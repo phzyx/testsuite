@@ -15,8 +15,7 @@ import traceback
 import uuid
 from datetime import datetime
 from hashlib import md5
-from twisted.internet import reactor, defer, error as twisted_error
-from twisted.python import log
+from asterisk.aio import reactor, defer, error as aio_error
 from starpy import manager, fastagi
 
 from .asterisk import Asterisk
@@ -75,7 +74,7 @@ def setup_logging(log_dir, log_full, log_messages):
 class TestCase(object):
     """The base class object for python tests. This class provides common
     functionality to all tests, including management of Asterisk instances, AMI,
-    twisted reactor, and various other utilities.
+    asyncio reactor shim, and various other utilities.
     """
 
     def __init__(self, test_path='', test_config=None):
@@ -183,9 +182,9 @@ class TestCase(object):
 
         self._setup_conditions()
 
-        # Enable twisted logging
-        observer = log.PythonLoggingObserver()
-        observer.start()
+        # Twisted's PythonLoggingObserver bridged Twisted's logging into stdlib
+        # logging; with the asyncio shim there is no separate log system to
+        # bridge -- stdlib logging is already configured.
 
         reactor.callWhenRunning(self._run)
 
@@ -533,9 +532,10 @@ class TestCase(object):
             if reactor.running:
                 try:
                     reactor.stop()
-                except twisted_error.ReactorNotRunning:
-                    # Something stopped it between our checks - at least we're
-                    # stopped
+                except aio_error.ReactorNotRunning:
+                    # The shim's stop() is idempotent and does not raise, but
+                    # keep the guard for parity in case something stopped it
+                    # between our checks - at least we're stopped
                     pass
             return result
         if not self._stopping:
@@ -649,7 +649,7 @@ class TestCase(object):
     def handle_originate_failure(self, reason):
         """Fail the test on an Originate failure
 
-        Convenience callback handler for twisted deferred errors for an AMI
+        Convenience callback handler for deferred errors for an AMI
         originate call. Derived classes can choose to add this handler to
         originate calls in order to handle them safely when they fail.
         This will stop the test if called.

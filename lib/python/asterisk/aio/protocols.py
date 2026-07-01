@@ -61,6 +61,15 @@ class ProcessTerminated(Exception):
         self.status = status
 
 
+class ProcessExitedAlready(Exception):
+    """Signalling a process that has already exited.
+
+    Mirrors ``twisted.internet.error.ProcessExitedAlready``: the process
+    transport adapter raises this from ``signalProcess()`` when the underlying
+    child is already gone (asyncio raises ``ProcessLookupError``).
+    """
+
+
 # ---------------------------------------------------------------------------- #
 # Datagram (UDP) protocol adapter
 # ---------------------------------------------------------------------------- #
@@ -151,7 +160,16 @@ class _ProcessTransportAdapter(object):
         if isinstance(signal, str):
             signal = getattr(_signal, 'SIG' + signal, None) or \
                 getattr(_signal, signal)
-        self._transport.send_signal(signal)
+        # asyncio's transport (via Popen.send_signal) silently no-ops on a child
+        # that has already exited; Twisted raised ProcessExitedAlready there, and
+        # Asterisk.stop()'s kill path relies on catching it. Reproduce that.
+        get_returncode = getattr(self._transport, 'get_returncode', None)
+        if get_returncode is not None and get_returncode() is not None:
+            raise ProcessExitedAlready()
+        try:
+            self._transport.send_signal(signal)
+        except ProcessLookupError:
+            raise ProcessExitedAlready()
 
     def __getattr__(self, name):
         return getattr(self._transport, name)

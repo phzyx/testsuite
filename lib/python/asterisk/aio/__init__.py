@@ -17,6 +17,7 @@ migrates callers to idiomatic asyncio and removes them.
 
 from . import defer
 from . import utils
+from . import error
 from .reactor import reactor
 from .failure import Failure
 from .protocols import (
@@ -25,12 +26,14 @@ from .protocols import (
     LoopingCall,
     ProcessDone,
     ProcessTerminated,
+    ProcessExitedAlready,
     ConnectionDone,
 )
 
 __all__ = [
     'defer',
     'utils',
+    'error',
     'reactor',
     'Failure',
     'DatagramProtocol',
@@ -38,5 +41,6 @@ __all__ = [
     'LoopingCall',
     'ProcessDone',
     'ProcessTerminated',
+    'ProcessExitedAlready',
     'ConnectionDone',
 ]

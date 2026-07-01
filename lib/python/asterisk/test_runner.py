@@ -22,7 +22,7 @@ try:
 except ImportError:
     from yaml import SafeLoader as MyLoader
 
-from twisted.internet import reactor
+from asterisk.aio import reactor
 
 LOGGER = logging.getLogger('test_runner')
 logging.basicConfig()
@@ -306,7 +306,7 @@ def main(argv=None):
     if test_object.global_config.config:
         load_test_modules(test_object.global_config.config, test_object)
 
-    # Kick off the twisted reactor
+    # Kick off the asyncio reactor
     reactor.run()
 
     LOGGER.info("Test run for %s completed with result %s" %

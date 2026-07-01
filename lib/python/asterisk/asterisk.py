@@ -10,6 +10,8 @@ This program is free software, distributed under the terms of
 the GNU General Public License Version 2.
 """
 
+import asyncio
+import shlex
 import subprocess
 import sys
 import os
@@ -25,17 +27,12 @@ from .config import ConfigFile
 
 from subprocess import PIPE, TimeoutExpired
 
-from twisted.internet import reactor, protocol, defer, utils, error
-from twisted.python.failure import Failure
+from asterisk.aio import reactor, defer, utils, error
+from asterisk.aio import Failure, ProcessProtocol
 
 REMOTE_ERROR = None
 try:
-    from twisted.python.filepath import FilePath
-    from twisted.internet.endpoints import UNIXClientEndpoint
-    from twisted.conch.ssh.keys import Key
-    from twisted.conch.client.knownhosts import KnownHostsFile
-    from twisted.conch.endpoints import SSHCommandClientEndpoint
-    from twisted.internet.error import ProcessTerminated
+    import asyncssh
 except ImportError as ie:
     # We cache any import errors here, as there's no point in bothering
     # things if we don't need the SSH connection to a remote Asterisk instance
@@ -47,34 +44,18 @@ from .pluggable_registry import PLUGGABLE_EVENT_REGISTRY,\
 
 LOGGER = logging.getLogger(__name__)
 
-class AsteriskRemoteProtocol(protocol.Protocol):
-    """Class that acts as a remote protocol to Asterisk"""
-
-    def connectionMade(self):
-        """Called on connect"""
-        LOGGER.debug('Connection made to remote Asterisk instance')
-        self.output = ''
-        self.finished = defer.Deferred()
-
-    def dataReceived(self, data):
-        """Called when we receive data back"""
-        LOGGER.debug(data)
-        self.output += data.decode('utf-8', 'ignore')
-
-    def connectionLost(self, reason):
-        """Called when the connect is lost"""
-        if reason.type == ProcessTerminated:
-            self.output += reason.getErrorMessage()
-            self.finished.errback(self)
-        else:
-            self.finished.callback(self)
-
-
 class AsteriskRemoteCliCommand(object):
-    """Class that attempts to manipulate a remote Asterisk CLI"""
+    """Class that attempts to manipulate a remote Asterisk CLI over SSH.
+
+    Uses ``asyncssh`` to open a connection, run a single command, and collect
+    its output. Preserves the public contract of the previous Twisted/conch
+    implementation: ``execute()`` returns a Deferred that fires with this
+    object on success and errbacks with a ``Failure`` wrapping this object on
+    failure, with ``exitcode``/``output``/``err`` populated in both cases.
+    """
 
     def __init__(self, remote_config, cmd):
-        """Create a new remote Astrisk CLI Protocol instance
+        """Create a new remote Asterisk CLI command instance
 
         Keyword Arguments:
         remote_config The parameters configuring this remote CLI command
@@ -89,62 +70,101 @@ class AsteriskRemoteCliCommand(object):
 
         self.config = remote_config
         self.cmd = cmd
-        self.keys = []
 
+        # Private key file(s) to offer, resolved from the 'identity' config.
+        self.client_keys = []
         identity = self.config.get('identity')
         if identity:
             key_path = os.path.expanduser(identity)
             if os.path.exists(key_path):
-                passphrase = self.config.get('passphrase')
-                self.keys.append(Key.fromFile(key_path, passphrase=passphrase))
+                self.client_keys.append(key_path)
 
+        # asyncssh takes a known_hosts filename (or None to disable checking),
+        # matching the previous behavior when the file was absent.
         known_hosts_file = self.config.get('known_hosts', '~/.ssh/known_hosts')
-        known_hosts_path = FilePath(os.path.expanduser(known_hosts_file))
-        if known_hosts_path.exists():
-            self.known_hosts = KnownHostsFile.fromPath(known_hosts_path)
+        known_hosts_path = os.path.expanduser(known_hosts_file)
+        if os.path.exists(known_hosts_path):
+            self.known_hosts = known_hosts_path
         else:
             self.known_hosts = None
 
-        no_agent = self.config.get('no-agent')
-        if no_agent or 'SSH_AUTH_SOCK' not in os.environ:
-            self.agent_endpoint = None
-        else:
-            self.agent_endpoint = UNIXClientEndpoint(reactor,
-                                                     os.environ['SSH_AUTH_SOCK'])
+        # Disable the SSH agent when asked to, or when there is no agent socket.
+        self.no_agent = bool(self.config.get('no-agent')) or \
+            'SSH_AUTH_SOCK' not in os.environ
 
     def execute(self):
-        """Execute the CLI command"""
+        """Execute the CLI command, returning a Deferred that fires with self."""
 
-        cmd = " ".join(self.cmd)
+        # Shell-quote each argument so paths/commands containing spaces or
+        # quotes survive being run by the remote shell intact.
+        cmd = shlex.join(self.cmd)
         LOGGER.debug('Executing {0}'.format(cmd))
-        endpoint = SSHCommandClientEndpoint.newConnection(reactor,
-            b"{0}".format(cmd), self.config.get('username'),
-            self.config.get('host'),
-            port=self.config.get('port', 22),
-            password=self.config.get('passsword'),
-            agentEndpoint=self.agent_endpoint,
-            keys=self.keys,
-            knownHosts=self.known_hosts)
-        factory = protocol.Factory()
-        factory.protocol = AsteriskRemoteProtocol
+        deferred = defer.Deferred()
 
-        def _nominal(param):
-            self.exitcode = 0
-            self.output = param.output
-            self.err = self.output
-            LOGGER.debug('Remote Asterisk process completed successfully')
-            return self
+        # Bound the whole SSH operation (connect + command) so a hung remote or
+        # network never wedges the reactor, per the SSH contract (design 6.5).
+        timeout = self.config.get('timeout', 60)
 
-        def _error(param):
-            self.exitcode = -1
-            self.output = param.value.output
-            self.err = self.output
-            LOGGER.warning('Remote Asterisk process failed: {0}'.format(self.err))
-            return Failure(self)
+        connect_kwargs = {
+            'port': self.config.get('port', 22),
+            'username': self.config.get('username'),
+            # The legacy config key had a typo ('passsword'); accept both.
+            'password': self.config.get('password',
+                                        self.config.get('passsword')),
+            'known_hosts': self.known_hosts,
+        }
+        if self.client_keys:
+            connect_kwargs['client_keys'] = self.client_keys
+            passphrase = self.config.get('passphrase')
+            if passphrase:
+                connect_kwargs['passphrase'] = passphrase
+        if self.no_agent:
+            connect_kwargs['agent_path'] = None
 
-        deferred = endpoint.connect(factory)
-        deferred.addCallback(lambda proto: proto.finished)
-        deferred.addCallbacks(_nominal, _error)
+        async def _connect_and_run():
+            async with asyncssh.connect(self.config.get('host'),
+                                        **connect_kwargs) as conn:
+                # check=False: a non-zero exit is a result to report, not an
+                # exception to raise.
+                return await conn.run(cmd, check=False)
+
+        async def _run():
+            try:
+                result = await asyncio.wait_for(_connect_and_run(), timeout)
+            except asyncio.TimeoutError:
+                self.exitcode = -1
+                self.output = ''
+                self.err = ('SSH operation timed out after %s seconds'
+                            % timeout)
+                LOGGER.warning('Remote Asterisk SSH timed out (%ss): %s'
+                               % (timeout, cmd))
+                deferred.errback(Failure(self))
+                return
+            except Exception as exc:
+                self.exitcode = -1
+                self.output = ''
+                self.err = str(exc)
+                LOGGER.warning('Remote Asterisk connection failed: '
+                               '{0}'.format(exc))
+                deferred.errback(Failure(self))
+                return
+
+            # Preserve stdout, stderr and the true exit status separately, as
+            # the local process path does. A signal-killed remote process has
+            # exit_status None; report that as a failure (-1).
+            self.output = result.stdout or ''
+            self.err = result.stderr or ''
+            self.exitcode = result.exit_status \
+                if result.exit_status is not None else -1
+            if self.exitcode == 0:
+                LOGGER.debug('Remote Asterisk process completed successfully')
+                deferred.callback(self)
+            else:
+                LOGGER.warning('Remote Asterisk process exited %s: %s'
+                               % (self.exitcode, self.err))
+                deferred.errback(Failure(self))
+
+        reactor.callWhenRunning(lambda: asyncio.ensure_future(_run()))
         return deferred
 
 
@@ -215,7 +235,7 @@ class AsteriskCliCommand(object):
         self.output = bintxt.decode('utf-8', 'ignore')
 
 
-class AsteriskProtocol(protocol.ProcessProtocol):
+class AsteriskProtocol(ProcessProtocol):
     """Class that manages an Asterisk instance"""
 
     def __init__(self, host, stop_deferred):
@@ -226,7 +246,7 @@ class AsteriskProtocol(protocol.ProcessProtocol):
 
         Keyword Arguments:
         host - the hostname or address of the Asterisk instance
-        stop_deferred - a twisted Deferred object that will be called when the
+        stop_deferred - a Deferred object that will be called when the
         process has exited
         """
 
@@ -472,7 +492,7 @@ class Asterisk(object):
             # asterisk sufficient time to actually start and create the ctl
             # file. If we try to send the fully booted command before this
             # happens we wait and try again, but this results in an unhandled
-            # error in twisted after the command succeeds.
+            # error in the reactor after the command succeeds.
             reactor.callLater(self.wfbdelay, __execute_wait_fully_booted)
 
         def __execute_wait_fully_booted():
@@ -941,11 +961,10 @@ class Asterisk(object):
         Example Usage:
         asterisk.cli_exec("core set verbose 10")
         """
-        # If this is going to a remote system, make sure we enclose
-        # the command in quotes
-        if self.remote_config:
-            cli_cmd = '"{0}"'.format(cli_cmd)
-
+        # The command is built as an argument vector. The local path passes it
+        # straight to the process (no shell), and the remote path shell-quotes
+        # each argument itself (see AsteriskRemoteCliCommand.execute), so no
+        # manual quoting is applied here.
         cmd = [
             self.ast_binary,
             "-C", "%s" % os.path.join(self.astetcdir, "asterisk.conf"),
