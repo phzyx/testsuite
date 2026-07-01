@@ -13,7 +13,7 @@ testinfo:
 
 properties:
     dependencies:
-        - python : 'twisted'
+        - python : 'asterisk.aio'
         - python : 'starpy'
         - asterisk : 'chan_pjsip'
         - asterisk : 'app_dial'

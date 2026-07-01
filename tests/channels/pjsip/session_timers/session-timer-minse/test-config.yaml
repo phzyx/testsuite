@@ -18,7 +18,7 @@ sipp-config:
 
 properties:
     dependencies:
-        - python: 'twisted'
+        - python: 'asterisk.aio'
         - python: 'starpy'
         - app: 'sipp'
         - asterisk: 'res_pjsip'

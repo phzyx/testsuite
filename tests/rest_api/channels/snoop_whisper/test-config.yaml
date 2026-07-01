@@ -70,9 +70,9 @@ ari-config:
 
 properties:
     dependencies:
-        - python : autobahn.websocket
+        - python : websockets
         - python : requests
-        - python : twisted
+        - python : asterisk.aio
         - python : starpy
         - asterisk : res_ari_channels
         - asterisk : app_amd

@@ -482,6 +482,18 @@ two only in comments. Counts regenerated via `doc/untwist/check_no_twisted.py`,
 excluding the new `asterisk/aio/` layer. The first-party library tier is 30
 modules importing Twisted, again excluding `aio/`.)
 
+> **Scope correction (found during Step 5):** the "32 fixtures" count came from
+> a `.py`-only scan and therefore *missed the per-test `run-test` entry
+> scripts*, which are executable Python modules with a `#!` line and **no `.py`
+> suffix**. 146 of them do `from twisted.internet import reactor` and call
+> `reactor.run()`; left unconverted they would break the moment Step 6 removes
+> Twisted. All 146 take the same trivial `from asterisk.aio import reactor`
+> swap (the reactor attrs they touch — `run`, `callLater`, `listenTCP`, `stop`,
+> `running`, `callWhenRunning` — are all provided by `aio.reactor`). The gate
+> had the same blind spot: `check_no_twisted.py` now also scans files named
+> `run-test`, but only when their shebang names a Python interpreter (some
+> directories ship a *bash* `run-test`, which must not be AST-parsed).
+
 Convert by the templates established in Steps 1/4:
 
 - **UDP listeners** (RTP/HEP/strict-rtp — 6+ files): import swap + `DatagramProtocol`
@@ -496,6 +508,36 @@ Convert by the templates established in Steps 1/4:
   `rest_api/*`): rely on the converted framework AMI/AGI; usually import-swap only.
 
 Exit criterion: each converted fixture's test passes individually.
+
+> **Review findings fixed before sign-off (three High):**
+>
+> - **F1 — YAML dependency declarations (735 twisted + 184 autobahn files).**
+>   Each `test-config.yaml` lists prerequisites as `- python: 'twisted'`; the
+>   framework resolves them by `__import__` and, on failure, marks the test
+>   *unmet* and **silently skips** it (`test_config.py`). Left untouched, Step 6's
+>   package removal would turn hundreds of tests into no-ops with no error. All
+>   736 twisted lines were repointed to `asterisk.aio` and all 185
+>   `autobahn[.websocket]` lines to `websockets`, preserving each file's exact
+>   quote/spacing style (four variants: `python :`/`python:` × quoted/bare). The
+>   AST gate was data-blind here, so `check_no_twisted.py` now also textually
+>   scans uncommented `python:` dep lines in `*.yaml` and fails on a banned
+>   module — the category is now gate-enforced against regressions.
+> - **F2 — `AriClientProtocol.sendClose()`.** The inbound-WebSocket media client
+>   calls `self.protocol.sendClose(1000)` on the ARI client protocol (autobahn
+>   `WebSocketProtocol` API). The websockets port had dropped that surface, so the
+>   fixture failed then timed out. Re-added `sendClose(code=1000, reason="")`
+>   delegating to `dropConnection`; covered by `test_ari_parity` (close fires on
+>   both ends).
+> - **F3 — synchronous `listenUDP` transport.** Twisted's `listenUDP` binds and
+>   installs `protocol.transport` before returning; the strict-RTP fixtures send a
+>   datagram on the very next line. asyncio's `create_datagram_endpoint` is a
+>   coroutine, so `protocol.transport` was still `None` at that point and
+>   `strict_rtp_seqno`/`strict_rtp_yes` raced. `listenUDP` now binds the socket
+>   synchronously and installs a `_SyncDatagramTransport` over that fd immediately;
+>   the asyncio receive path is wired from the same socket and upgrades the
+>   transport on `connection_made`. Early `stopListening()` (before the endpoint
+>   coroutine runs) is handled gracefully. Covered by
+>   `UDPSyncTransportTests.test_transport_usable_before_endpoint_awaited`.
 
 ## 8. Step 6 — dependency strip and final gate
 
@@ -576,5 +618,5 @@ comparing pass/behavior to the pre-branch Twisted baseline:
 - [ ] Step 2 — starpy fork converted + smoke test green + `pyproject.toml` updated
 - [ ] Step 3 — core converted + `self_test` green
 - [ ] Step 4 — subsystems converted (ami/ari/sipp/dns/http/ws/udp/pluggable)
-- [ ] Step 5 — test-condition family + 32 fixtures converted
+- [x] Step 5 — test-condition family + fixtures converted (32 `.py` fixtures + 146 `run-test` entry scripts; gate extended to scan Python `run-test` files; review findings F1/F2/F3 fixed: 736 twisted + 185 autobahn YAML deps repointed and gate-enforced, `AriClientProtocol.sendClose` restored, synchronous `listenUDP` transport)
 - [ ] Step 6 — deps stripped, AST import gate + `pip check` clean, full suite parity green

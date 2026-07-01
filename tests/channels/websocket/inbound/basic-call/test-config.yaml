@@ -22,8 +22,8 @@ test-object:
 
 properties:
     dependencies:
-        - python : autobahn
-        - python : twisted
+        - python : websockets
+        - python : asterisk.aio
         - asterisk : res_http_websocket
         - asterisk : res_websocket_client
         - asterisk : chan_websocket

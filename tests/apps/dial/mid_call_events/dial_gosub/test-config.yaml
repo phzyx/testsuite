@@ -288,7 +288,7 @@ cdr-config-12:
 
 properties:
     dependencies:
-        - python : 'twisted'
+        - python : 'asterisk.aio'
         - python : 'starpy'
         - asterisk: 'app_dial'
         - asterisk: 'app_echo'

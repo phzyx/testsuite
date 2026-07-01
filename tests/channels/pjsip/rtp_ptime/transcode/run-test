@@ -9,7 +9,7 @@ import subprocess
 sys.path.append("lib/python")
 sys.path.append("utils")
 
-from twisted.internet import reactor
+from asterisk.aio import reactor
 from asterisk.sipp import SIPpTest
 
 WORKING_DIR = os.path.abspath(os.path.dirname(__file__))

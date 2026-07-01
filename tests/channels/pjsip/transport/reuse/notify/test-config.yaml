@@ -22,7 +22,7 @@ properties:
         - buildoption: 'TEST_FRAMEWORK'
         - sipp :
             version : 'v3.0'
-        - python: 'twisted'
+        - python: 'asterisk.aio'
         - python: 'starpy'
         - asterisk: 'res_pjsip'
         - asterisk: 'res_pjsip_mwi'

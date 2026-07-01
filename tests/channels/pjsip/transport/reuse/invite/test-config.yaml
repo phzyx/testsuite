@@ -19,7 +19,7 @@ properties:
         - buildoption: 'TEST_FRAMEWORK'
         - sipp :
             version : 'v3.0'
-        - python: 'twisted'
+        - python: 'asterisk.aio'
         - python: 'starpy'
         - asterisk: 'app_dial'
         - asterisk: 'app_echo'

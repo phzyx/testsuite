@@ -17,7 +17,7 @@ test-modules:
 
 properties:
     dependencies:
-        - python : 'twisted'
+        - python : 'asterisk.aio'
         - python : 'starpy'
         - asterisk : 'chan_pjsip'
     tags:

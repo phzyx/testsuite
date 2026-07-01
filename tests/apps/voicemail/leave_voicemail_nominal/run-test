@@ -12,7 +12,7 @@ import sys
 import os
 import logging
 
-from twisted.internet import reactor
+from asterisk.aio import reactor
 
 sys.path.append("lib/python")
 sys.path.append("tests/apps/voicemail")

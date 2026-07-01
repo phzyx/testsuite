@@ -15,7 +15,7 @@ sys.path.append("lib/python")
 sys.path.append("tests/rest_api/applications")
 
 from asterisk.test_case import TestCase
-from twisted.internet import reactor, defer
+from asterisk.aio import reactor, defer
 
 LOGGER = logging.getLogger(__name__)
 

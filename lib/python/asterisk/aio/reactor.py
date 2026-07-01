@@ -124,12 +124,19 @@ class _Port(object):
         self._transport = None
         self._server = None
         self._closed = False
+        # For UDP: the socket bound synchronously in listenUDP. Owned by this
+        # handle only until the asyncio datagram transport takes it over (at
+        # which point _set_transport clears it); closed here if that never
+        # happens (e.g. stopListening before the endpoint finished binding).
+        self._presock = None
 
     def _set_transport(self, transport):
         if self._closed and transport is not None:
             transport.close()
             return
         self._transport = transport
+        # The asyncio transport now owns the pre-bound socket's fd.
+        self._presock = None
 
     def _set_server(self, server):
         if self._closed and server is not None:
@@ -146,6 +153,55 @@ class _Port(object):
         if self._server is not None:
             self._server.close()
             self._server = None
+        if self._presock is not None:
+            try:
+                self._presock.close()
+            except OSError:
+                pass
+            self._presock = None
+
+
+class _SyncDatagramTransport(object):
+    """A UDP transport available synchronously from ``listenUDP``.
+
+    Twisted's ``reactor.listenUDP`` binds the socket and installs
+    ``protocol.transport`` before returning, so pluggable modules routinely send
+    a first datagram on the very next line. asyncio's
+    ``create_datagram_endpoint`` is a coroutine, so between ``listenUDP``
+    returning and ``DatagramProtocol.connection_made`` installing the
+    asyncio-backed writer there is a window where ``protocol.transport`` would
+    otherwise be ``None``. This shim closes that window by carrying sends
+    straight to the freshly bound socket. Its ``write(data, addr)`` mirrors the
+    Twisted UDP transport signature; ``connection_made`` later replaces it with
+    the asyncio-backed writer over the same fd.
+    """
+
+    def __init__(self, sock):
+        self._sock = sock
+
+    def write(self, data, addr=None):
+        try:
+            if addr is None:
+                self._sock.send(data)
+            else:
+                self._sock.sendto(data, addr)
+        except (BlockingIOError, InterruptedError):
+            # UDP send buffer momentarily full; Twisted drops silently too.
+            pass
+
+    def writeSequence(self, seq, addr=None):
+        self.write(b''.join(seq), addr)
+
+    def getHost(self):
+        return self._sock.getsockname()
+
+    def loseConnection(self):
+        # No-op: once connection_made fires the asyncio transport owns the fd,
+        # and the _Port handle closes the socket if it never does.
+        pass
+
+    def close(self):
+        pass
 
 
 class _Connector(object):
@@ -511,19 +567,53 @@ class _Reactor(object):
 
     # -- networking ------------------------------------------------------- #
     def listenUDP(self, port, protocol, interface='', maxPacketSize=8192):
-        """Listen for UDP datagrams, driving ``protocol`` (a DatagramProtocol)."""
+        """Listen for UDP datagrams, driving ``protocol`` (a DatagramProtocol).
+
+        The socket is bound *synchronously* (as Twisted's listenUDP does) and
+        ``protocol.transport`` is installed before returning, so a pluggable
+        module can send its first datagram on the next line without racing the
+        asyncio endpoint-creation coroutine (review finding: strict-RTP
+        fixtures). A bind failure therefore also surfaces synchronously here,
+        matching Twisted's ``CannotListenError``. The asyncio receive path is
+        then wired from the same bound socket; when it is ready,
+        ``DatagramProtocol.connection_made`` upgrades ``protocol.transport`` to
+        the asyncio-backed writer.
+        """
+        import socket as _socket
+
         loop = self._ensure_loop()
         handle = _Port()
         self._ports.append(handle)
-        local_addr = (interface or '0.0.0.0', port)
-        coro = loop.create_datagram_endpoint(lambda: protocol,
-                                              local_addr=local_addr)
+
+        sock = _socket.socket(_socket.AF_INET, _socket.SOCK_DGRAM)
+        try:
+            sock.setblocking(False)
+            sock.bind((interface or '0.0.0.0', port))
+        except OSError:
+            sock.close()
+            self._ports.remove(handle)
+            raise
+        handle._presock = sock
+        # Give the protocol a working transport immediately (Twisted parity).
+        if getattr(protocol, 'transport', None) is None:
+            protocol.transport = _SyncDatagramTransport(sock)
+
+        async def _bind():
+            # stopListening() may have run before this coroutine gets its turn
+            # (it closes _presock). Binding a closed fd raises EBADF, so honour
+            # an early teardown by doing nothing -- the socket is already gone.
+            if handle._closed:
+                return None
+            return await loop.create_datagram_endpoint(lambda: protocol,
+                                                       sock=sock)
 
         def apply(result):
+            if result is None:
+                return
             transport, _proto = result
             handle._set_transport(transport)
 
-        self._register_bind(coro, apply, None, 'listenUDP:%d' % port)
+        self._register_bind(_bind(), apply, None, 'listenUDP:%d' % port)
         return handle
 
     def listenTCP(self, port, factory, backlog=50, interface=''):

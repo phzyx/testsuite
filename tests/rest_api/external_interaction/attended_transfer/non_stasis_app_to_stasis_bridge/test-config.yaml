@@ -263,9 +263,9 @@ pluggable-config:
 
 properties:
     dependencies:
-        - python : autobahn.websocket
+        - python : websockets
         - python : requests
-        - python : twisted
+        - python : asterisk.aio
         - python : starpy
         - app : sipp
         - asterisk : app_stasis

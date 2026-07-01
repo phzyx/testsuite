@@ -53,7 +53,7 @@ hangup-config:
 
 properties:
     dependencies:
-        - python : 'twisted'
+        - python : 'asterisk.aio'
         - python : 'starpy'
         - asterisk : 'app_userevent'
         - asterisk : 'pbx_spool'

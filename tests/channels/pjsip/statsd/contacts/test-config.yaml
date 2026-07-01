@@ -51,7 +51,7 @@ event-action-config:
 
 properties:
     dependencies:
-        - python: 'twisted'
+        - python: 'asterisk.aio'
         - asterisk: 'res_pjsip_outbound_registration'
         - asterisk: 'res_statsd'
         - asterisk: 'res_pjsip'

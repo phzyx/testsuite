@@ -14,7 +14,7 @@ import logging
 from asterisk.asterisk import Asterisk
 from asterisk.test_case import TestCase
 from asterisk.voicemail import VoiceMailMailboxManagement
-from twisted.internet import reactor
+from asterisk.aio import reactor
 
 LOGGER = logging.getLogger(__name__)
 

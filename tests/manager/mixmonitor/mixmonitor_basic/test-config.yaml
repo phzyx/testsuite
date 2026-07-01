@@ -151,7 +151,7 @@ expected-ami-events:
 
 properties:
     dependencies:
-        - python : 'twisted'
+        - python : 'asterisk.aio'
         - python : 'starpy'
         - asterisk: 'app_mixmonitor'
         - buildoption: 'TEST_FRAMEWORK'

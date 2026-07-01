@@ -246,7 +246,7 @@ ami-config:
 properties:
     dependencies:
         - buildoption: 'TEST_FRAMEWORK'
-        - python: 'twisted'
+        - python: 'asterisk.aio'
         - python: 'starpy'
         - sipp:
             version: 'v3.3'

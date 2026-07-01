@@ -25,7 +25,7 @@ testinfo:
                   from the instance element in the RLMI document.'
 properties:
     dependencies:
-        - python: 'twisted'
+        - python: 'asterisk.aio'
         - python: 'starpy'
         - python: 'lxml'
         - python: 'construct'

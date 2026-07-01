@@ -10,9 +10,9 @@ test-object-config:
 
 properties:
     dependencies:
-        - python : autobahn.websocket
+        - python : websockets
         - python : requests
-        - python : twisted
+        - python : asterisk.aio
         - asterisk : res_ari
         - asterisk : res_http_websocket
         - asterisk : res_ari_events

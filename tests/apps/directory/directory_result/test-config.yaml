@@ -292,7 +292,7 @@ properties:
       - directory
     dependencies:
       - buildoption: 'TEST_FRAMEWORK'
-      - python : 'twisted'
+      - python : 'asterisk.aio'
       - python : 'starpy'
       - asterisk : 'app_directory'
       - asterisk : 'app_playback'

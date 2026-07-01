@@ -26,6 +26,7 @@ from asterisk.aio.defer import (
 from asterisk.aio.failure import Failure
 from asterisk.aio.protocols import (
     DatagramProtocol, ProcessProtocol, ProcessDone, ProcessTerminated,
+    Protocol, Factory, ClientFactory,
 )
 
 
@@ -309,6 +310,47 @@ class UDPEchoTests(_LoopTestCase):
         reactor.callWhenRunning(setup)
         reactor.run()
         self.assertEqual(result.get('data'), b'echo:ping')
+
+
+class UDPSyncTransportTests(_LoopTestCase):
+    """listenUDP must install a usable transport *synchronously*.
+
+    Twisted's ``reactor.listenUDP`` binds the socket and installs
+    ``protocol.transport`` before returning, so fixtures may write a datagram on
+    the very next line. The strict-RTP fixtures rely on this: they call
+    ``listenUDP(port, proto)`` and immediately ``proto.transport.write(...)``.
+    The asyncio ``create_datagram_endpoint`` is a coroutine that binds later, so
+    listenUDP pre-binds the socket and installs a synchronous transport to close
+    the race. This test asserts that guarantee directly.
+    """
+
+    def test_transport_usable_before_endpoint_awaited(self):
+        observed = {}
+
+        def setup():
+            proto = DatagramProtocol()
+            handle = reactor.listenUDP(0, proto, '127.0.0.1')
+            # Synchronously — no await, no callLater — the transport must exist
+            # and expose a bound host and a working write().
+            observed['transport'] = proto.transport
+            try:
+                observed['host'] = proto.transport.getHost()
+                proto.transport.write(b'x', ('127.0.0.1', observed['host'][1]))
+                observed['wrote'] = True
+            except Exception as exc:                       # pragma: no cover
+                observed['error'] = repr(exc)
+            handle.stopListening()
+            reactor.stop()
+
+        reactor.callWhenRunning(setup)
+        reactor.run()
+        self.assertIsNotNone(observed.get('transport'),
+                             'transport was None synchronously')
+        self.assertIsInstance(observed.get('host'), tuple)
+        self.assertEqual(observed['host'][0], '127.0.0.1')
+        self.assertNotEqual(observed['host'][1], 0)
+        self.assertTrue(observed.get('wrote'),
+                        'synchronous write failed: %s' % observed.get('error'))
 
 
 # --------------------------------------------------------------------------- #
@@ -937,6 +979,58 @@ class ShutdownStrayTaskTests(_LoopTestCase):
             pid = int(handle.read())
         with self.assertRaises(ProcessLookupError):
             os.kill(pid, 0)
+
+
+class StreamProtocolBaseTests(unittest.TestCase):
+    """The generic Protocol/Factory/ClientFactory base classes used by
+    stream-oriented fixtures (e.g. the PJSIP keep_alive TCP client)."""
+
+    def test_make_connection_binds_transport_and_fires(self):
+        events = []
+
+        class _Proto(Protocol):
+            def connectionMade(self):
+                events.append(('made', self.transport))
+
+            def dataReceived(self, data):
+                events.append(('data', data))
+
+            def connectionLost(self, reason=None):
+                events.append(('lost', reason))
+
+        proto = _Proto()
+        sentinel = object()
+        proto.makeConnection(sentinel)
+        proto.dataReceived(b'hi')
+        proto.connectionLost('done')
+
+        self.assertIs(proto.transport, sentinel)
+        self.assertEqual(events,
+                         [('made', sentinel), ('data', b'hi'), ('lost', 'done')])
+
+    def test_factory_build_protocol_backlinks_factory(self):
+        class _Proto(Protocol):
+            pass
+
+        class _Factory(Factory):
+            protocol = _Proto
+
+        factory = _Factory()
+        proto = factory.buildProtocol(('127.0.0.1', 5060))
+        self.assertIsInstance(proto, _Proto)
+        self.assertIs(proto.factory, factory)
+
+    def test_client_factory_is_a_factory_with_callbacks(self):
+        factory = ClientFactory()
+        self.assertIsInstance(factory, Factory)
+        # The connection-lifecycle callbacks exist as no-op hooks so subclasses
+        # may override only the ones they need (keep_alive overrides the failed/
+        # lost pair). Calling them must not raise.
+        factory.startedConnecting(None)
+        factory.clientConnectionFailed(None, 'reason')
+        factory.clientConnectionLost(None, 'reason')
+        factory.doStart()
+        factory.doStop()
 
 
 if __name__ == '__main__':

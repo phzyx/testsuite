@@ -32,7 +32,7 @@ rtp-analyzer-config:
 
 properties:
     dependencies:
-        - python: 'twisted'
+        - python: 'asterisk.aio'
         - python: 'scapy'
         - asterisk : 'app_dial'
         - asterisk : 'res_pjsip'

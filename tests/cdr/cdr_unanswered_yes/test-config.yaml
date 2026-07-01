@@ -42,7 +42,7 @@ cdr-config-12:
 
 properties:
     dependencies:
-        - python : 'twisted'
+        - python : 'asterisk.aio'
         - python : 'starpy'
         - asterisk : 'cdr_csv'
     tags:

@@ -109,10 +109,10 @@ ami-config:
 
 properties:
     dependencies:
-        - python : autobahn.websocket
+        - python : websockets
         - python : requests
         - python : starpy
-        - python : twisted
+        - python : asterisk.aio
         - asterisk : app_stack
         - asterisk : app_stasis
         - asterisk : func_talkdetect

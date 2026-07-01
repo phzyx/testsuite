@@ -47,7 +47,7 @@ cdr-config-12:
 
 properties:
     dependencies:
-        - python : 'twisted'
+        - python : 'asterisk.aio'
         - python : 'starpy'
         - asterisk : 'chan_pjsip'
     tags:

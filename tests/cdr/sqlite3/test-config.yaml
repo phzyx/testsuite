@@ -85,7 +85,7 @@ cdr-config-13:
 
 properties:
     dependencies:
-        - python : 'twisted'
+        - python : 'asterisk.aio'
         - python : 'starpy'
         - python : 'sqlite3'
         - asterisk : 'cdr_sqlite3_custom'

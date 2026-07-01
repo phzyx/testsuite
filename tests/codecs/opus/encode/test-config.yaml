@@ -15,10 +15,10 @@ test-modules:
 
 properties:
     dependencies:
-        - python : 'autobahn.websocket'
+        - python : 'websockets'
         - python : 'numpy'
         - python : 'requests'
-        - python : 'twisted'
+        - python : 'asterisk.aio'
         - asterisk : 'res_pjsip'
         - asterisk : 'codec_opus'
     tags:

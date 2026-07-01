@@ -8,10 +8,10 @@ testinfo:
 
 properties:
     # Specify the minimum version to prevent your test from failing for older versions of Asterisk
-    # List dependencies your test will need to run.  You'll typically need twisted and starpy.  Other
+    # List dependencies your test will need to run.  You'll typically need asterisk.aio and starpy.  Other
     # options are listed in the README for the testsuite.
     dependencies:
-        - python : 'twisted'
+        - python : 'asterisk.aio'
         - python : 'starpy'
         - module : 'app_userevent'
 

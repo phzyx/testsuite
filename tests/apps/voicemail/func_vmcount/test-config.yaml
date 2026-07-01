@@ -7,7 +7,7 @@ testinfo:
 
 properties:
     dependencies:
-        - python : 'twisted'
+        - python : 'asterisk.aio'
         - python : 'starpy'
         - asterisk: 'app_userevent'
         - asterisk: 'app_voicemail'

@@ -93,7 +93,7 @@ cdr-config:
 properties:
     dependencies:
         - buildoption: 'TEST_FRAMEWORK'
-        - python : 'twisted'
+        - python : 'asterisk.aio'
         - python : 'starpy'
         - asterisk: 'app_dial'
         - asterisk: 'chan_pjsip'

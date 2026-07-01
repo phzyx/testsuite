@@ -11,7 +11,7 @@ import logging
 import json
 import requests
 
-from twisted.internet import defer
+from asterisk.aio import defer
 
 from asterisk.sipp import SIPpScenario
 

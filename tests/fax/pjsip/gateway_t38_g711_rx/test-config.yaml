@@ -19,7 +19,7 @@ testinfo:
 
 properties:
     dependencies:
-        - python : 'twisted'
+        - python : 'asterisk.aio'
         - python : 'starpy'
         - custom : 'fax'
         - asterisk : 'app_dial'

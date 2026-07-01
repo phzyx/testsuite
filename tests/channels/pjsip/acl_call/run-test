@@ -3,7 +3,7 @@
 import sys
 import os
 import shutil
-from twisted.internet import reactor
+from asterisk.aio import reactor
 
 sys.path.append("lib/python")
 

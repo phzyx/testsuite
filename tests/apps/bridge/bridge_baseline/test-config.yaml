@@ -141,7 +141,7 @@ cdr-config-12:
 properties:
     dependencies:
         - python : 'starpy'
-        - python : 'twisted'
+        - python : 'asterisk.aio'
         - asterisk : 'app_echo'
         - asterisk : 'app_userevent'
         - asterisk : 'app_verbose'

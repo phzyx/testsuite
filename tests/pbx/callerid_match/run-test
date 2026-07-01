@@ -13,7 +13,7 @@ import sys
 import os
 import logging
 
-from twisted.internet import reactor
+from asterisk.aio import reactor
 from shutil import move, copy
 
 sys.path.append("lib/python")

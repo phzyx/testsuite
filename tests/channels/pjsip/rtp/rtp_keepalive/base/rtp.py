@@ -10,8 +10,8 @@ import logging
 import sys
 import time
 
-from twisted.internet.protocol import DatagramProtocol
-from twisted.internet import reactor
+from asterisk.aio import DatagramProtocol
+from asterisk.aio import reactor
 from asterisk.pcap import RTPPacket
 
 sys.path.append('lib/python')

@@ -132,6 +132,73 @@ class DatagramProtocol(asyncio.DatagramProtocol):
 
 
 # ---------------------------------------------------------------------------- #
+# Generic (stream/TCP) protocol + factory base classes
+# ---------------------------------------------------------------------------- #
+class Protocol(object):
+    """Twisted-style stream Protocol base (twisted.internet.protocol.Protocol).
+
+    Subclasses override ``connectionMade``/``dataReceived``/``connectionLost``.
+    ``self.transport`` exposes ``write``/``writeSequence``/``loseConnection``/
+    ``getPeer``/``getHost`` -- it is supplied by the reactor's connect/listen
+    adapter, which calls ``makeConnection`` on the built protocol.
+    """
+
+    transport = None
+    factory = None
+
+    def makeConnection(self, transport):
+        """Bind the transport and fire ``connectionMade`` (Twisted contract)."""
+        self.transport = transport
+        self.connectionMade()
+
+    # Twisted-style overrides --------------------------------------------- #
+    def connectionMade(self):
+        """Called when a connection is established (override as needed)."""
+
+    def dataReceived(self, data):
+        """Called with each chunk of received bytes (override as needed)."""
+
+    def connectionLost(self, reason=None):
+        """Called when the connection is closed (override as needed)."""
+
+
+class Factory(object):
+    """Twisted-style protocol Factory (twisted.internet.protocol.Factory).
+
+    ``buildProtocol(addr)`` instantiates ``self.protocol`` and back-links the
+    factory, matching Twisted so subclasses that only set ``protocol`` work
+    unchanged.
+    """
+
+    protocol = None
+
+    def buildProtocol(self, addr):
+        """Create a protocol instance for a new connection."""
+        proto = self.protocol()
+        proto.factory = self
+        return proto
+
+    def startedConnecting(self, connector):
+        """Called when a connection attempt begins (override as needed)."""
+
+    def clientConnectionFailed(self, connector, reason):
+        """Called when a connection attempt fails (override as needed)."""
+
+    def clientConnectionLost(self, connector, reason):
+        """Called when an established connection is lost (override as needed)."""
+
+    def doStart(self):
+        """Called when the factory starts being used (override as needed)."""
+
+    def doStop(self):
+        """Called when the factory stops being used (override as needed)."""
+
+
+class ClientFactory(Factory):
+    """Twisted-style ClientFactory (twisted.internet.protocol.ClientFactory)."""
+
+
+# ---------------------------------------------------------------------------- #
 # Process protocol adapter
 # ---------------------------------------------------------------------------- #
 class _ProcessTransportAdapter(object):

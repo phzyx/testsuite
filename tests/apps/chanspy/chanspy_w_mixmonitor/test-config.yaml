@@ -12,7 +12,7 @@ testinfo:
 
 properties:
     dependencies:
-        - python : 'twisted'
+        - python : 'asterisk.aio'
         - python : 'starpy'
         - app : 'pjsua'
         - asterisk : 'app_chanspy'

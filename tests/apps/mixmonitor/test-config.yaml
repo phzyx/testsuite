@@ -6,7 +6,7 @@ testinfo:
 
 properties:
     dependencies:
-        - python : 'twisted'
+        - python : 'asterisk.aio'
         - python : 'starpy'
         - asterisk : 'app_echo'
         - asterisk : 'app_mixmonitor'

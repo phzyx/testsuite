@@ -5,7 +5,7 @@ import logging
 
 sys.path.append("lib/python")
 
-from twisted.internet import reactor
+from asterisk.aio import reactor
 
 LOGGER = logging.getLogger(__name__)
 

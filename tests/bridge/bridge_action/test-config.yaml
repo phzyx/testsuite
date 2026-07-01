@@ -36,7 +36,7 @@ bridge-action:
 
 properties:
     dependencies:
-        - python : 'twisted'
+        - python : 'asterisk.aio'
         - python : 'starpy'
         - asterisk: 'app_echo'
     tags:

@@ -528,7 +528,7 @@ properties:
       - apps
     dependencies:
       - buildoption: 'TEST_FRAMEWORK'
-      - python : 'twisted'
+      - python : 'asterisk.aio'
       - python : 'starpy'
       - asterisk : 'app_confbridge'
       - asterisk : 'app_playback'

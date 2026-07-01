@@ -53,7 +53,7 @@ event-action-config:
 
 properties:
     dependencies:
-        - python : 'twisted'
+        - python : 'asterisk.aio'
         - python : 'starpy'
         - asterisk : 'app_chanspy'
         - asterisk : 'app_echo'

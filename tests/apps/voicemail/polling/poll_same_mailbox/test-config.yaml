@@ -8,7 +8,7 @@ testinfo:
 properties:
     buildoption: 'TEST_FRAMEWORK'
     dependencies:
-        - python : 'twisted'
+        - python : 'asterisk.aio'
         - python : 'starpy'
         - asterisk: 'app_voicemail'
         - asterisk: 'chan_pjsip'

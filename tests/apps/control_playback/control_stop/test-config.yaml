@@ -161,7 +161,7 @@ properties:
       - apps
     dependencies:
       - buildoption: 'TEST_FRAMEWORK'
-      - python : 'twisted'
+      - python : 'asterisk.aio'
       - python : 'starpy'
       - asterisk : 'app_controlplayback'
       - asterisk : 'app_exec'

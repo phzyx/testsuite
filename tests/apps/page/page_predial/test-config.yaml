@@ -173,7 +173,7 @@ properties:
       - page
     dependencies:
       - buildoption: 'TEST_FRAMEWORK'
-      - python : 'twisted'
+      - python : 'asterisk.aio'
       - python : 'starpy'
       - asterisk : 'app_page'
       - asterisk : 'app_senddtmf'

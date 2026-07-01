@@ -119,7 +119,7 @@ ami-config:
 properties:
     dependencies:
         - python: 'starpy'
-        - python: 'twisted'
+        - python: 'asterisk.aio'
         - asterisk: 'app_dial'
         - asterisk: 'app_playback'
         - asterisk: 'app_talkdetect'

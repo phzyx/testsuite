@@ -184,7 +184,7 @@ test-object-config:
 properties:
     dependencies:
         - python : 'starpy'
-        - python : 'twisted'
+        - python : 'asterisk.aio'
         - asterisk : 'app_agent_pool'
         - asterisk : 'app_exec'
         - asterisk : 'app_playback'

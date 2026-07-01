@@ -82,7 +82,7 @@ ami-uut:
 
 properties:
     dependencies:
-        - python : 'twisted'
+        - python : 'asterisk.aio'
         - python : 'starpy'
         - asterisk: 'app_dial'
         - asterisk: 'app_stack'

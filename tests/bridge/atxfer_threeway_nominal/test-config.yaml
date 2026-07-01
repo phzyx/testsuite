@@ -108,7 +108,7 @@ hangup-config:
 properties:
     dependencies:
         - buildoption: 'TEST_FRAMEWORK'
-        - python : 'twisted'
+        - python : 'asterisk.aio'
         - python : 'starpy'
         - asterisk: 'app_dial'
         - asterisk: 'app_echo'

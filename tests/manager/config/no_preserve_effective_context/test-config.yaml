@@ -4,7 +4,7 @@ testinfo:
         'Test Manager UpdateConfig NOT preserving effective context'
 properties:
     dependencies:
-        - python : 'twisted'
+        - python : 'asterisk.aio'
         - python : 'starpy'
     tags:
         - manager

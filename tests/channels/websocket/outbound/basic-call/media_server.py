@@ -14,7 +14,7 @@ import sys
 import logging
 import io
 import os
-from twisted.internet import reactor, threads
+from asterisk.aio import reactor
 
 sys.path.append("lib/python")
 from asterisk.test_case import TestCase

@@ -20,9 +20,9 @@ testinfo:
 properties:
     dependencies:
         - asterisk: 'res_pjsip'
-        - python: 'autobahn.websocket'
+        - python: 'websockets'
         - python: 'starpy'
-        - python: 'twisted'
+        - python: 'asterisk.aio'
         - sipp:
             version: 'v3.0'
     tags:

@@ -72,7 +72,7 @@ properties:
         - apps
     dependencies:
         - python : 'starpy'
-        - python : 'twisted'
+        - python : 'asterisk.aio'
         - asterisk: 'app_confbridge'
         - asterisk: 'app_userevent'
         - asterisk: 'func_dialplan'

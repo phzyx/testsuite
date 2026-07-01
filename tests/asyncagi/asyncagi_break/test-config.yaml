@@ -82,7 +82,7 @@ properties:
     tags:
       - AGI
     dependencies:
-        - python : 'twisted'
+        - python : 'asterisk.aio'
         - python : 'starpy'
         - asterisk : 'res_agi'
         - asterisk : 'app_userevent'

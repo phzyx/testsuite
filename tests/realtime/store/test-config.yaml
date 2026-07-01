@@ -10,7 +10,7 @@ properties:
     # Unlike other realtime tests, this requires at least version 12.2.0 because
     # of a bug in res_sorcery_realtime when storing in realtime.
     dependencies:
-        - python: 'twisted'
+        - python: 'asterisk.aio'
         - python: 'starpy'
         - asterisk: 'res_mwi_external'
         - asterisk: 'res_mwi_external_ami'

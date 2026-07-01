@@ -64,7 +64,7 @@ properties:
       - playback
       - apps
     dependencies:
-        - python : 'twisted'
+        - python : 'asterisk.aio'
         - python : 'starpy'
         - buildoption: 'TEST_FRAMEWORK'
         - asterisk : 'app_exec'

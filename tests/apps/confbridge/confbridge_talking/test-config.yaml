@@ -57,7 +57,7 @@ properties:
         - confbridge
         - apps
     dependencies:
-        - python : 'twisted'
+        - python : 'asterisk.aio'
         - python : 'starpy'
         - asterisk : 'app_confbridge'
         - asterisk : 'chan_pjsip'

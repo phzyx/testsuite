@@ -53,7 +53,7 @@ properties:
       - bridge
     dependencies:
       - buildoption: 'TEST_FRAMEWORK'
-      - python: 'twisted'
+      - python: 'asterisk.aio'
       - python: 'starpy'
       - asterisk: 'app_bridgewait'
       - asterisk: 'app_playback'

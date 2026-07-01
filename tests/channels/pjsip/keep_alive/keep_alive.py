@@ -14,7 +14,8 @@ the GNU General Public License Version 2.
 import logging
 from datetime import datetime
 
-from twisted.internet import reactor, protocol
+from asterisk.aio import reactor
+from asterisk.aio import protocols as protocol
 
 LOGGER = logging.getLogger(__name__)
 

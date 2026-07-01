@@ -11,7 +11,7 @@ import logging
 import requests
 import os
 
-from twisted.internet import reactor
+from asterisk.aio import reactor
 
 LOGGER = logging.getLogger(__name__)
 

@@ -10,7 +10,7 @@ testinfo:
 properties:
     dependencies:
         - python : 'starpy'
-        - python : 'twisted'
+        - python : 'asterisk.aio'
         - asterisk : 'app_echo'
         - asterisk : 'app_userevent'
         - asterisk : 'pbx_config'

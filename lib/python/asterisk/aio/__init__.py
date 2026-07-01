@@ -21,6 +21,9 @@ from . import error
 from .reactor import reactor
 from .failure import Failure
 from .protocols import (
+    Protocol,
+    Factory,
+    ClientFactory,
     DatagramProtocol,
     ProcessProtocol,
     LoopingCall,
@@ -36,6 +39,9 @@ __all__ = [
     'error',
     'reactor',
     'Failure',
+    'Protocol',
+    'Factory',
+    'ClientFactory',
     'DatagramProtocol',
     'ProcessProtocol',
     'LoopingCall',

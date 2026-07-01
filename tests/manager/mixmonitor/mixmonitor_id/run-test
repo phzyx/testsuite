@@ -9,7 +9,7 @@ the GNU General Public License Version 2.
 
 import sys
 import logging
-from twisted.internet import reactor
+from asterisk.aio import reactor
 from asterisk.test_case import TestCase
 
 LOGGER = logging.getLogger(__name__)

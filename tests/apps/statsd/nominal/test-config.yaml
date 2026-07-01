@@ -46,9 +46,9 @@ originator-config:
 
 properties:
     dependencies:
-        - python: 'autobahn.websocket'
+        - python: 'websockets'
         - python: 'starpy'
-        - python: 'twisted'
+        - python: 'asterisk.aio'
         - asterisk: 'app_statsd'
         - asterisk: 'res_statsd'
     tags:

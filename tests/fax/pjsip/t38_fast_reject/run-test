@@ -13,7 +13,7 @@ import os
 import logging
 import subprocess
 
-from twisted.internet import reactor
+from asterisk.aio import reactor
 
 sys.path.append("lib/python")
 sys.path.append("utils")

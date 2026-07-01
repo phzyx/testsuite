@@ -25,9 +25,9 @@ testinfo:
 
 properties:
     dependencies:
-        - python : autobahn.websocket
+        - python : websockets
         - python : requests
-        - python : twisted
+        - python : asterisk.aio
         - asterisk : res_ari_channels
         - asterisk : res_ari_bridges
         - asterisk : chan_pjsip

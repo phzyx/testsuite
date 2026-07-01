@@ -16,7 +16,7 @@ sys.path.append("tests/channels/pjsip/subscriptions/rls")
 from asterisk.pcap_proxy import VOIPProxy
 from rls_element import RLSPacket
 from rls_validation import ValidationInfo
-from twisted.internet import reactor
+from asterisk.aio import reactor
 
 LOGGER = logging.getLogger(__name__)
 

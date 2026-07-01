@@ -5,7 +5,7 @@ testinfo:
 
 properties:
     dependencies:
-        - python : 'twisted'
+        - python : 'asterisk.aio'
         - python : 'starpy'
         - asterisk : 'pbx_lua'
         - asterisk : 'chan_pjsip'

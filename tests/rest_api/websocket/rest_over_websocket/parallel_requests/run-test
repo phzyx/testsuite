@@ -14,7 +14,7 @@ import logging
 import json
 import os
 
-from twisted.internet import reactor
+from asterisk.aio import reactor
 
 sys.path.append("lib/python")
 

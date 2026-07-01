@@ -7,7 +7,7 @@ test-info:
 
 properties:
     dependencies:
-        - python : 'twisted'
+        - python : 'asterisk.aio'
         - python : 'starpy'
         - asterisk : 'app_disa'
         - asterisk : 'app_senddtmf'

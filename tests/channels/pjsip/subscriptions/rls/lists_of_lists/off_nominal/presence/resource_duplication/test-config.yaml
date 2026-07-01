@@ -29,7 +29,7 @@ testinfo:
 
 properties:
     dependencies:
-        - python: 'twisted'
+        - python: 'asterisk.aio'
         - python: 'starpy'
         - python: 'lxml'
         - python: 'construct'

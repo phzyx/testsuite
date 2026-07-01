@@ -11,7 +11,7 @@ testinfo:
 
 properties:
     dependencies:
-        - python : twisted
+        - python : asterisk.aio
         - python : starpy
         - python : requests
     tags:

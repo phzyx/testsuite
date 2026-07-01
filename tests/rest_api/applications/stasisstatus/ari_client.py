@@ -16,7 +16,7 @@ sys.path.append("tests/rest_api/applications")
 
 from asterisk.ari import ARI, AriClientFactory
 from stasisstatus.observable_object import ObservableObject
-from twisted.internet import defer, reactor
+from asterisk.aio import defer, reactor
 
 LOGGER = logging.getLogger(__name__)
 

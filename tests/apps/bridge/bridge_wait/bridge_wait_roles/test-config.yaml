@@ -102,7 +102,7 @@ test-object-config:
 properties:
     dependencies:
         - python : 'starpy'
-        - python : 'twisted'
+        - python : 'asterisk.aio'
         - asterisk : 'app_bridgewait'
         - asterisk : 'app_exec'
         - asterisk : 'app_playback'

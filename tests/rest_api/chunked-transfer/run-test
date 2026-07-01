@@ -14,7 +14,7 @@ import requests
 import json
 import sys
 
-from twisted.internet import reactor
+from asterisk.aio import reactor
 
 sys.path.append("lib/python")
 from asterisk.test_case import TestCase

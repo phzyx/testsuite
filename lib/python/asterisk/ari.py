@@ -487,6 +487,15 @@ class AriClientProtocol(object):
         """Close the WebSocket connection."""
         self._dispatch(self._connection.close(code, reason))
 
+    def sendClose(self, code=1000, reason=""):
+        """Close the WebSocket connection (autobahn WebSocketProtocol API).
+
+        Fixtures (e.g. the inbound media_client) call ``sendClose(code)`` on the
+        ARI client protocol just as they do on the media client protocol; keep
+        that surface by delegating to ``dropConnection``.
+        """
+        self.dropConnection(code, reason)
+
     def _dispatch(self, coro):
         if _on_loop(self._loop):
             asyncio.ensure_future(coro, loop=self._loop)

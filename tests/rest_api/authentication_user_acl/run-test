@@ -12,7 +12,7 @@ import requests
 import sys
 
 from requests import codes
-from twisted.internet import reactor
+from asterisk.aio import reactor
 
 sys.path.append("lib/python")
 from asterisk.test_case import TestCase

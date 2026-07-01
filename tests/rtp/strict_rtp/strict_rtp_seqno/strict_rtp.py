@@ -14,9 +14,9 @@ the GNU General Public License Version 2.
 import logging
 #from datetime import datetime
 
-from twisted.internet.protocol import DatagramProtocol
-from twisted.internet import reactor
-from twisted.internet import task
+from asterisk.aio import DatagramProtocol
+from asterisk.aio import reactor
+from asterisk.aio import LoopingCall
 
 LOGGER = logging.getLogger(__name__)
 
@@ -121,6 +121,6 @@ class StrictRtpTester(object):
         self.channel = event['channel']
         protocol = StrictRtpTester.PacketSendProtocol(self.test_object)
         reactor.listenUDP(6000, protocol)
-        self.send_task = task.LoopingCall(self.send_packets, protocol, 20)
+        self.send_task = LoopingCall(self.send_packets, protocol, 20)
         deferred = self.send_task.start(1.0)
         deferred.addErrback(errback)

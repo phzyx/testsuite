@@ -9,7 +9,7 @@ testinfo:
 properties:
     buildoptions: 'TEST_FRAMEWORK'
     dependencies:
-        - python : 'twisted'
+        - python : 'asterisk.aio'
         - python : 'starpy'
         - asterisk: 'app_playback'
         - asterisk: 'app_senddtmf'

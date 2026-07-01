@@ -21,11 +21,29 @@ package is importable in the current environment.
 
 import ast
 import os
+import re
 import sys
 import importlib.util
 
 # Import roots that must be free of Twisted (and its WebSocket stack).
 BANNED_PREFIXES = ('twisted', 'txaio', 'autobahn')
+
+# A test-config.yaml declares Python prerequisites as ``- python: 'twisted'``.
+# The framework resolves each by ``__import__``; if it fails the test is marked
+# unmet and SILENTLY SKIPPED (test_config.py). So a YAML dep on a removed
+# package is as damaging as a stale import -- it turns a test into a no-op
+# without any error. The AST scan cannot see these (they are data, not code),
+# so they are matched textually here. Whitespace around the colon and the quote
+# style both vary across the suite, hence the tolerant pattern.
+_YAML_DEP_RE = re.compile(
+    r"""python\s*:\s*(['"]?)(?P<mod>[A-Za-z0-9_.]+)\1\s*$""")
+
+# Extensionless Python entry-point scripts the suite uses. Each test directory
+# ships an executable ``run-test`` (a Python module with a ``#!`` line and no
+# ``.py`` suffix) that imports the reactor and calls ``reactor.run()``. They are
+# real source that must be Twisted-free, so the AST scan includes them by name
+# even though they do not end in ``.py``.
+SCANNED_BASENAMES = ('run-test',)
 
 # No source directories are excluded. The AST gate flags imports only, so the
 # compat layer's prose mentions of Twisted are safe and its actual imports are
@@ -63,6 +81,27 @@ def _banned(module):
     return head in BANNED_PREFIXES
 
 
+def _is_python_source(path, name):
+    """True if ``path`` should be AST-scanned as Python.
+
+    ``.py`` files always qualify. Extensionless entry scripts in
+    ``SCANNED_BASENAMES`` (``run-test``) qualify only when their shebang names a
+    Python interpreter -- some directories ship a *bash* ``run-test`` instead,
+    which is not Python source and must not be parsed (or it false-positives as
+    a syntax error).
+    """
+    if name.endswith('.py'):
+        return True
+    if name not in SCANNED_BASENAMES:
+        return False
+    try:
+        with open(path, 'r', encoding='utf-8', errors='replace') as handle:
+            first = handle.readline()
+    except OSError:
+        return False
+    return first.startswith('#!') and 'python' in first
+
+
 def scan_file(path):
     """Return a list of (lineno, import-text) for banned imports in ``path``."""
     try:
@@ -93,11 +132,43 @@ def scan_source(roots):
                    for ex in EXCLUDE_DIRS):
                 continue
             for name in files:
-                if not name.endswith('.py'):
-                    continue
                 path = os.path.join(dirpath, name)
+                if not _is_python_source(path, name):
+                    continue
                 for lineno, text in scan_file(path):
                     findings.append((path, lineno, text))
+    return findings
+
+
+def scan_yaml(roots):
+    """Return (path, lineno, text) for banned ``python:`` deps in test YAML.
+
+    Only uncommented ``python: <mod>`` dependency lines are considered, and a
+    line is flagged when the module's top-level name is in ``BANNED_PREFIXES``.
+    This catches the silent-skip trap where a test still declares a dependency
+    on a package the migration removed.
+    """
+    findings = []
+    for root in roots:
+        for dirpath, _dirs, files in os.walk(root):
+            for name in files:
+                if not name.endswith('.yaml'):
+                    continue
+                path = os.path.join(dirpath, name)
+                try:
+                    with open(path, 'r', encoding='utf-8',
+                              errors='replace') as handle:
+                        lines = handle.readlines()
+                except OSError:
+                    continue
+                for lineno, raw in enumerate(lines, 1):
+                    stripped = raw.lstrip()
+                    if stripped.startswith('#'):
+                        continue          # commented-out dep, not evaluated
+                    match = _YAML_DEP_RE.search(raw)
+                    if match and _banned(match.group('mod')):
+                        findings.append(
+                            (path, lineno, 'python: %s' % match.group('mod')))
     return findings
 
 
@@ -115,20 +186,25 @@ def scan_environment():
 def main(argv):
     roots = argv[1:] or list(_default_roots())
     findings = scan_source(roots)
+    yaml_findings = scan_yaml(roots)
     env = scan_environment()
 
     if findings:
         print("Banned Twisted/autobahn imports found in source:")
         for path, lineno, text in findings:
             print("  %s:%d: %s" % (path, lineno, text))
+    if yaml_findings:
+        print("Banned Twisted/autobahn dependencies found in test YAML:")
+        for path, lineno, text in yaml_findings:
+            print("  %s:%d: %s" % (path, lineno, text))
     if env:
         print("Banned packages importable in the environment: %s"
               % ", ".join(env))
 
-    if findings or env:
+    if findings or yaml_findings or env:
         return 1
-    print("OK: no Twisted/txaio/autobahn imports in %s; environment clean."
-          % ", ".join(roots))
+    print("OK: no Twisted/txaio/autobahn imports or deps in %s; "
+          "environment clean." % ", ".join(roots))
     return 0
 
 
