@@ -25,5 +25,5 @@ txaio==22.2.1
 typing_extensions==4.12.2
 urllib3==1.26.9
 zope.interface==8.0.1
-starpy @ git+https://github.com/asterisk/starpy@1.1.1
+starpy @ git+https://github.com/phzyx/starpy@fe58ce9a6eff34ce6328858d46122717a0c7b3f1
 scapy==2.6.1
