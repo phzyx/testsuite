@@ -15,7 +15,7 @@ import sys
 import logging
 import uuid
 
-from twisted.internet import reactor, defer
+from asterisk.aio import reactor, defer
 
 sys.path.append("lib/python")
 from .test_case import TestCase

@@ -13,7 +13,8 @@ import logging
 from . import test_suite_utils
 
 from abc import ABCMeta, abstractmethod
-from twisted.internet import reactor, defer, protocol, error
+from asterisk.aio import reactor, defer, error
+from asterisk.aio import ProcessProtocol
 from .test_case import TestCase
 from .utils_socket import get_available_port
 from .test_runner import load_and_parse_module
@@ -511,7 +512,7 @@ class SIPpScenarioSequence(object):
         deferred_list.addCallback(__execute_next)
 
 
-class SIPpProtocol(protocol.ProcessProtocol):
+class SIPpProtocol(ProcessProtocol):
     """Class that manages a single SIPp instance"""
 
     def __init__(self, name, stop_deferred, start_deferred=None):

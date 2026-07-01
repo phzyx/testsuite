@@ -105,7 +105,7 @@ def pattern_attended_transfer(test_object, referer_scenario, referer_port,
     # a TCP socket with the other scenario (sipp_referee). This _must_ start
     # after sipp_referee - give it a few seconds to get the process off the
     # ground.
-    from twisted.internet import reactor
+    from asterisk.aio import reactor
     reactor.callLater(delay, _start_referer_scenario, sipp_referer, test_object)
 
     return True

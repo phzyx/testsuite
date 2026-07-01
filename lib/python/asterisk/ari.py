@@ -6,6 +6,7 @@ This program is free software, distributed under the terms of
 the GNU General Public License Version 2.
 """
 
+import asyncio
 import datetime
 import json
 import logging
@@ -18,20 +19,20 @@ try:
 except:
     from urllib import urlencode
 
+import websockets
+
 from .test_case import TestCase
 from .test_runner import load_and_parse_module
 from .pluggable_registry import PLUGGABLE_EVENT_REGISTRY,\
     PLUGGABLE_ACTION_REGISTRY, var_replace
 from .test_suite_utils import all_match
-from twisted.internet import reactor
-try:
-    from autobahn.websocket import WebSocketClientFactory, \
-        WebSocketClientProtocol, connectWS, WebSocketServerFactory, \
-        WebSocketServerProtocol
-except:
-    from autobahn.twisted.websocket import WebSocketClientFactory, \
-        WebSocketClientProtocol, connectWS, WebSocketServerFactory, \
-        WebSocketServerProtocol
+from asterisk.aio import reactor
+# asyncio port (design doc Section 6.2): the autobahn ARI WebSocket client is
+# reimplemented on the ``websockets`` library over the ``asterisk.aio`` reactor
+# loop. The (unused) server classes reuse the sans-I/O server adapter shared
+# with media_websocket so the whole module is free of autobahn/twisted.
+from asterisk.media_websocket import (_ConnectRequest, _SansIOServerProtocol,
+                                      _on_loop)
 
 LOGGER = logging.getLogger(__name__)
 
@@ -323,8 +324,27 @@ class WebSocketEventModule(object):
             LOGGER.info("Event had no matcher: %r", event)
 
 
-class AriClientFactory(WebSocketClientFactory):
-    """Twisted protocol factory for building ARI WebSocket clients."""
+def _build_rest_request(method, uri, kwargs):
+    """Build the RESTRequest JSON envelope shared by client/server sendRequest."""
+    uuidstr = kwargs.pop('request_id', str(uuid.uuid4()))
+    req = {
+        'type': 'RESTRequest',
+        'request_id': uuidstr,
+        'method': method,
+        'uri': uri
+    }
+    for k, v in kwargs.items():
+        req[k] = v
+    return uuidstr, json.dumps(req)
+
+
+class AriClientFactory(object):
+    """Factory that opens an ARI WebSocket client on the reactor loop.
+
+    The autobahn ``WebSocketClientFactory``/``connectWS`` pair is replaced by
+    the high-level ``websockets.connect`` coroutine, retried with the same
+    ``timeout_secs`` budget the twisted version used.
+    """
 
     def __init__(self, receiver, host, apps, userpass, port=DEFAULT_PORT,
                  timeout_secs=60, subscribe_all=False):
@@ -342,34 +362,26 @@ class AriClientFactory(WebSocketClientFactory):
                urlencode({'app': apps, 'api_key': '%s:%s' % userpass}))
         if subscribe_all:
             url += '&subscribeAll=true'
-        LOGGER.info("WebSocketClientFactory(url=%s)", url)
-        try:
-            WebSocketClientFactory.__init__(self, url, debug=True,
-                                            protocols=['ari'], debugCodePaths=True)
-        except TypeError:
-            WebSocketClientFactory.__init__(self, url, protocols=['ari'])
+        LOGGER.info("AriClientFactory(url=%s)", url)
+        self.url = url
         self.timeout_secs = timeout_secs
         self.attempts = 0
         self.start = None
         self.receiver = receiver
 
-    def buildProtocol(self, addr):
+    def buildProtocol(self):
         """Make the protocol"""
         return AriClientProtocol(self.receiver, self)
-
-    def clientConnectionFailed(self, connector, reason):
-        """Doh, connection lost"""
-        LOGGER.debug("Connection lost; attempting again in 1 second")
-        reactor.callLater(1, self.reconnect)
 
     def connect(self):
         """Start the connection"""
         self.reconnect()
 
     def reconnect(self):
-        """Attempt to reconnect the ARI WebSocket.
+        """Attempt to (re)connect the ARI WebSocket.
 
-        This call will give up after timeout_secs has been exceeded.
+        Gives up after timeout_secs has been exceeded, mirroring the twisted
+        factory's behaviour.
         """
         self.attempts += 1
         LOGGER.debug("WebSocket attempt #%d", self.attempts)
@@ -381,27 +393,74 @@ class AriClientFactory(WebSocketClientFactory):
             raise Exception("Failed to connect after %d seconds" %
                             self.timeout_secs)
 
-        connectWS(self)
+        asyncio.ensure_future(self._connect_async(),
+                              loop=reactor._ensure_loop())
+
+    async def _connect_async(self):
+        try:
+            connection = await websockets.connect(self.url,
+                                                  subprotocols=['ari'])
+        except Exception as exc:
+            LOGGER.debug("Connection failed (%s); attempting again in 1 second",
+                         exc)
+            reactor.callLater(1, self.reconnect)
+            return
+        proto = self.buildProtocol()
+        proto._attach(connection)
 
 
-class AriClientProtocol(WebSocketClientProtocol):
-    """Twisted protocol for handling a ARI WebSocket connection."""
+class _ClientTransport(object):
+    """Minimal transport shim over an AriClientProtocol.
+
+    autobahn/twisted exposed ``protocol.transport`` with ``loseConnection()``;
+    the websockets port has no such transport, so this shim maps the one method
+    fixtures use onto the protocol's ``dropConnection``.
+    """
+
+    def __init__(self, protocol):
+        self._protocol = protocol
+
+    def loseConnection(self):
+        """Close the underlying WebSocket connection."""
+        self._protocol.dropConnection()
+
+
+class AriClientProtocol(object):
+    """Handles an ARI WebSocket client connection via ``websockets``."""
 
     def __init__(self, receiver, factory):
         """Constructor.
 
         :param receiver The event receiver
         """
-        try:
-            super(AriClientProtocol, self).__init__()
-        except TypeError as te:
-            # Older versions of Autobahn use old style classes with no initializer.
-            # Newer versions must have their initializer called by derived
-            # implementations.
-            LOGGER.debug("AriClientProtocol: TypeError thrown in init: {0}".format(te))
         LOGGER.debug("Made me a client protocol!")
         self.receiver = receiver
         self.factory = factory
+        self._loop = reactor._ensure_loop()
+        self._connection = None
+        # Twisted/autobahn exposed the protocol's transport with a
+        # loseConnection() method; fixtures (e.g. ari_client.py) call
+        # ``ws_client.transport.loseConnection()``. Preserve that surface.
+        self.transport = _ClientTransport(self)
+
+    def _attach(self, connection):
+        """Bind an open websockets connection and begin reading events."""
+        self._connection = connection
+        self.onOpen()
+        asyncio.ensure_future(self._reader(), loop=self._loop)
+
+    async def _reader(self):
+        try:
+            async for message in self._connection:
+                if isinstance(message, (bytes, bytearray)):
+                    message = message.decode('utf-8')
+                self.onMessage(message)
+        except websockets.ConnectionClosed:
+            pass
+        except Exception as exc:  # pragma: no cover - defensive
+            LOGGER.debug("ARI client reader error: %s", exc)
+        finally:
+            self.onClose(True, 1000, "connection closed")
 
     def onOpen(self):
         """Called back when connection is open."""
@@ -413,126 +472,111 @@ class AriClientProtocol(WebSocketClientProtocol):
         LOGGER.debug("WebSocket closed(%r, %d, %s)", wasClean, code, reason)
         self.receiver.on_ws_closed(self)
 
-    def onMessage(self, msg, binary):
-        """Called back when message is received.
-
-        :param msg: Received text message.
-        """
+    def onMessage(self, msg):
+        """Called back when a text message is received."""
         LOGGER.debug("rxed: %s", msg)
-        msg = json.loads(msg)
-        self.receiver.on_ws_event(msg)
+        self.receiver.on_ws_event(json.loads(msg))
+
+    def sendMessage(self, payload):
+        """Send a text frame (``payload`` is UTF-8 bytes, as autobahn used)."""
+        data = payload.decode('utf-8') \
+            if isinstance(payload, (bytes, bytearray)) else payload
+        self._dispatch(self._connection.send(data))
+
+    def dropConnection(self, code=1000, reason=""):
+        """Close the WebSocket connection."""
+        self._dispatch(self._connection.close(code, reason))
+
+    def _dispatch(self, coro):
+        if _on_loop(self._loop):
+            asyncio.ensure_future(coro, loop=self._loop)
+        else:
+            try:
+                asyncio.run_coroutine_threadsafe(coro, self._loop).result()
+            except (asyncio.CancelledError, websockets.ConnectionClosed):
+                # Connection closing during teardown; drop the send quietly.
+                pass
 
     def sendRequest(self, method, uri, **kwargs):
         """Send a REST Request over Websocket.
 
         :param method: Method.
-        :param path: Resource URI without query string.
+        :param uri: Resource URI without query string.
         :param kwargs: Additional request parameters
         :returns: Request UUID
         """
-        uuidstr = kwargs.pop('request_id', str(uuid.uuid4()))
-        req = {
-            'type': 'RESTRequest',
-            'request_id': uuidstr,
-            'method': method,
-            'uri': uri
-        }
-
-        for k,v in kwargs.items():
-            req[k] = v
-
-        msg = json.dumps(req)
+        uuidstr, msg = _build_rest_request(method, uri, kwargs)
         LOGGER.info("Sending request message: %s", msg)
         self.sendMessage(msg.encode('utf-8'))
         return uuidstr
 
-class AriServerFactory(WebSocketServerFactory):
-    """Twisted protocol factory for building ARI WebSocket clients."""
 
-    def __init__(self, receiver, uri, protocols, server_name, reactor):
+class AriServerFactory(object):
+    """Factory (bound via ``reactor.listenTCP``) for ARI WebSocket servers.
+
+    Retained for API compatibility; no test currently drives the ARI server
+    path. Built on the shared sans-I/O server adapter.
+    """
+
+    def __init__(self, receiver, uri, protocols, server_name, reactor=None):
         """Constructor
 
         :param receiver The object that will receive events from the protocol
         :param uri: URI to be served.
         :param protocols: List of protocols to accept.
-        :param reactor: The twisted reactor.
+        :param server_name: Server name for the HTTP response.
+        :param reactor: Ignored (accepted for signature compatibility).
         """
-        try:
-            WebSocketServerFactory.__init__(self, uri, protocols, server_name,
-                                            reactor=reactor)
-        except TypeError:
-            WebSocketServerFactory.__init__(self, uri, protocols=['ari'])
+        self.receiver = receiver
+        self.uri = uri
+        self.protocols = list(protocols) if protocols else ['ari']
+        self.server_name = server_name
+        self.auto_fragment_size = 0
         self.attempts = 0
         self.start = None
-        self.receiver = receiver
 
     def buildProtocol(self, addr):
         """Make the protocol"""
         return AriServerProtocol(self.receiver, self)
 
-class AriServerProtocol(WebSocketServerProtocol):
-    """Twisted protocol for handling a ARI WebSocket connection."""
+
+class AriServerProtocol(_SansIOServerProtocol):
+    """Handles an ARI WebSocket server connection via the sans-I/O adapter."""
 
     def __init__(self, receiver, factory):
-        """Constructor.
+        _SansIOServerProtocol.__init__(self, receiver, factory)
 
-        :param receiver The event receiver
-        """
-        try:
-            super(AriServerProtocol, self).__init__()
-        except TypeError as te:
-            # Older versions of Autobahn use old style classes with no initializer.
-            # Newer versions must have their initializer called by derived
-            # implementations.
-            LOGGER.debug("AriServerProtocol: TypeError thrown in init: {0}".format(te))
-        LOGGER.debug("Made me a client protocol!")
-        self.receiver = receiver
-        self.factory = factory
-
-    def onConnect(self, request):
-        """Called back when connection is open."""
+    def _on_connect(self, request):
         LOGGER.debug("New WebSocket Connected")
-        self.receiver.on_ws_connect(request)
+        if hasattr(self.receiver, 'on_ws_connect'):
+            # Present the autobahn-shaped request (``.peer``/``.path``/
+            # ``.headers``) the receiver expects, as the media server does.
+            return self.receiver.on_ws_connect(_ConnectRequest(self.peer,
+                                                               request))
+        return None
 
-    def onOpen(self):
-        """Called back when connection is open."""
+    def _notify_open(self):
         LOGGER.debug("WebSocket Open")
         self.receiver.on_ws_open(self)
 
-    def onClose(self, wasClean, code, reason):
-        """Called back when connection is closed."""
-        LOGGER.debug("WebSocket closed(%r, %d, %s)", wasClean, code, reason)
+    def _notify_close(self, was_clean, code, reason):
+        LOGGER.debug("WebSocket closed(%r, %d, %s)", was_clean, code, reason)
         self.receiver.on_ws_closed(self)
 
-    def onMessage(self, msg, binary):
-        """Called back when message is received.
-
-        :param msg: Received text message.
-        """
-        LOGGER.debug("rxed: %s", msg)
-        msg = json.loads(msg)
-        self.receiver.on_ws_event(msg)
+    def _deliver_message(self, data, binary):
+        LOGGER.debug("rxed: %s", data)
+        msg = data if binary else data.decode('utf-8')
+        self.receiver.on_ws_event(json.loads(msg))
 
     def sendRequest(self, method, uri, **kwargs):
         """Send a REST Request over Websocket.
 
         :param method: Method.
-        :param path: Resource URI without query string.
+        :param uri: Resource URI without query string.
         :param kwargs: Additional request parameters
         :returns: Request UUID
         """
-        uuidstr = kwargs.pop('request_id', str(uuid.uuid4()))
-        req = {
-            'type': 'RESTRequest',
-            'request_id': uuidstr,
-            'method': method,
-            'uri': uri
-        }
-
-        for k,v in kwargs.items():
-            req[k] = v
-
-        msg = json.dumps(req)
+        uuidstr, msg = _build_rest_request(method, uri, kwargs)
         LOGGER.info("Sending request message: %s", msg)
         self.sendMessage(msg.encode('utf-8'))
         return uuidstr

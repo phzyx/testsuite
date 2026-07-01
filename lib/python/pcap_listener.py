@@ -1,4 +1,3 @@
-from twisted.internet import abstract, protocol
 import logging
 import scapy
 from scapy.all import *

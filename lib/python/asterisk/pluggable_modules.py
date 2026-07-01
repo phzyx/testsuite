@@ -14,7 +14,7 @@ import re
 
 sys.path.append("lib/python")
 from .ami import AMIEventInstance
-from twisted.internet import reactor
+from asterisk.aio import reactor
 from starpy import fastagi
 from .test_runner import load_and_parse_module
 from .sipp import SIPpActionModule, SIPpStartEventModule

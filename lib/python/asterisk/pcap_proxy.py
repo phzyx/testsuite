@@ -20,8 +20,8 @@ import binascii
 
 sys.path.append('lib/python')
 
-from twisted.internet.protocol import DatagramProtocol
-from twisted.internet import reactor
+from asterisk.aio import DatagramProtocol
+from asterisk.aio import reactor
 from construct import *
 from construct.core import *
 

@@ -12,7 +12,7 @@ import logging
 import logging.config
 
 from .test_conditions import TestCondition
-from twisted.internet import defer
+from asterisk.aio import defer
 
 LOGGER = logging.getLogger(__name__)
 

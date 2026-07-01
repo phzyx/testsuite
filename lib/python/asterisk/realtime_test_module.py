@@ -5,18 +5,25 @@ Mark Michelson <mmichelson@digium.com>
 
 This program is free software, distributed under the terms of
 the GNU General Public License Version 2.
+
+asyncio port (design doc Section 6.2): the ``twisted.web`` ``Resource``/``Site``
+tree is replaced by an ``aiohttp`` application served on the ``asterisk.aio``
+reactor loop. The realtime data model and the per-operation request handling
+(argument unpacking, LIKE handling, URL-vs-POST argument separation, row
+encoding) are preserved verbatim; only the transport/routing layer changed.
+
+Requests are routed as ``/{table}/{operation}`` where operation is one of
+single/multi/update/store/destroy/require/static, matching the previous
+RootResource -> TableResource -> LeafResource hierarchy.
 """
-from encodings import utf_8
 import logging
 import sys
 import html
 import re
-from wsgiref.util import request_uri
 
-from twisted.internet import reactor
-from twisted.internet import error
-from twisted.web.server import Site
-from twisted.web.resource import Resource, NoResource
+from aiohttp import web
+
+from asterisk.aio import reactor
 
 LOGGER = logging.getLogger(__name__)
 
@@ -138,88 +145,29 @@ class RealtimeData(object):
         return len(to_delete)
 
 
-class RootResource(Resource):
-    """Resource provided by the root of our HTTP server.
+class _ShimRequest(object):
+    """Adapts an aiohttp request into the small twisted-request surface the
+    resource handlers use: ``args`` (a dict of ``bytes`` keys to lists of
+    ``bytes`` values, merging URL query and POST form parameters as
+    twisted.web did) and ``uri`` (the raw request target, bytes). ``code`` lets
+    a handler request a non-200 status (the old NoResource 404 path)."""
+
+    def __init__(self, args, uri):
+        self.args = args
+        self.uri = uri
+        self.code = 200
+
+
+class LeafResource(object):
+    """Base class for the per-operation handlers.
+
+    Each subclass represents an operation to perform on a table and implements
+    ``render_GET``/``render_POST`` returning the response body as bytes. The
+    request-data helpers (argument unpacking, encoding) are shared here and are
+    unchanged from the twisted implementation.
     """
-    def __init__(self, rt_data):
-        Resource.__init__(self)
-        self.rt_data = rt_data
-        LOGGER.debug("Creating RootResource")
-
-    def getChild(self, name, request):
-        """Get child resource for site root.
-        :param name: Name of requested child resource.
-        :param request: incoming HTTP request.
-        :returns: Table resource for the given name.
-
-        When Asterisk makes an HTTP request, Twisted will initially call into
-        this resource in order to be given the proper resource given the path
-        in the URL. The name requested is expected to be one of the realtime
-        tables, so we create a TableResource representing that table. The
-        TableResource is then called into to get the resource relating to the
-        operation to perform on the table.
-        """
-        LOGGER.debug("Asking root for child %s", name.decode("utf-8"))
-        return TableResource(name.decode("utf-8"), self.rt_data)
-
-
-class TableResource(Resource):
-    """Resource for a specific table on our HTTP server.
-    """
-    def __init__(self, table_name, rt_data):
-        Resource.__init__(self)
-        self.table_name = table_name
-        self.rt_data = rt_data
-        LOGGER.debug("Creating TableResource for %s", table_name)
-
-    def getChild(self, name, request):
-        """Get child resource for a table
-        :param name: Name of requested child resource.
-        :param request: Incoming HTTP request.
-        :returns: LeafResource subclass.
-
-        Twisted automatically calls this when trying to get a requested
-        resource. The expected names of the resources are one of
-
-        * single
-        * multi
-        * update
-        * store
-        * destroy
-        * require
-        * static
-
-        Each of these corresponds to a resource class in this module. We use
-        reflection here to generate the requested resource dynamically. Each of
-        these resources represents an operation to perform on the table.
-        """
-        try:
-            attr_str = "_" + str(name, 'utf_8') + "Resource"
-            return getattr(THIS_MODULE, attr_str)(
-                self.table_name, self.rt_data
-            )
-        except AttributeError as ex:
-            msg = "Error retrieving resource %s/%s: %s" % \
-                (self.table_name, name, ex)
-            LOGGER.error(msg)
-            return NoResource(message=msg)
-
-
-class LeafResource(Resource):
-    """Base class for leaf resources.
-
-    A leaf resource is one that has the isLeaf property set. This means that
-    there are no children for this resource in the hierarchy.
-
-    All resources representing table operations are subclasses of this
-    LeafResource since they all have no child resources. The LeafResource class
-    provides common operations that its children require, mostly pertaining to
-    manipulation of request data.
-    """
-    isLeaf = True
 
     def __init__(self, table_name, rt_data):
-        Resource.__init__(self)
         self.table_name = table_name
         self.rt_data = rt_data
         LOGGER.debug("Constructing LeafResource")
@@ -297,15 +245,16 @@ class LeafResource(Resource):
         return string
 
     def return_404(self, request):
-        """Return a 404 HTTP response.
+        """Flag a 404 HTTP response and return its body.
         :param request: The request to which we are responding.
-        :returns: NoResource's rendering of the request.
+        :returns: The error body as bytes.
 
-        Performed if a request tries to access a nonexistent table.
+        Performed if a request tries to access a nonexistent table. Mirrors
+        twisted's NoResource, which set a 404 status; here the status is carried
+        on the shim request and applied by the dispatcher.
         """
-        page = NoResource(message="Table %s could not be found" %
-                          self.table_name)
-        return page.render(request)
+        request.code = 404
+        return ("Table %s could not be found" % self.table_name).encode("utf-8")
 
 
 class _singleResource(LeafResource):
@@ -375,11 +324,10 @@ class _updateResource(LeafResource):
         The URL parameters determine which objects to update, and the POST
         parameters determine which object fields to update.
 
-        Twisted makes this a bit difficult since it combines the URL and POST
-        parameters into a single dictionary. So what we have to do is parse the
-        URL parameters out of the URL and then remove those from the dictionary
-        that Twisted gives us. With the parameters separated out, the update
-        operation can proceed.
+        The URL and POST parameters arrive combined in a single dictionary. So
+        what we have to do is parse the URL parameters out of the URL and then
+        remove those from the combined dictionary. With the parameters separated
+        out, the update operation can proceed.
         """
         LOGGER.debug("Asked to render POST in the update resource")
 
@@ -496,6 +444,7 @@ class RealtimeTestModule(object):
         self.test_object = test_object
         self.module_config = module_config
         self.rt_data = RealtimeData()
+        self._runner = None
         self.test_object.register_ami_observer(self._ami_connect)
 
         self.populate_rt_data(module_config.get('data'))
@@ -512,15 +461,70 @@ class RealtimeTestModule(object):
             self.rt_data.add_rows(table_name, rows)
 
     def setup_http(self):
-        """Create Twisted HTTP server.
+        """Create the aiohttp realtime HTTP server.
 
-        We supply Twisted with a root resource to call into for all HTTP
-        requests made. The root resource is then responsible for dynamically
-        creating resources to handle specific requests
+        A single catch-all route dispatches ``/{table}/{operation}`` requests to
+        the operation handler, reproducing the twisted root/table/leaf resource
+        traversal. Startup is bound through the reactor's awaited pre-run path so
+        a bind failure surfaces out of run(), and the AppRunner is registered for
+        async cleanup at shutdown.
         """
-        resource = RootResource(self.rt_data)
-        factory = Site(resource)
-        reactor.listenTCP(46821, factory)
+        reactor.addStartupBind(self._start(), label='realtime-http:46821')
+
+    async def _start(self):
+        app = web.Application()
+        app.router.add_route('*', '/{table}/{operation}', self._dispatch)
+        self._runner = web.AppRunner(app)
+        await self._runner.setup()
+        site = web.TCPSite(self._runner, '0.0.0.0', 46821)
+        await site.start()
+        reactor.addAsyncCleanup(self._runner.cleanup)
+        LOGGER.info("Started realtime HTTP server on port 46821")
+
+    async def _dispatch(self, request):
+        """Route a request to the matching operation resource.
+
+        Builds the twisted-style ``args``/``uri`` shim (merging URL query and
+        POST form parameters, both as bytes), selects the ``_<operation>Resource``
+        by reflection as the old TableResource.getChild did, invokes the
+        method-specific render handler, and returns its bytes body with the
+        status the handler requested.
+        """
+        table = request.match_info['table']
+        operation = request.match_info['operation']
+
+        # Merge URL query and POST form parameters into {bytes: [bytes]}, the
+        # shape twisted's request.args presented.
+        args = {}
+        for key, value in request.rel_url.query.items():
+            args.setdefault(key.encode("utf-8"), []).append(value.encode("utf-8"))
+        if request.method == 'POST':
+            post = await request.post()
+            for key, value in post.items():
+                if not isinstance(value, str):
+                    # Ignore file uploads; realtime only uses simple fields.
+                    continue
+                args.setdefault(key.encode("utf-8"), []).append(
+                    value.encode("utf-8"))
+
+        shim = _ShimRequest(args, request.path_qs.encode("utf-8"))
+
+        resource_cls = getattr(THIS_MODULE, "_" + operation + "Resource", None)
+        if resource_cls is None:
+            msg = "Error retrieving resource %s/%s" % (table, operation)
+            LOGGER.error(msg)
+            return web.Response(status=404, body=msg.encode("utf-8"))
+
+        resource = resource_cls(table, self.rt_data)
+        handler = getattr(resource, "render_" + request.method, None)
+        if handler is None:
+            return web.Response(status=501,
+                                body=b'Method not supported')
+
+        body = handler(shim)
+        if not isinstance(body, (bytes, bytearray)):
+            body = bytes(body)
+        return web.Response(status=shim.code, body=body)
 
     def _ami_connect(self, ami):
         """Callback for when AMI connects.

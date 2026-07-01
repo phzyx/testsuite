@@ -90,7 +90,7 @@ import logging
 
 from . import test_suite_utils
 from abc import ABCMeta, abstractmethod
-from twisted.internet import reactor, defer, protocol, error
+from asterisk.aio import reactor
 from .test_case import TestCase
 from .utils_socket import get_available_port
 from .test_runner import load_and_parse_module
@@ -99,7 +99,6 @@ from .pluggable_registry import PLUGGABLE_EVENT_REGISTRY,\
 
 from asterisk.sipp import SIPpScenarioSequence
 from asterisk.sipp import SIPpScenario
-from twisted.internet import reactor
 
 LOGGER = logging.getLogger(__name__)
 

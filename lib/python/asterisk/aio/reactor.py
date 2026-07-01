@@ -308,6 +308,7 @@ class _Reactor(object):
         self._ports = []
         self._connectors = []
         self._process_transports = []
+        self._async_cleanups = []    # zero-arg awaitable factories, run at shutdown
 
     # -- loop access ------------------------------------------------------ #
     def _ensure_loop(self):
@@ -396,6 +397,16 @@ class _Reactor(object):
                 dc.cancel()
         self._delayed_calls.clear()
 
+        # Async cleanups (e.g. aiohttp AppRunner.cleanup) run first, while the
+        # loop is still healthy, so servers close their sites/connections
+        # gracefully before we cancel any straggler tasks.
+        for cleanup in list(self._async_cleanups):
+            try:
+                await cleanup()
+            except Exception:
+                pass
+        self._async_cleanups.clear()
+
         # Listening ports and outgoing connectors.
         for port in list(self._ports):
             port.stopListening()
@@ -475,6 +486,28 @@ class _Reactor(object):
 
         fut.add_done_callback(_done)
         return deferred
+
+    # -- async server helpers --------------------------------------------- #
+    def addStartupBind(self, coro, apply=None, label='startup'):
+        """Bind ``coro`` during the awaited pre-run startup phase.
+
+        If the reactor is already running the coroutine is scheduled and its
+        result applied when it completes; otherwise it is awaited during run()'s
+        startup, so a failure (e.g. an aiohttp bind that cannot claim its port)
+        is fatal and surfaces out of run(). ``apply(result)`` receives the
+        coroutine's result. This lets transport-agnostic servers (aiohttp, etc.)
+        reuse the same awaited-startup + failure-surfacing path as listenTCP.
+        """
+        self._ensure_loop()
+        self._register_bind(coro, apply or (lambda result: None), None, label)
+
+    def addAsyncCleanup(self, cleanup):
+        """Register a zero-arg callable returning an awaitable, run at shutdown.
+
+        Used for resources whose teardown is asynchronous (e.g. aiohttp's
+        ``AppRunner.cleanup``). Cleanups run before straggler-task cancellation.
+        """
+        self._async_cleanups.append(cleanup)
 
     # -- networking ------------------------------------------------------- #
     def listenUDP(self, port, protocol, interface='', maxPacketSize=8192):

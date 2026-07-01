@@ -7,7 +7,7 @@ This program is free software, distributed under the terms of
 the GNU General Public License Version 2.
 """
 
-from twisted.internet import reactor
+from asterisk.aio import reactor
 from starpy import manager
 import datetime
 import logging

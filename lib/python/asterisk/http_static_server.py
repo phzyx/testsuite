@@ -6,16 +6,25 @@ Matt Jordan <mjordan@digium.com>
 
 This program is free software, distributed under the terms of
 the GNU General Public License Version 2.
+
+asyncio port (design doc Section 6.2): the ``twisted.web`` ``static.File`` +
+``server.Site`` listener is reimplemented as an ``aiohttp`` static route served
+on the ``asterisk.aio`` reactor loop. aiohttp's static handler provides the
+path-traversal protection the parity contract (Section 6.5) requires.
 """
 
+import logging
 import os
 
-from twisted.internet import reactor
-from twisted.web import static, server
+from aiohttp import web
+
+from asterisk.aio import reactor
+
+LOGGER = logging.getLogger(__name__)
+
 
 class HTTPStaticServer(object):
-    """A pluggable module that creates an HTTP server hosting static content
-    """
+    """A pluggable module that creates an HTTP server hosting static content."""
 
     def __init__(self, module_config, test_object):
         """Constructor
@@ -24,6 +33,25 @@ class HTTPStaticServer(object):
         module_config The pluggable module's configuration
         test_object   The one and only test object
         """
-        root = static.File(os.path.join(os.getcwd(),
-                                        module_config['root-directory']))
-        reactor.listenTCP(module_config.get('port', 8090), server.Site(root))
+        self._root = os.path.join(os.getcwd(), module_config['root-directory'])
+        self._port = module_config.get('port', 8090)
+        self._runner = None
+        # Bind through the reactor's awaited startup path so a failure to claim
+        # the port surfaces out of run() (matching twisted's synchronous
+        # listenTCP), and register async cleanup of the AppRunner at shutdown.
+        reactor.addStartupBind(self._start(),
+                               label='http-static:%d' % self._port)
+
+    async def _start(self):
+        """Start the aiohttp static server on the reactor's event loop."""
+        app = web.Application()
+        # add_static resolves requests against the root and rejects attempts to
+        # escape it (path traversal), returning 403/404 rather than the file.
+        app.router.add_static('/', self._root, show_index=False)
+        self._runner = web.AppRunner(app)
+        await self._runner.setup()
+        site = web.TCPSite(self._runner, '0.0.0.0', self._port)
+        await site.start()
+        reactor.addAsyncCleanup(self._runner.cleanup)
+        LOGGER.info("Started static HTTP server on port %d serving %s",
+                    self._port, self._root)

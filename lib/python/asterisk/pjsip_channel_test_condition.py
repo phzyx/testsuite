@@ -8,7 +8,7 @@ This program is free software, distributed under the terms of
 the GNU General Public License Version 2.
 '''
 
-from twisted.internet import defer
+from asterisk.aio import defer
 from test_conditions import TestCondition
 
 

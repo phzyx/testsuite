@@ -10,7 +10,7 @@ the GNU General Public License Version 2.
 
 import logging
 
-from twisted.internet import defer
+from asterisk.aio import defer
 from .test_conditions import TestCondition
 
 LOGGER = logging.getLogger(__name__)

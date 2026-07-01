@@ -28,3 +28,6 @@ zope.interface==8.0.1
 starpy @ git+https://github.com/phzyx/starpy@fe58ce9a6eff34ce6328858d46122717a0c7b3f1
 scapy==2.6.1
 asyncssh==2.21.1
+websockets==12.0
+aiohttp==3.9.5
+dnslib==0.9.24

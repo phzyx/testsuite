@@ -12,7 +12,7 @@ the GNU General Public License Version 2.
 import logging
 import os
 import sys
-from twisted.internet import defer
+from asterisk.aio import defer
 import unittest
 
 # Add directory where the modules to test can be found

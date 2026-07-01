@@ -10,8 +10,8 @@ the GNU General Public License Version 2.
 import logging
 import re
 
-from twisted.internet.protocol import DatagramProtocol
-from twisted.internet import reactor
+from asterisk.aio import DatagramProtocol
+from asterisk.aio import reactor
 
 from .matcher import PluggableConditions
 

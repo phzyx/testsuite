@@ -15,7 +15,7 @@ import sys
 import logging
 
 from .test_state import TestState
-from twisted.internet import reactor
+from asterisk.aio import reactor
 
 sys.path.append("lib/python")
 
