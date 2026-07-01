@@ -15,8 +15,11 @@ Run with:  python3 -m unittest asterisk.aio.test_aio
 """
 
 import asyncio
+import logging
+import signal
 import sys
 import unittest
+from unittest import mock
 
 from asterisk.aio import defer, reactor
 from asterisk.aio.defer import (
@@ -26,7 +29,7 @@ from asterisk.aio.defer import (
 from asterisk.aio.failure import Failure
 from asterisk.aio.protocols import (
     DatagramProtocol, ProcessProtocol, ProcessDone, ProcessTerminated,
-    Protocol, Factory, ClientFactory,
+    Protocol, Factory, ClientFactory, _ProcessTransportAdapter,
 )
 
 
@@ -257,6 +260,34 @@ class DelayedCallTests(_LoopTestCase):
         reactor.run()
         self.assertEqual(out, [])
 
+    def test_get_time_and_reset(self):
+        # TestCase.reset_timeout() calls timeout_id.getTime() and feeds the
+        # result to datetime.fromtimestamp(), so getTime() must exist and return
+        # a wall-clock POSIX timestamp. A missing getTime() raised AttributeError
+        # that the Deferred chain swallowed, silently stalling multi-phase SIPp
+        # tests (pjsip hold, stir_shaken, attended_transfer, ...).
+        import time as _time
+        import datetime as _datetime
+        out = {}
+
+        def setup():
+            dc = reactor.callLater(30.0, lambda: None)
+            t0 = dc.getTime()
+            # Sane POSIX timestamp (fromtimestamp must not raise).
+            _datetime.datetime.fromtimestamp(t0)
+            self.assertAlmostEqual(t0, _time.time() + 30.0, delta=2.0)
+            dc.reset(60.0)
+            t1 = dc.getTime()
+            _datetime.datetime.fromtimestamp(t1)
+            self.assertGreater(t1, t0)
+            dc.cancel()
+            out['ok'] = True
+            reactor.stop()
+
+        reactor.callWhenRunning(setup)
+        reactor.run()
+        self.assertTrue(out.get('ok'))
+
 
 # --------------------------------------------------------------------------- #
 # UDP echo through the DatagramProtocol adapter
@@ -409,6 +440,164 @@ class SubprocessTests(_LoopTestCase):
         self.assertIsInstance(reason, Failure)
         self.assertEqual(reason.check(ProcessTerminated), ProcessTerminated)
         self.assertEqual(reason.value.exitCode, 3)
+
+
+class SubprocessSyncKillTests(_LoopTestCase):
+    """spawnProcess must accept a signal/kill issued *synchronously*.
+
+    Twisted wires ``protocol.transport`` inside ``spawnProcess``; the suite kills
+    scenarios on the next line (SIPp is killed straight from an AMI event
+    handler). asyncio's ``subprocess_exec`` is a coroutine, so without a
+    synchronous placeholder ``protocol.transport`` is ``None`` at that point and
+    ``self.transport.signalProcess('KILL')`` raises ``AttributeError``. This
+    reproduces that exact call ordering and asserts the child is actually
+    killed, not that the call silently blew up.
+    """
+
+    def test_kill_before_connection_made_is_replayed(self):
+        record = {}
+        watcher_warnings = []
+
+        class _WarningCapture(logging.Handler):
+            def emit(self, log_record):
+                if 'exit status already read' in log_record.getMessage():
+                    watcher_warnings.append(log_record.getMessage())
+
+        warning_capture = _WarningCapture()
+        asyncio_logger = logging.getLogger('asyncio')
+        asyncio_logger.addHandler(warning_capture)
+        # A child that would run for a long time unless it is killed.
+        script = "import time; time.sleep(30)"
+
+        def setup():
+            proto = _CollectingProcess(record)
+            reactor.spawnProcess(proto, sys.executable,
+                                 [sys.executable, '-c', script])
+            # Synchronously, before connection_made: transport must exist and
+            # accept a kill (mirrors SIPpProtocol.kill()).
+            record['transport_sync'] = proto.transport
+            proto.transport.signalProcess('KILL')
+            reactor.callLater(10.0, reactor.stop)  # safety net
+
+        try:
+            reactor.callWhenRunning(setup)
+            reactor.run()
+        finally:
+            asyncio_logger.removeHandler(warning_capture)
+
+        self.assertIsNotNone(record.get('transport_sync'),
+                             'transport was None synchronously after spawn')
+        reason = record.get('reason')
+        self.assertIsInstance(reason, Failure)
+        # Killed by SIGKILL -> ProcessTerminated with a signal, not a timeout.
+        self.assertEqual(reason.check(ProcessTerminated), ProcessTerminated)
+        self.assertEqual(reason.value.signal, signal.SIGKILL)
+        self.assertEqual(watcher_warnings, [])
+
+    def test_pidfd_signal_does_not_call_popen_transport(self):
+        """The Linux signalling path must not invoke Popen.send_signal/poll."""
+        class _FakeTransport(object):
+            def __init__(self):
+                self.returncode = None
+                self.raw_signals = []
+
+            def get_pid(self):
+                return 12345
+
+            def get_returncode(self):
+                return self.returncode
+
+            def get_pipe_transport(self, fd):
+                return None
+
+            def send_signal(self, sig):
+                self.raw_signals.append(sig)
+
+            def close(self):
+                pass
+
+        async def exercise():
+            raw = _FakeTransport()
+            with mock.patch('asterisk.aio.protocols.os.pidfd_open',
+                            return_value=99), \
+                    mock.patch(
+                        'asterisk.aio.protocols._signal.pidfd_send_signal') \
+                    as pidfd_send, \
+                    mock.patch('asterisk.aio.protocols.os.close') as close:
+                adapter = _ProcessTransportAdapter(raw)
+                adapter.signalProcess('KILL')
+                pidfd_send.assert_called_once_with(
+                    99, signal.SIGKILL, None, 0)
+                self.assertEqual(raw.raw_signals, [])
+
+                raw.returncode = -signal.SIGKILL
+                adapter.processExited()
+                self.assertEqual(await adapter.waitForExit(),
+                                 -signal.SIGKILL)
+                close.assert_called_once_with(99)
+
+        self.loop.run_until_complete(exercise())
+
+    def test_posix_fallback_does_not_call_popen_transport(self):
+        """Without pidfds, POSIX signalling must still avoid Popen.poll."""
+        class _FakeTransport(object):
+            def __init__(self):
+                self.raw_signals = []
+
+            def get_pid(self):
+                return 12345
+
+            def get_returncode(self):
+                return None
+
+            def send_signal(self, sig):
+                self.raw_signals.append(sig)
+
+        async def exercise():
+            raw = _FakeTransport()
+            with mock.patch('asterisk.aio.protocols.os.pidfd_open',
+                            side_effect=OSError), \
+                    mock.patch('asterisk.aio.protocols.os.kill') as os_kill:
+                adapter = _ProcessTransportAdapter(raw)
+                adapter.signalProcess('TERM')
+                os_kill.assert_called_once_with(12345, signal.SIGTERM)
+                self.assertEqual(raw.raw_signals, [])
+                adapter._exit_waiter.cancel()
+
+        self.loop.run_until_complete(exercise())
+
+    def test_reactor_shutdown_reaps_live_process_without_warning(self):
+        """Shutdown waits for its child watcher instead of Popen.poll reaping."""
+        record = {}
+        watcher_warnings = []
+
+        class _WarningCapture(logging.Handler):
+            def emit(self, log_record):
+                if 'exit status already read' in log_record.getMessage():
+                    watcher_warnings.append(log_record.getMessage())
+
+        warning_capture = _WarningCapture()
+        asyncio_logger = logging.getLogger('asyncio')
+        asyncio_logger.addHandler(warning_capture)
+
+        def setup():
+            proto = _CollectingProcess(record)
+            reactor.spawnProcess(
+                proto, sys.executable,
+                [sys.executable, '-c', 'import time; time.sleep(30)'])
+            reactor.callLater(0.1, reactor.stop)
+
+        try:
+            reactor.callWhenRunning(setup)
+            reactor.run()
+        finally:
+            asyncio_logger.removeHandler(warning_capture)
+
+        reason = record.get('reason')
+        self.assertIsInstance(reason, Failure)
+        self.assertEqual(reason.check(ProcessTerminated), ProcessTerminated)
+        self.assertEqual(reason.value.signal, signal.SIGTERM)
+        self.assertEqual(watcher_warnings, [])
 
 
 # --------------------------------------------------------------------------- #
@@ -945,6 +1134,16 @@ class ShutdownStrayTaskTests(_LoopTestCase):
         import tempfile
         from asterisk.aio import utils
 
+        watcher_warnings = []
+
+        class _WarningCapture(logging.Handler):
+            def emit(self, log_record):
+                if 'exit status already read' in log_record.getMessage():
+                    watcher_warnings.append(log_record.getMessage())
+
+        warning_capture = _WarningCapture()
+        asyncio_logger = logging.getLogger('asyncio')
+        asyncio_logger.addHandler(warning_capture)
         fd, pidfile = tempfile.mkstemp()
         os.close(fd)
         self.addCleanup(lambda: os.path.exists(pidfile) and os.remove(pidfile))
@@ -967,8 +1166,11 @@ class ShutdownStrayTaskTests(_LoopTestCase):
             reactor.callLater(0.02, check_ready)
             reactor.callLater(10.0, reactor.stop)   # safety net
 
-        reactor.callWhenRunning(setup)
-        reactor.run()
+        try:
+            reactor.callWhenRunning(setup)
+            reactor.run()
+        finally:
+            asyncio_logger.removeHandler(warning_capture)
 
         # The Deferred errbacked with CancelledError, no task leaked, and the
         # child was terminated (and reaped) rather than left running.
@@ -979,6 +1181,7 @@ class ShutdownStrayTaskTests(_LoopTestCase):
             pid = int(handle.read())
         with self.assertRaises(ProcessLookupError):
             os.kill(pid, 0)
+        self.assertEqual(watcher_warnings, [])
 
 
 class StreamProtocolBaseTests(unittest.TestCase):

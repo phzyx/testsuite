@@ -33,6 +33,7 @@ new functionality on top of it.
 """
 
 import asyncio
+import time
 
 from .defer import Deferred
 from .failure import Failure
@@ -80,6 +81,12 @@ class _DelayedCall(object):
         self._kw = kw
         self._cancelled = False
         self._called = False
+        # Absolute wall-clock time (time.time() units) at which this call is
+        # scheduled to fire. Twisted's DelayedCall.getTime() returns this in
+        # reactor.seconds() units, and callers (e.g. TestCase.reset_timeout)
+        # feed it to datetime.fromtimestamp(), so it must be a POSIX timestamp
+        # rather than asyncio's monotonic loop clock.
+        self._scheduled_time = time.time() + delay
         self._handle = reactor._loop.call_later(delay, self._fire)
 
     def _fire(self):
@@ -90,6 +97,14 @@ class _DelayedCall(object):
     def active(self):
         """Return True if the call has neither fired nor been cancelled."""
         return not (self._cancelled or self._called)
+
+    def getTime(self):
+        """Return the wall-clock time (seconds since epoch) this call fires.
+
+        Mirrors twisted.internet.base.DelayedCall.getTime(), whose result is a
+        reactor.seconds()/time.time()-compatible absolute timestamp.
+        """
+        return self._scheduled_time
 
     def cancel(self):
         """Cancel the pending call."""
@@ -107,6 +122,7 @@ class _DelayedCall(object):
             raise AlreadyCalled()
         self._handle.cancel()
         self._delay = delay
+        self._scheduled_time = time.time() + delay
         self._handle = self._reactor._loop.call_later(delay, self._fire)
 
     def delay(self, seconds_later):
@@ -471,12 +487,45 @@ class _Reactor(object):
             connector.disconnect()
         self._connectors.clear()
 
-        # Child processes: terminate any still running, then close.
-        for transport in list(self._process_transports):
+        # Child processes: terminate and let asyncio's watcher reap them before
+        # transports are closed. Calling BaseSubprocessTransport.close() while a
+        # child is live invokes Popen.poll()/kill(), which can steal waitpid()
+        # from PidfdChildWatcher and manufacture return code 255.
+        process_transports = list(self._process_transports)
+        running_processes = []
+        for transport in process_transports:
             try:
                 if transport.get_returncode() is None:
                     transport.terminate()
-                transport.close()
+                    running_processes.append(transport)
+            except Exception:
+                pass
+
+        if running_processes:
+            try:
+                await asyncio.wait_for(asyncio.gather(*(
+                    transport.waitForExit()
+                    for transport in running_processes)), 1.0)
+            except asyncio.TimeoutError:
+                # Match the old close()-on-live-child behavior, but signal via
+                # pidfd and give the watcher a chance to perform the one reap.
+                for transport in running_processes:
+                    try:
+                        if transport.get_returncode() is None:
+                            transport.kill()
+                    except Exception:
+                        pass
+                try:
+                    await asyncio.wait_for(asyncio.gather(*(
+                        transport.waitForExit()
+                        for transport in running_processes
+                        if transport.get_returncode() is None)), 1.0)
+                except asyncio.TimeoutError:
+                    pass
+
+        for transport in process_transports:
+            try:
+                transport.loseConnection()
             except Exception:
                 pass
         self._process_transports.clear()
@@ -653,15 +702,28 @@ class _Reactor(object):
         Returns a connector proxying the eventual process transport. ``args``
         follows the Twisted convention where ``args[0]`` is the program name.
         """
+        from .protocols import _PendingProcessTransport
+
         loop = self._ensure_loop()
         rest = tuple(args[1:]) if args else ()
+
+        # Twisted installs protocol.transport synchronously; asyncio's
+        # subprocess_exec is a coroutine. Give the protocol a placeholder now so
+        # a signal/kill issued before connection_made (e.g. a SIPp scenario
+        # killed from an AMI event) is buffered and replayed, instead of hitting
+        # protocol.transport is None.
+        if getattr(processProtocol, 'transport', None) is None:
+            processProtocol.transport = _PendingProcessTransport()
+
         coro = loop.subprocess_exec(lambda: processProtocol,
                                     executable, *rest,
                                     env=env, cwd=path)
 
         def apply(result):
             transport, _proto = result
-            self._process_transports.append(transport)
+            # connection_made runs before subprocess_exec resolves, so the
+            # protocol now owns the non-reaping process transport adapter.
+            self._process_transports.append(processProtocol.transport)
 
         self._register_bind(coro, apply, None, 'spawnProcess:%s' % executable)
         return _ProcessConnector(processProtocol)

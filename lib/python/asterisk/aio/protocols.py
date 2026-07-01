@@ -20,6 +20,8 @@ layer (design Section 14); Phase B migrates callers to native asyncio protocols.
 """
 
 import asyncio
+import os
+import signal as _signal
 
 from .defer import Deferred
 from .failure import Failure
@@ -207,6 +209,23 @@ class _ProcessTransportAdapter(object):
     def __init__(self, transport):
         self._transport = transport
         self.pid = transport.get_pid()
+        self._exit_waiter = asyncio.get_running_loop().create_future()
+        self._pidfd = None
+
+        # asyncio's subprocess transport signals through subprocess.Popen.
+        # Popen.send_signal() calls poll(), which can reap the child before
+        # asyncio's PidfdChildWatcher does and produces a bogus return code 255.
+        # Hold our own pidfd where Linux supports it so signalling is both
+        # race-free (the PID cannot be recycled underneath us) and non-reaping.
+        if (hasattr(os, 'pidfd_open')
+                and hasattr(_signal, 'pidfd_send_signal')):
+            try:
+                self._pidfd = os.pidfd_open(self.pid, 0)
+            except OSError:
+                # Older kernels / restricted containers may expose the Python
+                # API without allowing pidfds. The POSIX fallback below remains
+                # non-reaping, although it cannot guard against PID reuse.
+                self._pidfd = None
 
     def write(self, data):
         stdin = self._transport.get_pipe_transport(0)
@@ -219,11 +238,16 @@ class _ProcessTransportAdapter(object):
             stdin.close()
 
     def loseConnection(self):
-        self._transport.close()
+        # BaseSubprocessTransport.close() polls and kills a live Popen, racing
+        # asyncio's child watcher. For a live child, close only stdin and let an
+        # explicit signal plus process_exited own process termination/reaping.
+        if self._transport.get_returncode() is None:
+            self.closeStdin()
+        else:
+            self._transport.close()
 
     def signalProcess(self, signal):
         """Send a signal; accepts a name ('KILL'/'TERM') or number like Twisted."""
-        import signal as _signal
         if isinstance(signal, str):
             signal = getattr(_signal, 'SIG' + signal, None) or \
                 getattr(_signal, signal)
@@ -234,12 +258,100 @@ class _ProcessTransportAdapter(object):
         if get_returncode is not None and get_returncode() is not None:
             raise ProcessExitedAlready()
         try:
-            self._transport.send_signal(signal)
+            if self._pidfd is not None:
+                _signal.pidfd_send_signal(self._pidfd, signal, None, 0)
+            elif os.name == 'posix':
+                # pidfds are unavailable on older Unix platforms. os.kill()
+                # still avoids Popen.poll()/waitpid; the return-code check above
+                # and ESRCH handling below preserve ProcessExitedAlready as far
+                # as the non-pidfd API permits.
+                os.kill(self.pid, signal)
+            else:
+                # Non-POSIX fallback preserves platform-specific behavior.
+                self._transport.send_signal(signal)
         except ProcessLookupError:
             raise ProcessExitedAlready()
 
+    def terminate(self):
+        """Terminate without allowing Popen.poll() to reap the child."""
+        self.signalProcess(_signal.SIGTERM)
+
+    def kill(self):
+        """Kill without allowing Popen.poll() to reap the child."""
+        self.signalProcess(_signal.SIGKILL)
+
+    async def waitForExit(self):
+        """Wait until asyncio's child watcher has delivered process_exited."""
+        if self._transport.get_returncode() is None:
+            await asyncio.shield(self._exit_waiter)
+        return self._transport.get_returncode()
+
+    def processExited(self):
+        """Release signalling resources and wake reactor shutdown waiters."""
+        if not self._exit_waiter.done():
+            self._exit_waiter.set_result(self._transport.get_returncode())
+        if self._pidfd is not None:
+            os.close(self._pidfd)
+            self._pidfd = None
+
     def __getattr__(self, name):
         return getattr(self._transport, name)
+
+
+class _PendingProcessTransport(object):
+    """Synchronous stand-in installed by ``reactor.spawnProcess`` before the
+    asyncio subprocess transport connects.
+
+    Twisted's ``reactor.spawnProcess`` wires ``protocol.transport`` (and returns
+    a transport) synchronously, so a fixture may signal or kill the child on the
+    very next line. asyncio's ``loop.subprocess_exec`` is a coroutine, so
+    ``connection_made`` -- which installs the real transport -- runs later; a
+    kill issued in between (e.g. a SIPp scenario killed from an AMI event
+    handler) would otherwise hit ``protocol.transport is None`` and raise
+    ``AttributeError`` instead of doing anything. This placeholder absorbs
+    ``signalProcess``/``loseConnection`` synchronously and replays them once the
+    real transport arrives, so the kill still lands. It also makes the
+    ``_ProcessConnector`` returned by ``spawnProcess`` usable immediately, since
+    that connector delegates to ``protocol.transport``.
+    """
+
+    pid = None
+
+    def __init__(self):
+        self._signal = None
+        self._close = False
+
+    def signalProcess(self, signal):
+        # Remember the last signal requested; replayed on connect. A pre-connect
+        # child can't have "already exited", so never raise ProcessExitedAlready.
+        self._signal = signal
+
+    def loseConnection(self):
+        self._close = True
+
+    def closeStdin(self):
+        # No stdin yet; the child hasn't started. Fold into a close-on-connect
+        # so nothing is silently dropped.
+        self._close = True
+
+    def write(self, data):
+        # Nothing in the suite writes to a process's stdin before it has
+        # connected; dropping here matches Twisted, which would not have a
+        # transport to write to either.
+        pass
+
+    def replay(self, transport):
+        """Apply the buffered actions to the now-live process ``transport``."""
+        if self._signal is not None:
+            try:
+                transport.signalProcess(self._signal)
+            except ProcessExitedAlready:
+                pass
+        if self._close:
+            transport.loseConnection()
+
+    def __bool__(self):
+        return True
 
 
 class ProcessProtocol(asyncio.SubprocessProtocol):
@@ -263,7 +375,14 @@ class ProcessProtocol(asyncio.SubprocessProtocol):
 
     # asyncio callbacks --------------------------------------------------- #
     def connection_made(self, transport):
+        # A pre-connect signal/kill may have been buffered on the synchronous
+        # placeholder that spawnProcess installed; replay it onto the real
+        # transport now that the child exists (review finding: SIPp scenario
+        # killed from an AMI event before subprocess_exec resolved).
+        pending = self.transport
         self.transport = _ProcessTransportAdapter(transport)
+        if isinstance(pending, _PendingProcessTransport):
+            pending.replay(self.transport)
         # Pipes that the child was not given do not produce a
         # pipe_connection_lost, so treat absent stdout/stderr as already closed.
         if transport.get_pipe_transport(1) is None:
@@ -295,8 +414,34 @@ class ProcessProtocol(asyncio.SubprocessProtocol):
         # processEnded until stdout and stderr have both drained, so no trailing
         # Asterisk/SIPp output is lost. (review finding 1)
         self._proc_exited = True
-        self._returncode = self.transport.get_returncode()
+        self._returncode = self._reliable_returncode()
+        self.transport.processExited()
         self._maybe_end()
+
+    def _reliable_returncode(self):
+        """Return the authoritative child exit status.
+
+        asyncio's child watcher can lose a reap race if code bypasses this
+        adapter and calls a ``subprocess.Popen`` method that polls/waits for the
+        child. PidfdChildWatcher then gets ``ECHILD`` and substitutes its sentinel
+        return code 255. The adapter's pidfd/os.kill signalling and ordered
+        reactor shutdown prevent that race for owned children; this recovery is
+        retained defensively for external or platform-specific process paths.
+
+        The underlying ``Popen.returncode`` is set only from a real
+        ``os.waitpid`` result, so it is authoritative whenever present (it agrees
+        with the watcher on a clean exit and holds the true signal status on the
+        raced path). Prefer it; fall back to the transport's value otherwise.
+        This restores Twisted parity, where a signal-terminated process reports
+        ``signal``/``exitCode is None`` rather than a fabricated exit code.
+        """
+        transport_rc = self.transport.get_returncode()
+        inner = getattr(self.transport, '_transport', None)
+        proc = getattr(inner, '_proc', None)
+        proc_rc = getattr(proc, 'returncode', None)
+        if proc_rc is not None:
+            return proc_rc
+        return transport_rc
 
     def _maybe_end(self):
         if self._ended:

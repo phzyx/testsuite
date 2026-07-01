@@ -94,9 +94,6 @@ test-object-config:
                 -
                   action-type: 'set-expected-result'
                   expected-result: 'Channel test_screening hungup'
-                -
-                  action-type: 'start-call'
-                  channel-id: 'Test-User2'
         -
           # This channel is dialed; as a result, we don't control
           # it when it goes into an application. Instead, channel
@@ -167,4 +164,3 @@ properties:
       - asterisk : 'app_verbose'
       - asterisk : 'func_callerid'
       - asterisk : 'pbx_config'
-

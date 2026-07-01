@@ -13,11 +13,48 @@ implemented. The contract mirrors Twisted's:
 """
 
 import asyncio
+import os
+import signal
 
 from .defer import Deferred
 from .failure import Failure
 
 __all__ = ['getProcessOutputAndValue']
+
+
+def _terminate_without_reaping(proc):
+    """Send SIGTERM without calling Popen.poll()/waitpid.
+
+    ``asyncio.subprocess.Process.terminate()`` delegates to ``Popen.terminate``.
+    Popen polls first and can reap the child before asyncio's child watcher,
+    causing PidfdChildWatcher to manufacture return code 255. Use a pidfd when
+    possible, or direct POSIX signalling as the non-reaping fallback.
+    """
+    if proc.returncode is not None:
+        return
+
+    pidfd = None
+    if hasattr(os, 'pidfd_open') and hasattr(signal, 'pidfd_send_signal'):
+        try:
+            pidfd = os.pidfd_open(proc.pid, 0)
+        except ProcessLookupError:
+            # The process is already gone; its asyncio watcher still owns reap.
+            return
+        except OSError:
+            pidfd = None
+
+    try:
+        if pidfd is not None:
+            signal.pidfd_send_signal(pidfd, signal.SIGTERM, None, 0)
+        elif os.name == 'posix':
+            os.kill(proc.pid, signal.SIGTERM)
+        else:
+            proc.terminate()
+    except ProcessLookupError:
+        pass
+    finally:
+        if pidfd is not None:
+            os.close(pidfd)
 
 
 def getProcessOutputAndValue(executable, args=(), env=None, path=None):
@@ -41,10 +78,7 @@ def getProcessOutputAndValue(executable, args=(), env=None, path=None):
             # Cancellation (e.g. reactor shutdown) must not leave the child
             # running: terminate it and reap before propagating.
             if proc.returncode is None:
-                try:
-                    proc.terminate()
-                except ProcessLookupError:
-                    pass
+                _terminate_without_reaping(proc)
                 try:
                     await proc.wait()
                 except asyncio.CancelledError:

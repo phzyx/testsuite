@@ -24,6 +24,7 @@ from .pluggable_registry import PLUGGABLE_EVENT_REGISTRY,\
 
 LOGGER = logging.getLogger(__name__)
 
+
 class ScenarioGenerator(object):
     """Scenario Generators provide a generator function for creating scenario
     sets for use by SIPpTestCase"""

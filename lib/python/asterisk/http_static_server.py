@@ -47,7 +47,15 @@ class HTTPStaticServer(object):
         app = web.Application()
         # add_static resolves requests against the root and rejects attempts to
         # escape it (path traversal), returning 403/404 rather than the file.
-        app.router.add_static('/', self._root, show_index=False)
+        #
+        # follow_symlinks=True restores Twisted's static.File behaviour: some
+        # webroots (e.g. the STIR/SHAKEN tests) publish their certificate files
+        # as symlinks into a sibling keys/ directory. aiohttp refuses to serve
+        # symlinked targets by default (404), which broke those tests; Twisted
+        # followed the links. The root is a fixed, test-controlled directory, so
+        # following links here does not widen the traversal surface in practice.
+        app.router.add_static('/', self._root, show_index=False,
+                              follow_symlinks=True)
         self._runner = web.AppRunner(app)
         await self._runner.setup()
         site = web.TCPSite(self._runner, '0.0.0.0', self._port)

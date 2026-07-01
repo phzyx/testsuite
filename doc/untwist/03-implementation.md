@@ -538,6 +538,20 @@ Exit criterion: each converted fixture's test passes individually.
 >   transport on `connection_made`. Early `stopListening()` (before the endpoint
 >   coroutine runs) is handled gracefully. Covered by
 >   `UDPSyncTransportTests.test_transport_usable_before_endpoint_awaited`.
+> - **F4 — synchronous `spawnProcess` transport (same class as F3, found in
+>   manual review).** Twisted wires `protocol.transport` inside `spawnProcess`;
+>   the suite kills scenarios on the next line — SIPp's `kill()` calls
+>   `self.transport.signalProcess('KILL')` straight from an AMI `TestEvent`
+>   handler (`sipp.py`), and `asterisk.py`'s stop path signals `self.process`
+>   (the connector, which delegates to `protocol.transport`). asyncio's
+>   `subprocess_exec` is a coroutine, so `connection_made` had not yet installed
+>   the transport and the kill raised `'NoneType' object has no attribute
+>   'signalProcess'`. `spawnProcess` now installs a `_PendingProcessTransport`
+>   synchronously that buffers `signalProcess`/`loseConnection` and replays them
+>   in `connection_made` once the child exists. Covered by
+>   `SubprocessSyncKillTests.test_kill_before_connection_made_is_replayed` (a
+>   long-lived child killed synchronously must end via signal, not the safety-net
+>   timeout).
 
 ## 8. Step 6 — dependency strip and final gate
 
