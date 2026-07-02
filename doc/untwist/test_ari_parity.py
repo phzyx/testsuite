@@ -30,9 +30,38 @@ Run:  PYTHONPATH=lib/python .venv/bin/python doc/untwist/test_ari_parity.py
 import socket
 
 from asterisk.aio import reactor
-from asterisk.ari import AriClientFactory, AriServerFactory
+from asterisk.ari import ARI, AriClientFactory, AriServerFactory
 
 results = {}
+
+
+class _FakeResponse(object):
+    """Small requests.Response stand-in for status classification checks."""
+
+    def __init__(self, status_code):
+        self.status_code = status_code
+        self.url = 'http://127.0.0.1/ari/test'
+        self.reason = 'test'
+        self.text = ''
+        self.raise_calls = 0
+
+    def raise_for_status(self):
+        self.raise_calls += 1
+
+
+def _assert_http_status_classification():
+    """Every 2xx response is success; 4xx/5xx responses use raise_for_status."""
+    ari = ARI('127.0.0.1', ('user', 'pass'))
+
+    for status in (200, 201, 204, 299):
+        response = _FakeResponse(status)
+        assert ari.raise_on_err(response) is response
+        assert response.raise_calls == 0, \
+            "successful HTTP %d was treated as an error" % status
+
+    response = _FakeResponse(404)
+    assert ari.raise_on_err(response) is response
+    assert response.raise_calls == 1, "HTTP 404 did not use raise_for_status"
 
 
 def _free_port():
@@ -99,6 +128,7 @@ class _ClientReceiver(object):
 
 
 def main():
+    _assert_http_status_classification()
     port = _free_port()
 
     server_rcv = _ServerReceiver()
@@ -151,6 +181,7 @@ def main():
     assert results.get('server_closed') is True, "server on_ws_closed not fired"
     assert results.get('client_closed') is True, "client on_ws_closed not fired"
 
+    print("  [ari HTTP]      all 2xx statuses classified as success OK")
     print("  [ari subproto]  client<->server negotiated 'ari' OK")
     print("  [ari request]   RESTRequest envelope round-tripped to server OK")
     print("  [ari event]     server->client JSON event delivered OK")

@@ -25,7 +25,7 @@ txaio==22.2.1
 typing_extensions==4.12.2
 urllib3==1.26.9
 zope.interface==8.0.1
-starpy @ git+https://github.com/phzyx/starpy@fe58ce9a6eff34ce6328858d46122717a0c7b3f1
+starpy @ git+https://github.com/phzyx/starpy@abeb0de15322016460139d8563e6ebff418c5bbe
 scapy==2.6.1
 asyncssh==2.21.1
 websockets==12.0

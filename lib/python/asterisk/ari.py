@@ -704,7 +704,7 @@ class ARI(object):
         :param resp: requests.models.Response object
         :returns: resp
         """
-        if not self.allow_errors and resp.status_code / 100 != 2:
+        if not self.allow_errors and resp.status_code // 100 != 2:
             LOGGER.error('%s (%d %s): %r', resp.url, resp.status_code,
                          resp.reason, resp.text)
             resp.raise_for_status()
