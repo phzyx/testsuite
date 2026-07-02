@@ -627,10 +627,10 @@ comparing pass/behavior to the pre-branch Twisted baseline:
 
 ## 11. Tracking checklist
 
-- [ ] Step 0 — env + baseline captured
-- [ ] Step 1 — `asterisk.aio` built + unit tests green
-- [ ] Step 2 — starpy fork converted + smoke test green + `pyproject.toml` updated
-- [ ] Step 3 — core converted + `self_test` green
-- [ ] Step 4 — subsystems converted (ami/ari/sipp/dns/http/ws/udp/pluggable)
+- [x] Step 0 — env + baseline captured
+- [x] Step 1 — `asterisk.aio` built + unit tests green
+- [x] Step 2 — starpy fork converted + smoke test green + `pyproject.toml` updated
+- [x] Step 3 — core converted + `self_test` green
+- [x] Step 4 — subsystems converted (ami/ari/sipp/dns/http/ws/udp/pluggable)
 - [x] Step 5 — test-condition family + fixtures converted (32 `.py` fixtures + 146 `run-test` entry scripts; gate extended to scan Python `run-test` files; review findings F1/F2/F3 fixed: 736 twisted + 185 autobahn YAML deps repointed and gate-enforced, `AriClientProtocol.sendClose` restored, synchronous `listenUDP` transport)
-- [ ] Step 6 — deps stripped, AST import gate + `pip check` clean, full suite parity green
+- [x] Step 6 — deps stripped (Twisted/txaio/autobahn/Automat/constantly/hyperlink/incremental/zope.interface + service_identity + six removed; pyOpenSSL kept — `opensslversion.py` uses it for OpenSSL-version test gating, and it reports the cryptography-bundled 3.2.0, preserving baseline gating; cffi/pycparser/attrs kept as transitive deps of cryptography←asyncssh / aiohttp), venv rebuilt clean, AST import gate + `pip check` clean, parity spot-run green (AMI, SIPp/process, HTTP static, ARI/websockets, WS framing, DNS)
