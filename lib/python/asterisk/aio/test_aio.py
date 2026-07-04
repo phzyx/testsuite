@@ -19,6 +19,7 @@ import logging
 import signal
 import sys
 import unittest
+import warnings
 from unittest import mock
 
 from asterisk.aio import defer, reactor
@@ -1455,6 +1456,339 @@ class SequentialRunOwnershipTests(unittest.TestCase):
         self.assertIsNot(loop1, loop2)
         self.assertIs(rt1._loop, loop1)
         self.assertIs(rt2._loop, loop2)
+
+
+# --------------------------------------------------------------------------- #
+# B1.1: native entrypoint primitives -- startup driver, await-only bridge,
+# ordered teardown -- with responsibilities decoupled (design doc points 2/2b/4)
+# --------------------------------------------------------------------------- #
+class NativeEntrypointTests(_LoopTestCase):
+    """_run_startup() drives startup, run_async() only awaits completion, and
+    _finish() owns the single ordered teardown -- driven under a live loop the
+    caller is turning (asyncio.run / loop.run_until_complete)."""
+
+    def _drive(self, coro):
+        """Run a coroutine that mimics _main: startup -> await -> finish."""
+        return self.loop.run_until_complete(coro)
+
+    def test_startup_then_bridge_then_finish(self):
+        async def go():
+            reactor.callWhenRunning(lambda: reactor.callLater(0.01, reactor.stop))
+            await self.runtime._run_startup()
+            # After startup: RUNNING with a live completion future.
+            self.assertIs(self.runtime.state, _RuntimeState.RUNNING)
+            self.assertIsNotNone(self.runtime._completion)
+            await self.runtime.run_async()   # bridge: only awaits completion
+            await self.runtime._finish()      # single ordered teardown
+        self._drive(go())
+        self.assertIs(self.runtime.state, _RuntimeState.STOPPED)
+        self.assertEqual(self.runtime.live_resources(), [])
+
+    def test_run_async_only_awaits_no_shutdown(self):
+        # run_async() must NOT tear down: a timer registered before it is still
+        # live after it returns (teardown is _finish's job, not the bridge's).
+        async def go():
+            await self.runtime._run_startup()
+            dc = reactor.callLater(30.0, lambda: None)
+            reactor.stop()
+            await self.runtime.run_async()
+            # Bridge returned on stop; the timer is untouched (still RUNNING).
+            self.assertIs(self.runtime.state, _RuntimeState.RUNNING)
+            self.assertEqual(self.runtime.live_resources(), ['delayed_calls'])
+            self.assertTrue(dc.active())
+            await self.runtime._finish()      # now it is torn down
+        self._drive(go())
+        self.assertIs(self.runtime.state, _RuntimeState.STOPPED)
+        self.assertEqual(self.runtime.live_resources(), [])
+
+    def test_fatal_bind_reraises_and_finish_cleans(self):
+        async def boom():
+            raise RuntimeError('bind failed')
+
+        async def go():
+            self.runtime.addStartupBind(boom())
+            raised = None
+            try:
+                await self.runtime._run_startup()   # fatal bind re-raises
+            except RuntimeError as exc:
+                raised = exc
+            finally:
+                await self.runtime._finish()         # teardown runs regardless
+            self.assertIsNotNone(raised)
+            self.assertIs(self.runtime._failure, raised)
+        self._drive(go())
+        self.assertIs(self.runtime.state, _RuntimeState.STOPPED)
+        self.assertEqual(self.runtime.live_resources(), [])
+
+    def test_run_startup_rejects_reentrant_completion(self):
+        # An unresolved completion future means a run is already in flight.
+        async def go():
+            self.runtime._completion = self.loop.create_future()
+            with self.assertRaises(ReactorAlreadyRunning):
+                await self.runtime._run_startup()
+            self.runtime._completion.cancel()
+            self.runtime._completion = None
+        self._drive(go())
+
+    def test_first_bind_fatal_closes_later_queued_binds(self):
+        # First queued bind fails fatally; the later binds -- already pulled
+        # into the drain batch and cleared from _pending_binds -- must be
+        # handed back so _finish's ordered _shutdown closes them. Otherwise
+        # the later coroutines leak "coroutine was never awaited".
+        import inspect
+        ran = {'later': False}
+
+        async def boom():
+            raise RuntimeError('first bind failed')
+
+        async def later():
+            ran['later'] = True
+
+        later_coro = later()
+
+        async def go():
+            self.runtime.addStartupBind(boom())
+            self.runtime.addStartupBind(later_coro)
+            raised = None
+            try:
+                await self.runtime._run_startup()
+            except RuntimeError as exc:
+                raised = exc
+            finally:
+                await self.runtime._finish()
+            self.assertIsNotNone(raised)
+
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter('always')
+            self._drive(go())
+
+        # The un-awaited remainder was closed (never ran) by the teardown.
+        self.assertEqual(inspect.getcoroutinestate(later_coro),
+                         inspect.CORO_CLOSED)
+        self.assertFalse(ran['later'])
+        self.assertIs(self.runtime.state, _RuntimeState.STOPPED)
+        self.assertEqual(self.runtime.live_resources(), [])
+        never_awaited = [w for w in caught
+                         if 'never awaited' in str(w.message)]
+        self.assertEqual(never_awaited, [])
+
+
+# --------------------------------------------------------------------------- #
+# B1.1: test_runner._main -- construction under a running loop, guaranteed
+# teardown + detach on every exit path (including constructor/module failures)
+# --------------------------------------------------------------------------- #
+class MainEntrypointTests(unittest.TestCase):
+    """test_runner._main() installs one runtime, builds the test object under a
+    running loop, and always runs the ordered teardown + detaches -- even when a
+    constructor or module load raises after registering resources."""
+
+    def setUp(self):
+        import asterisk.test_runner as test_runner
+        self.test_runner = test_runner
+        self._orig_create = test_runner.create_test_object
+        self._orig_load = test_runner.load_test_modules
+        # Ensure a clean holder before each case.
+        detach_runtime()
+
+    def tearDown(self):
+        self.test_runner.create_test_object = self._orig_create
+        self.test_runner.load_test_modules = self._orig_load
+        detach_runtime()
+        asyncio.set_event_loop(None)
+
+    class _Global(object):
+        config = None
+
+    def _run_main(self):
+        result = {}
+        asyncio.run(self.test_runner._main('/fake/dir', {}, result))
+        return result
+
+    def test_main_runs_under_running_loop_and_detaches(self):
+        captured = {}
+
+        tc = self
+
+        class Obj(object):
+            def __init__(self):
+                self.passed = True
+                self.global_config = tc._Global()
+                # Construction happens with a live loop AND a live runtime.
+                captured['loop_running'] = asyncio.get_running_loop().is_running()
+                captured['runtime'] = get_current_runtime()
+                reactor.callWhenRunning(
+                    lambda: reactor.callLater(0.01, reactor.stop))
+
+        self.test_runner.create_test_object = lambda d, c: Obj()
+        self.test_runner.load_test_modules = lambda c, o: None
+
+        result = self._run_main()
+        self.assertTrue(captured['loop_running'])
+        self.assertIsNotNone(captured['runtime'])
+        self.assertIs(captured['runtime'].state, _RuntimeState.STOPPED)
+        self.assertEqual(captured['runtime'].live_resources(), [])
+        self.assertIsNone(get_current_runtime())      # detached
+        self.assertTrue(result['test_object'].passed)
+
+    def test_main_tears_down_after_constructor_failure(self):
+        captured = {}
+        tc = self
+
+        class Obj(object):
+            def __init__(self):
+                self.global_config = tc._Global()
+                # Register a resource, THEN fail -- it must not leak.
+                captured['runtime'] = get_current_runtime()
+                captured['timer'] = reactor.callLater(30.0, lambda: None)
+                raise RuntimeError('constructor blew up')
+
+        self.test_runner.create_test_object = lambda d, c: Obj()
+        self.test_runner.load_test_modules = lambda c, o: None
+
+        with self.assertRaises(RuntimeError):
+            self._run_main()
+        rt = captured['runtime']
+        self.assertIs(rt.state, _RuntimeState.STOPPED)
+        self.assertEqual(rt.live_resources(), [])       # timer torn down
+        self.assertFalse(captured['timer'].active())
+        self.assertIsNone(get_current_runtime())         # detached
+
+    def test_main_tears_down_after_module_load_failure(self):
+        captured = {}
+        tc = self
+
+        class Obj(object):
+            def __init__(self):
+                self.passed = True
+                self.global_config = tc._Global()
+
+        def bad_load(config, obj):
+            # A module registers a resource, then loading raises.
+            captured['runtime'] = get_current_runtime()
+            captured['timer'] = reactor.callLater(30.0, lambda: None)
+            raise RuntimeError('module load failed')
+
+        self.test_runner.create_test_object = lambda d, c: Obj()
+        self.test_runner.load_test_modules = bad_load
+
+        with self.assertRaises(RuntimeError):
+            self._run_main()
+        rt = captured['runtime']
+        self.assertIs(rt.state, _RuntimeState.STOPPED)
+        self.assertEqual(rt.live_resources(), [])
+        self.assertIsNone(get_current_runtime())
+
+    def test_main_constructor_failure_after_startup_bind_no_leak(self):
+        # Constructor queues an addStartupBind (state COLLECTING -> lands in
+        # _pending_binds) THEN raises. _main's teardown must close that queued
+        # coroutine and clear the queues -- no leaked pending_binds/when_running
+        # and no "coroutine was never awaited" warning.
+        captured = {}
+        tc = self
+
+        class Obj(object):
+            def __init__(self):
+                self.global_config = tc._Global()
+                captured['runtime'] = get_current_runtime()
+
+                async def never_awaited():
+                    return 'unused'
+                reactor.addStartupBind(never_awaited())
+                reactor.callWhenRunning(lambda: None)   # queues _when_running
+                raise RuntimeError('constructor blew up after bind')
+
+        self.test_runner.create_test_object = lambda d, c: Obj()
+        self.test_runner.load_test_modules = lambda c, o: None
+
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter('always')
+            with self.assertRaises(RuntimeError):
+                self._run_main()
+
+        rt = captured['runtime']
+        self.assertIs(rt.state, _RuntimeState.STOPPED)
+        self.assertEqual(rt.live_resources(), [])        # no queue leak
+        self.assertIsNone(get_current_runtime())          # detached
+        never_awaited = [w for w in caught
+                         if 'never awaited' in str(w.message)]
+        self.assertEqual(never_awaited, [])
+
+    def test_main_detaches_even_when_finish_raises(self):
+        # If the ordered teardown itself raises, _main must still land the
+        # holder detached and the runtime in STOPPED (nested finally), and it
+        # must NOT mask the original setup exception.
+        captured = {}
+        tc = self
+
+        class Obj(object):
+            def __init__(self):
+                self.global_config = tc._Global()
+                captured['runtime'] = get_current_runtime()
+                raise RuntimeError('original setup failure')
+
+        self.test_runner.create_test_object = lambda d, c: Obj()
+        self.test_runner.load_test_modules = lambda c, o: None
+
+        # Force the ordered _shutdown to blow up during teardown.
+        rt_box = {}
+
+        async def exploding_shutdown():
+            raise ValueError('teardown exploded')
+
+        orig_create = self.test_runner.create_test_object
+
+        def create_and_sabotage(d, c):
+            rt = get_current_runtime()
+            rt_box['rt'] = rt
+            rt._shutdown = exploding_shutdown
+            return orig_create(d, c)
+
+        self.test_runner.create_test_object = create_and_sabotage
+
+        # The ORIGINAL setup exception must propagate, not the teardown error.
+        with self.assertRaises(RuntimeError) as ctx:
+            self._run_main()
+        self.assertIn('original setup failure', str(ctx.exception))
+
+        rt = rt_box['rt']
+        self.assertIs(rt.state, _RuntimeState.STOPPED)    # final state cleaned
+        self.assertIsNone(get_current_runtime())           # still detached
+
+    def test_main_propagates_teardown_failure_on_clean_run(self):
+        # Clean setup + run, but the ordered teardown fails. Since nothing was
+        # in flight, the teardown failure is a REAL failure and must propagate
+        # -- a test with broken teardown must not report success. The runtime
+        # is still detached.
+        rt_box = {}
+        tc = self
+
+        class Obj(object):
+            def __init__(self):
+                self.passed = True
+                self.global_config = tc._Global()
+                reactor.callWhenRunning(
+                    lambda: reactor.callLater(0.01, reactor.stop))
+
+        async def exploding_shutdown():
+            raise ValueError('teardown exploded on a clean run')
+
+        def create_and_sabotage(d, c):
+            rt = get_current_runtime()
+            rt_box['rt'] = rt
+            rt._shutdown = exploding_shutdown
+            return Obj()
+
+        self.test_runner.create_test_object = create_and_sabotage
+        self.test_runner.load_test_modules = lambda c, o: None
+
+        # The teardown failure must surface (not be suppressed).
+        with self.assertRaises(ValueError) as ctx:
+            self._run_main()
+        self.assertIn('teardown exploded', str(ctx.exception))
+
+        rt = rt_box['rt']
+        self.assertIs(rt.state, _RuntimeState.STOPPED)
+        self.assertIsNone(get_current_runtime())           # still detached
 
 
 if __name__ == '__main__':

@@ -10,6 +10,7 @@ This program is free software, distributed under the terms of
 the GNU General Public License Version 2.
 """
 
+import asyncio
 import sys
 import logging
 import logging.config
@@ -22,7 +23,7 @@ try:
 except ImportError:
     from yaml import SafeLoader as MyLoader
 
-from asterisk.aio import reactor
+from asterisk.aio.runtime import new_runtime, detach_runtime
 
 LOGGER = logging.getLogger('test_runner')
 logging.basicConfig()
@@ -271,6 +272,72 @@ def read_module_paths(test_config, test_path):
             sys.path.append(os.path.join(test_path, path))
 
 
+async def _main(test_directory, test_config, result):
+    """Native asyncio entrypoint for a single test run (Phase B step B1.1).
+
+    Driven by ``asyncio.run()``, so ``_main`` owns the event loop and the single
+    per-run ``AsyncTestRuntime`` for the *whole* run, construction included. The
+    runtime is installed *first* so ``reactor.*`` registrations issued from test
+    object / module constructors land in it; the test object and its modules are
+    then built (state COLLECTING -> constructor binds enter the awaited startup
+    queue); ``_run_startup`` drives the awaited startup phase (STARTING -> drain
+    -> RUNNING -> flush kickoff); ``run_async`` awaits the completion signal.
+
+    Cleanup has one owner and always runs: ``finally`` invokes the runtime's
+    ordered ``_shutdown`` (via ``_finish``) even if construction, module loading,
+    or startup raised -- so a port/timer/process registered by an early
+    constructor is torn down before the exception propagates -- then detaches the
+    runtime. A fatal error (startup-bind failure or a stored mid-run ``_failure``)
+    re-raises out of ``_main`` *after* that teardown. The loaded test object is
+    handed back through ``result`` so the caller can evaluate it.
+    """
+    runtime = new_runtime(asyncio.get_running_loop())
+    try:
+        test_object = create_test_object(test_directory, test_config)
+        if test_object is None:
+            return
+
+        # Retain the test object for result evaluation even if a later module
+        # load / startup step raises (teardown still runs in finally).
+        result['test_object'] = test_object
+
+        # Load other modules that may be specified
+        load_test_modules(test_config, test_object)
+
+        # Load global modules as well
+        if test_object.global_config.config:
+            load_test_modules(test_object.global_config.config, test_object)
+
+        # Drive the awaited startup phase, then await completion (bridge).
+        await runtime._run_startup()
+        await runtime.run_async()
+    finally:
+        # Single ordered teardown, run on every exit path, then detach. Whether
+        # a teardown failure is suppressed depends on whether setup/run already
+        # failed (an exception is unwinding through this finally):
+        #   - setup/run failed: log the teardown error and preserve the
+        #     original exception (a broken teardown must not mask it).
+        #   - clean run: a teardown failure is itself a real failure and must
+        #     propagate, so a test with broken teardown cannot report success.
+        # Detachment is guaranteed in either case via the inner finally.
+        setup_failed = sys.exc_info()[0] is not None
+        try:
+            await runtime._finish()
+        except Exception:
+            if setup_failed:
+                LOGGER.exception("error during runtime shutdown")
+            else:
+                raise
+        finally:
+            detach_runtime(runtime)
+
+    # Re-raise a fatal error (startup or mid-run) after the teardown above.
+    if runtime._failure is not None:
+        failure = runtime._failure
+        runtime._failure = None
+        raise failure
+
+
 def main(argv=None):
     """Main entry point for the test run
 
@@ -295,19 +362,15 @@ def main(argv=None):
 
     read_module_paths(test_config, test_directory)
 
-    test_object = create_test_object(test_directory, test_config)
+    # Native asyncio entrypoint: asyncio.run() creates, drives, and tears the
+    # loop down (cancels stragglers, shuts down async gens *and* the default
+    # executor used by callInThread, then closes the loop).
+    result = {}
+    asyncio.run(_main(test_directory, test_config, result))
+
+    test_object = result.get('test_object')
     if test_object is None:
         return 1
-
-    # Load other modules that may be specified
-    load_test_modules(test_config, test_object)
-
-    # Load global modules as well
-    if test_object.global_config.config:
-        load_test_modules(test_object.global_config.config, test_object)
-
-    # Kick off the asyncio reactor
-    reactor.run()
 
     LOGGER.info("Test run for %s completed with result %s" %
                 (test_directory, str(test_object.passed)))

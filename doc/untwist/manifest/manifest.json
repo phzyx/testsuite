@@ -13,7 +13,7 @@
     "maybeDeferred": 8,
     "succeed": 1
   },
-  "files_with_reactor_or_defer": 214,
+  "files_with_reactor_or_defer": 213,
   "lifecycle_owners": {
     "doc/untwist/test_ari_parity.py": {
       "counts": {
@@ -65,10 +65,10 @@
     },
     "lib/python/asterisk/aio/test_aio.py": {
       "counts": {
-        "callWhenRunning": 32,
+        "callWhenRunning": 36,
         "run": 35,
         "running": 11,
-        "stop": 48
+        "stop": 52
       },
       "is_run_test": false
     },
@@ -90,12 +90,6 @@
         "callWhenRunning": 1,
         "running": 1,
         "stop": 1
-      },
-      "is_run_test": false
-    },
-    "lib/python/asterisk/test_runner.py": {
-      "counts": {
-        "run": 1
       },
       "is_run_test": false
     },
@@ -1078,16 +1072,17 @@
       },
       "reactor": {
         "_ensure_loop": 1,
+        "addStartupBind": 1,
         "callInThread": 1,
-        "callLater": 35,
-        "callWhenRunning": 32,
+        "callLater": 41,
+        "callWhenRunning": 36,
         "connectTCP": 4,
         "listenTCP": 3,
         "listenUDP": 3,
         "run": 35,
         "running": 11,
         "spawnProcess": 8,
-        "stop": 48
+        "stop": 52
       }
     },
     "lib/python/asterisk/aio/utils.py": {
@@ -1290,12 +1285,6 @@
         "defer.Deferred": 2
       },
       "reactor": {}
-    },
-    "lib/python/asterisk/test_runner.py": {
-      "defer": {},
-      "reactor": {
-        "run": 1
-      }
     },
     "lib/python/asterisk/thread_test_condition.py": {
       "defer": {
@@ -2395,21 +2384,21 @@
       }
     }
   },
-  "reactor_grand_total": 531,
+  "reactor_grand_total": 545,
   "reactor_totals": {
     "_ensure_loop": 6,
     "addAsyncCleanup": 2,
-    "addStartupBind": 2,
+    "addStartupBind": 3,
     "callInThread": 5,
-    "callLater": 145,
-    "callWhenRunning": 42,
+    "callLater": 151,
+    "callWhenRunning": 46,
     "connectTCP": 5,
     "listenTCP": 29,
     "listenUDP": 14,
-    "run": 190,
+    "run": 189,
     "running": 14,
     "spawnProcess": 11,
-    "stop": 66
+    "stop": 70
   },
   "root": "/usr/src/phzyx/testsuite",
   "scanned": 394,

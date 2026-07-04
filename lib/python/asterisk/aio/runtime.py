@@ -574,6 +574,111 @@ class AsyncTestRuntime(object):
             self._failure = None
             raise failure
 
+    async def _run_startup(self):
+        """Drive the awaited startup phase for the native ``_main`` entrypoint.
+
+        Native-entrypoint startup has exactly one driver -- ``_main`` -- and this
+        method is the runtime-side primitive it calls (Phase B step B1.1; B1.2
+        promotes it into the module-constructing ``start_all()``). It creates the
+        per-run completion signal on the running loop, advances COLLECTING ->
+        STARTING (``running`` becomes true here, so a stop requested during
+        awaited startup is meaningful), drains ``_pending_binds`` to quiescence
+        surfacing a fatal bind, then RUNNING and flushes the ``callWhenRunning``
+        kickoff queue.
+
+        Deliberately narrow responsibility (design doc Section, points 2/2b):
+        it does NOT await completion (that is ``run_async``) and does NOT tear
+        down (that is the ordered ``_shutdown`` run from ``_main``'s ``finally``).
+        A fatal bind stores ``_failure`` and re-raises so ``_main``'s ``finally``
+        runs the single ordered teardown and ``_main`` re-raises afterward.
+        """
+        # State-based re-entrancy guard (as blocking run()): reject while a run
+        # is active or an unresolved completion future already exists.
+        if (self._state in (_RuntimeState.STARTING, _RuntimeState.RUNNING,
+                            _RuntimeState.STOPPING)
+                or self._completion is not None):
+            raise ReactorAlreadyRunning()
+        loop = asyncio.get_running_loop()
+        self._loop = loop
+        self._failure = None
+        self._stop_requested = False
+        self._completion = loop.create_future()
+
+        # STARTING: drain the bind queue to quiescence, surfacing failures.
+        self._state = _RuntimeState.STARTING
+        while self._pending_binds:
+            batch = self._pending_binds
+            self._pending_binds = []
+            for index, (coro, apply, on_error, label) in enumerate(batch):
+                try:
+                    result = await coro
+                except Exception as exc:
+                    if on_error is not None:
+                        on_error(exc)
+                        continue
+                    # Fatal: hand the still-unawaited remainder of this batch
+                    # back to _pending_binds so the ordered _shutdown closes
+                    # them -- otherwise those later coroutines leak "coroutine
+                    # was never awaited". Then record and re-raise; _main's
+                    # finally tears down.
+                    self._pending_binds = batch[index + 1:] + self._pending_binds
+                    self._failure = exc
+                    raise
+                apply(result)
+
+        # RUNNING: flush callWhenRunning kickoffs (after all binds, never before).
+        self._state = _RuntimeState.RUNNING
+        queued = self._when_running
+        self._when_running = []
+        for fn, args, kw in queued:
+            loop.call_soon(fn, *args, **kw)
+
+    async def run_async(self):
+        """Transitional bridge: adopt the running loop and await completion.
+
+        The linchpin of incrementality (design doc Section, point 2). By the time
+        ``_main`` awaits this, ``_run_startup`` has already advanced the runtime
+        to RUNNING with a live completion future, so this bridge does the one
+        thing it owns: **await the runtime's completion signal**. ``stop()``
+        resolves that future (via ``call_soon_threadsafe``), so the relay is
+        implicit -- when stop is requested this returns.
+
+        It deliberately does NOT mark ``running``, does NOT drive ``start_all`` /
+        startup, and does NOT perform shutdown: startup has one driver (``_main``)
+        and shutdown has one owner (``_main``'s ``finally`` -> ordered
+        ``_shutdown``). Every shim registration it services already lands in this
+        runtime's registries, and any fatal error sits on this runtime's
+        ``_failure``, which ``_main`` re-raises. Deleted in B4 with reactor.py.
+        """
+        if self._completion is None:
+            # Misuse: run_async() awaits a completion _run_startup() must have
+            # created. Never reached on the _main path.
+            raise ReactorNotRunning()
+        await self._completion
+
+    async def _finish(self):
+        """Ordered teardown for the native ``_main`` entrypoint's ``finally``.
+
+        The single shutdown owner on the native path: STOPPING -> run the ordered
+        ``_shutdown`` over the one registry set -> STOPPED, then clear the
+        completion future. Safe to call from ``_main``'s ``finally`` regardless of
+        where the run failed -- construction (state still COLLECTING, but
+        constructor-registered timers/ports/processes are torn down), awaited
+        startup (a partially-bound run), or mid-run -- so nothing a constructor or
+        a failing module registered escapes teardown.
+
+        Final-state cleanup is protected by its own ``finally`` so the runtime
+        still lands in STOPPED with a cleared completion future even if the
+        ordered ``_shutdown`` itself raises -- the runtime must never be left
+        pinned in STOPPING.
+        """
+        self._state = _RuntimeState.STOPPING
+        try:
+            await self._shutdown()
+        finally:
+            self._state = _RuntimeState.STOPPED
+            self._completion = None
+
     def stop(self):
         """Stop the runtime, unblocking run().
 
@@ -595,7 +700,23 @@ class AsyncTestRuntime(object):
 
     async def _shutdown(self):
         """Ordered teardown of all runtime-owned resources."""
-        # Timers first, so nothing new is scheduled during teardown.
+        # Un-driven startup queues first. If a run is torn down before (or
+        # during) the awaited startup drain -- e.g. a constructor registered an
+        # addStartupBind/listenTCP/connectTCP bind and then a later constructor
+        # raised -- the queued bind coroutines were never awaited. Close them so
+        # they cannot emit "coroutine was never awaited", and drop any queued
+        # callWhenRunning kickoffs that will now never fire.
+        for coro, apply, on_error, label in self._pending_binds:
+            close = getattr(coro, 'close', None)
+            if close is not None:
+                try:
+                    close()
+                except Exception:
+                    pass
+        self._pending_binds = []
+        self._when_running = []
+
+        # Timers, so nothing new is scheduled during teardown.
         for dc in list(self._delayed_calls):
             if dc.active():
                 dc.cancel()
