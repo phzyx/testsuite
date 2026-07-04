@@ -1,30 +1,20 @@
 # reactor/defer manifest  (root=.)
-scanned=393 parsed=393 skipped_non_python=0 files_with_usage=214
+scanned=394 parsed=394 skipped_non_python=0 files_with_usage=214
 
-## reactor.* totals  (grand=503)
-  reactor._connectors          1
-  reactor._delayed_calls       1
-  reactor._ensure_loop         5
-  reactor._failure             1
-  reactor._loop                1
-  reactor._pending_binds       1
-  reactor._ports               1
-  reactor._process_transports  1
-  reactor._stop_future         1
-  reactor._tasks               1
-  reactor._when_running        1
+## reactor.* totals  (grand=531)
+  reactor._ensure_loop         6
   reactor.addAsyncCleanup      2
   reactor.addStartupBind       2
   reactor.callInThread         5
-  reactor.callLater            137
-  reactor.callWhenRunning      35
+  reactor.callLater            145
+  reactor.callWhenRunning      42
   reactor.connectTCP           5
   reactor.listenTCP            29
   reactor.listenUDP            14
-  reactor.run                  181
-  reactor.running              9
-  reactor.spawnProcess         10
-  reactor.stop                 59
+  reactor.run                  190
+  reactor.running              14
+  reactor.spawnProcess         11
+  reactor.stop                 66
 
 ## defer totals  (grand=106)
   AlreadyCalledError         2
@@ -46,7 +36,7 @@ scanned=393 parsed=393 skipped_non_python=0 files_with_usage=214
   [module  ] doc/untwist/test_http_parity.py   callWhenRunning=1 run=1 stop=2
   [module  ] doc/untwist/test_ssh_parity.py   callWhenRunning=1 run=1 stop=2
   [module  ] doc/untwist/test_ws_parity.py   callWhenRunning=1 run=1 stop=2
-  [module  ] lib/python/asterisk/aio/test_aio.py   callWhenRunning=25 run=26 running=6 stop=41
+  [module  ] lib/python/asterisk/aio/test_aio.py   callWhenRunning=32 run=35 running=11 stop=48
   [module  ] lib/python/asterisk/asterisk.py   callWhenRunning=1
   [module  ] lib/python/asterisk/pcap.py   run=1 stop=1
   [module  ] lib/python/asterisk/test_case.py   callWhenRunning=1 running=1 stop=1

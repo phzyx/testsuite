@@ -31,6 +31,11 @@ from asterisk.aio.protocols import (
     DatagramProtocol, ProcessProtocol, ProcessDone, ProcessTerminated,
     Protocol, Factory, ClientFactory, _ProcessTransportAdapter,
 )
+from asterisk.aio.runtime import (
+    AsyncTestRuntime, ReactorAlreadyRunning, _RuntimeState,
+    new_runtime, install_runtime, detach_runtime, get_current_runtime,
+    current_runtime,
+)
 
 
 class _LoopTestCase(unittest.TestCase):
@@ -39,19 +44,15 @@ class _LoopTestCase(unittest.TestCase):
     def setUp(self):
         self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.loop)
-        reactor._loop = self.loop
-        reactor.running = False
-        reactor._when_running = []
-        reactor._pending_binds = []
-        reactor._stop_future = None
-        reactor._failure = None
-        reactor._delayed_calls = set()
-        reactor._tasks = set()
-        reactor._ports = []
-        reactor._connectors = []
-        reactor._process_transports = []
+        # Install a *fresh* runtime bound to this loop as the current runtime, so
+        # each test gets an isolated per-run owner rather than a reset shared
+        # singleton. The reactor facade resolves this dynamically on every call.
+        self.runtime = new_runtime(self.loop)
 
     def tearDown(self):
+        # Detach so the next test starts from an empty holder and no superseded
+        # runtime lingers as "current".
+        detach_runtime(self.runtime)
         if not self.loop.is_closed():
             self.loop.close()
         asyncio.set_event_loop(None)
@@ -1234,6 +1235,226 @@ class StreamProtocolBaseTests(unittest.TestCase):
         factory.clientConnectionLost(None, 'reason')
         factory.doStart()
         factory.doStop()
+
+
+# --------------------------------------------------------------------------- #
+# B1.0: explicit lifecycle state machine
+# --------------------------------------------------------------------------- #
+class RuntimeStateMachineTests(_LoopTestCase):
+    """The runtime advances through explicit _RuntimeState transitions, and the
+    public ``running`` boolean is derived from that state rather than stored."""
+
+    def test_state_progression_collecting_running_stopped(self):
+        seen = {}
+        self.assertIs(self.runtime.state, _RuntimeState.COLLECTING)
+
+        def cb():
+            seen['at_run'] = self.runtime.state
+            reactor.stop()
+
+        reactor.callWhenRunning(cb)
+        reactor.run()
+        self.assertIs(seen['at_run'], _RuntimeState.RUNNING)
+        self.assertIs(self.runtime.state, _RuntimeState.STOPPED)
+
+    def test_running_property_derives_from_state(self):
+        obs = {}
+        self.assertFalse(reactor.running)          # COLLECTING
+
+        def cb():
+            obs['before_stop'] = reactor.running   # RUNNING, not stopped -> True
+            reactor.stop()
+            obs['after_stop'] = reactor.running    # stop requested -> False
+
+        reactor.callWhenRunning(cb)
+        reactor.run()
+        self.assertTrue(obs['before_stop'])
+        self.assertFalse(obs['after_stop'])
+        self.assertFalse(reactor.running)          # STOPPED
+
+    def test_fatal_prerun_bind_ends_in_stopped(self):
+        proto = ProcessProtocol()
+        bad = '/nonexistent/binary/definitely-not-here'
+        reactor.spawnProcess(proto, bad, [bad])
+        with self.assertRaises(FileNotFoundError):
+            reactor.run()
+        self.assertIs(self.runtime.state, _RuntimeState.STOPPED)
+        self.assertFalse(reactor.running)
+
+
+# --------------------------------------------------------------------------- #
+# B1.0: single-owner facade over the installable current runtime
+# --------------------------------------------------------------------------- #
+class CurrentRuntimeFacadeTests(_LoopTestCase):
+    """The reactor facade holds no fixed reference: it resolves whatever runtime
+    is currently installed, and install/detach change what it forwards to."""
+
+    def test_facade_forwards_to_installed_runtime(self):
+        self.assertIs(get_current_runtime(), self.runtime)
+        # A delegated bound method resolves against the current runtime.
+        self.assertIs(reactor.callLater.__self__, self.runtime)
+        self.assertIs(reactor._ensure_loop(), self.loop)
+
+    def test_facade_follows_install_and_detach(self):
+        self.assertIs(reactor.callLater.__self__, self.runtime)
+
+        other = AsyncTestRuntime()
+        install_runtime(other)
+        self.assertIs(current_runtime(), other)
+        self.assertIs(reactor.callLater.__self__, other)
+
+        # Detaching empties the holder; the next facade use lazily installs a
+        # brand-new owner (not the detached one, not the fixture's).
+        detach_runtime()
+        self.assertIsNone(get_current_runtime())
+        fresh = reactor.callLater.__self__
+        self.assertIsNot(fresh, other)
+        self.assertIsNot(fresh, self.runtime)
+
+        # Restore the fixture's runtime so tearDown's detach matches.
+        install_runtime(self.runtime)
+
+
+# --------------------------------------------------------------------------- #
+# B1.0: re-entrant run() is rejected even after stop() flips running False
+# --------------------------------------------------------------------------- #
+class ReentrantRunTests(_LoopTestCase):
+
+    def test_run_rejected_during_run_after_stop(self):
+        outcome = {}
+
+        def cb():
+            reactor.stop()
+            # stop() has flipped ``running`` False (stop requested) while the
+            # outer run() is still in RUNNING and about to unwind. A guard on
+            # ``running`` would let this re-enter; a state guard must reject it.
+            self.assertFalse(reactor.running)
+            try:
+                reactor.run()
+                outcome['result'] = 'ran'
+            except ReactorAlreadyRunning:
+                outcome['result'] = 'rejected'
+
+        reactor.callWhenRunning(cb)
+        reactor.run()
+        self.assertEqual(outcome['result'], 'rejected')
+
+
+# --------------------------------------------------------------------------- #
+# B1.0: reset() is guarded (test-facing), never a silent registry discard
+# --------------------------------------------------------------------------- #
+class ResetSafetyTests(_LoopTestCase):
+
+    def test_reset_after_clean_run_is_allowed(self):
+        reactor.callWhenRunning(lambda: reactor.callLater(0.01, reactor.stop))
+        reactor.run()
+        # Clean completion: registries drained, STOPPED -> reset permitted.
+        self.runtime.reset(self.loop)
+        self.assertIs(self.runtime.state, _RuntimeState.COLLECTING)
+
+    def test_reset_rejected_with_live_resources(self):
+        dc = reactor.callLater(30.0, lambda: None)   # a live timer
+        with self.assertRaises(RuntimeError):
+            self.runtime.reset(self.loop)
+        dc.cancel()
+
+    def test_reset_rejected_while_active(self):
+        outcome = {}
+
+        def cb():
+            try:
+                self.runtime.reset()
+            except RuntimeError:
+                outcome['reset'] = 'rejected'
+            reactor.stop()
+
+        reactor.callWhenRunning(cb)
+        reactor.run()
+        self.assertEqual(outcome.get('reset'), 'rejected')
+
+
+# --------------------------------------------------------------------------- #
+# B1.0: install_runtime() refuses to silently orphan the incumbent runtime
+# --------------------------------------------------------------------------- #
+class InstallGuardTests(_LoopTestCase):
+    """Installing a replacement is rejected while the incumbent is active or
+    still owns resources; only an empty holder, the same object, or an idle
+    resource-free incumbent may be superseded."""
+
+    def test_install_rejected_when_current_active(self):
+        other = AsyncTestRuntime()
+        outcome = {}
+
+        def cb():
+            # In-run: self.runtime is RUNNING (active). Superseding it would
+            # orphan the live run, so install must reject.
+            try:
+                install_runtime(other)
+            except ReactorAlreadyRunning:
+                outcome['install'] = 'rejected'
+            # Holder untouched: the facade still resolves to self.runtime.
+            self.assertIs(get_current_runtime(), self.runtime)
+            reactor.stop()
+
+        reactor.callWhenRunning(cb)
+        reactor.run()
+        self.assertEqual(outcome.get('install'), 'rejected')
+
+    def test_install_rejected_when_current_owns_resources(self):
+        other = AsyncTestRuntime()
+        dc = reactor.callLater(30.0, lambda: None)   # idle runtime, live timer
+        with self.assertRaises(RuntimeError):
+            install_runtime(other)
+        # Holder unchanged; the incumbent still owns its timer.
+        self.assertIs(get_current_runtime(), self.runtime)
+        dc.cancel()
+
+    def test_install_same_runtime_is_allowed(self):
+        # Reinstalling the same object is a no-op, never a rejection.
+        self.assertIs(install_runtime(self.runtime), self.runtime)
+
+    def test_install_allowed_when_current_idle_and_empty(self):
+        # The fixture runtime is COLLECTING with no resources -> replaceable.
+        other = AsyncTestRuntime()
+        self.assertIs(install_runtime(other), other)
+        self.assertIs(get_current_runtime(), other)
+        # Restore the fixture's runtime so tearDown's detach matches.
+        install_runtime(self.runtime)
+
+
+# --------------------------------------------------------------------------- #
+# B1.0: sequential runs with fresh installed runtimes own distinct loop/runtime
+# --------------------------------------------------------------------------- #
+class SequentialRunOwnershipTests(unittest.TestCase):
+    """Two sequential runs, each installing a freshly created runtime, own
+    distinct runtimes and loops. This is the per-run isolation the native
+    entrypoint will rely on: the blocking run() leaves its STOPPED runtime
+    installed, so the caller detaches it before installing the next owner."""
+
+    def tearDown(self):
+        detach_runtime()
+        asyncio.set_event_loop(None)
+
+    def _one_run(self):
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        rt = new_runtime(loop)
+        reactor.callWhenRunning(lambda: reactor.callLater(0.01, reactor.stop))
+        reactor.run()
+        self.assertIs(rt.state, _RuntimeState.STOPPED)
+        self.assertEqual(rt.live_resources(), [])
+        # Blocking run() does not detach; the caller does before the next run.
+        detach_runtime(rt)
+        loop.close()
+        return rt, loop
+
+    def test_two_sequential_runs_have_distinct_ownership(self):
+        rt1, loop1 = self._one_run()
+        rt2, loop2 = self._one_run()
+        self.assertIsNot(rt1, rt2)
+        self.assertIsNot(loop1, loop2)
+        self.assertIs(rt1._loop, loop1)
+        self.assertIs(rt2._loop, loop2)
 
 
 if __name__ == '__main__':

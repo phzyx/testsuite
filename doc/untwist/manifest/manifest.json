@@ -65,10 +65,10 @@
     },
     "lib/python/asterisk/aio/test_aio.py": {
       "counts": {
-        "callWhenRunning": 25,
-        "run": 26,
-        "running": 6,
-        "stop": 41
+        "callWhenRunning": 32,
+        "run": 35,
+        "running": 11,
+        "stop": 48
       },
       "is_run_test": false
     },
@@ -990,7 +990,7 @@
       "is_run_test": true
     }
   },
-  "parsed": 393,
+  "parsed": 394,
   "per_file": {
     "doc/untwist/test_ari_parity.py": {
       "defer": {},
@@ -1059,7 +1059,7 @@
       },
       "reactor": {}
     },
-    "lib/python/asterisk/aio/reactor.py": {
+    "lib/python/asterisk/aio/runtime.py": {
       "defer": {
         "Deferred": 1
       },
@@ -1077,26 +1077,17 @@
         "succeed": 1
       },
       "reactor": {
-        "_connectors": 1,
-        "_delayed_calls": 1,
-        "_failure": 1,
-        "_loop": 1,
-        "_pending_binds": 1,
-        "_ports": 1,
-        "_process_transports": 1,
-        "_stop_future": 1,
-        "_tasks": 1,
-        "_when_running": 1,
+        "_ensure_loop": 1,
         "callInThread": 1,
-        "callLater": 27,
-        "callWhenRunning": 25,
+        "callLater": 35,
+        "callWhenRunning": 32,
         "connectTCP": 4,
         "listenTCP": 3,
         "listenUDP": 3,
-        "run": 26,
-        "running": 6,
-        "spawnProcess": 7,
-        "stop": 41
+        "run": 35,
+        "running": 11,
+        "spawnProcess": 8,
+        "stop": 48
       }
     },
     "lib/python/asterisk/aio/utils.py": {
@@ -2404,33 +2395,23 @@
       }
     }
   },
-  "reactor_grand_total": 503,
+  "reactor_grand_total": 531,
   "reactor_totals": {
-    "_connectors": 1,
-    "_delayed_calls": 1,
-    "_ensure_loop": 5,
-    "_failure": 1,
-    "_loop": 1,
-    "_pending_binds": 1,
-    "_ports": 1,
-    "_process_transports": 1,
-    "_stop_future": 1,
-    "_tasks": 1,
-    "_when_running": 1,
+    "_ensure_loop": 6,
     "addAsyncCleanup": 2,
     "addStartupBind": 2,
     "callInThread": 5,
-    "callLater": 137,
-    "callWhenRunning": 35,
+    "callLater": 145,
+    "callWhenRunning": 42,
     "connectTCP": 5,
     "listenTCP": 29,
     "listenUDP": 14,
-    "run": 181,
-    "running": 9,
-    "spawnProcess": 10,
-    "stop": 59
+    "run": 190,
+    "running": 14,
+    "spawnProcess": 11,
+    "stop": 66
   },
   "root": "/usr/src/phzyx/testsuite",
-  "scanned": 393,
+  "scanned": 394,
   "skipped_non_python": 0
 }
