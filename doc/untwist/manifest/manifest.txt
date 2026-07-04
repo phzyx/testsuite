@@ -1,0 +1,200 @@
+# reactor/defer manifest  (root=.)
+scanned=393 parsed=393 skipped_non_python=0 files_with_usage=214
+
+## reactor.* totals  (grand=503)
+  reactor._connectors          1
+  reactor._delayed_calls       1
+  reactor._ensure_loop         5
+  reactor._failure             1
+  reactor._loop                1
+  reactor._pending_binds       1
+  reactor._ports               1
+  reactor._process_transports  1
+  reactor._stop_future         1
+  reactor._tasks               1
+  reactor._when_running        1
+  reactor.addAsyncCleanup      2
+  reactor.addStartupBind       2
+  reactor.callInThread         5
+  reactor.callLater            137
+  reactor.callWhenRunning      35
+  reactor.connectTCP           5
+  reactor.listenTCP            29
+  reactor.listenUDP            14
+  reactor.run                  181
+  reactor.running              9
+  reactor.spawnProcess         10
+  reactor.stop                 59
+
+## defer totals  (grand=106)
+  AlreadyCalledError         2
+  Deferred                   27
+  DeferredList               4
+  TimeoutError               1
+  defer.AlreadyCalledError   5
+  defer.Deferred             36
+  defer.DeferredList         20
+  fail                       1
+  gatherResults              1
+  maybeDeferred              8
+  succeed                    1
+
+## lifecycle owners (158)  [run/stop/running/callWhenRunning]
+  [module  ] doc/untwist/test_ari_parity.py   callWhenRunning=1 run=1 stop=2
+  [module  ] doc/untwist/test_core_runtime.py   callWhenRunning=1 run=1 stop=2
+  [module  ] doc/untwist/test_dns_parity.py   callWhenRunning=1 run=1 stop=2
+  [module  ] doc/untwist/test_http_parity.py   callWhenRunning=1 run=1 stop=2
+  [module  ] doc/untwist/test_ssh_parity.py   callWhenRunning=1 run=1 stop=2
+  [module  ] doc/untwist/test_ws_parity.py   callWhenRunning=1 run=1 stop=2
+  [module  ] lib/python/asterisk/aio/test_aio.py   callWhenRunning=25 run=26 running=6 stop=41
+  [module  ] lib/python/asterisk/asterisk.py   callWhenRunning=1
+  [module  ] lib/python/asterisk/pcap.py   run=1 stop=1
+  [module  ] lib/python/asterisk/test_case.py   callWhenRunning=1 running=1 stop=1
+  [module  ] lib/python/asterisk/test_runner.py   run=1
+  [run-test] tests/agi/exit_status/run-test   run=1
+  [run-test] tests/agi/nominal/run-test   run=1
+  [run-test] tests/apps/bridge/bridge_transfer_callee/run-test   run=1
+  [run-test] tests/apps/chanspy/chanspy_w_mixmonitor/run-test   run=1
+  [run-test] tests/apps/confbridge/confbridge_nominal/run-test   run=1
+  [run-test] tests/apps/confbridge/confbridge_recording/run-test   run=1
+  [run-test] tests/apps/directed_pickup/pickup_chan/run-test   run=1
+  [run-test] tests/apps/directory/directory_attendant_exit/run-test   run=1
+  [run-test] tests/apps/directory/directory_context_operator_exit/run-test   run=1
+  [run-test] tests/apps/directory/directory_operator_exit/run-test   run=1
+  [run-test] tests/apps/mixmonitor/run-test   run=1
+  [run-test] tests/apps/mixmonitor_audiohook_inherit/run-test   run=1
+  [run-test] tests/apps/mixmonitor_duplex/run-test   run=1
+  [run-test] tests/apps/mixmonitor_rxtx/run-test   run=1
+  [run-test] tests/apps/page/page_baseline/run-test   run=1
+  [run-test] tests/apps/queues/position_priority_maxlen/run-test   run=1
+  [run-test] tests/apps/queues/queue_baseline/run-test   run=1
+  [run-test] tests/apps/queues/queue_transfer_callee/run-test   run=1
+  [run-test] tests/apps/queues/reason_pause_ami/run-test   run=1
+  [run-test] tests/apps/queues/reload_queue_members/run-test   run=1
+  [run-test] tests/apps/queues/set_penalty/run-test   run=1
+  [run-test] tests/apps/voicemail/authenticate_extensions/run-test   run=1
+  [run-test] tests/apps/voicemail/authenticate_invalid_mailbox/run-test   run=1
+  [run-test] tests/apps/voicemail/authenticate_invalid_password/run-test   run=1
+  [run-test] tests/apps/voicemail/authenticate_nominal/run-test   run=1
+  [run-test] tests/apps/voicemail/check_voicemail_callback/run-test   run=1
+  [run-test] tests/apps/voicemail/check_voicemail_delete/run-test   run=1
+  [run-test] tests/apps/voicemail/check_voicemail_dialout/run-test   run=1
+  [run-test] tests/apps/voicemail/check_voicemail_envelope/run-test   run=1
+  [run-test] tests/apps/voicemail/check_voicemail_forward/run-test   run=1
+  [run-test] tests/apps/voicemail/check_voicemail_forward_hangup/run-test   run=1
+  [run-test] tests/apps/voicemail/check_voicemail_forward_with_prepend/run-test   run=1
+  [run-test] tests/apps/voicemail/check_voicemail_new_user/run-test   run=1
+  [run-test] tests/apps/voicemail/check_voicemail_new_user_hangup/run-test   run=1
+  [run-test] tests/apps/voicemail/check_voicemail_nominal/run-test   run=1
+  [run-test] tests/apps/voicemail/check_voicemail_options_change_password/run-test   run=1
+  [run-test] tests/apps/voicemail/check_voicemail_options_change_password_spooldir/run-test   run=1
+  [run-test] tests/apps/voicemail/check_voicemail_options_record_busy/run-test   run=1
+  [run-test] tests/apps/voicemail/check_voicemail_options_record_name/run-test   run=1
+  [run-test] tests/apps/voicemail/check_voicemail_options_record_temp/run-test   run=1
+  [run-test] tests/apps/voicemail/check_voicemail_options_record_unavail/run-test   run=1
+  [run-test] tests/apps/voicemail/check_voicemail_reply/run-test   run=1
+  [run-test] tests/apps/voicemail/check_voicemail_while_leaving_msg/run-test   run=1
+  [run-test] tests/apps/voicemail/func_vmcount/run-test   run=1
+  [run-test] tests/apps/voicemail/leave_voicemail_contexts/run-test   run=1
+  [run-test] tests/apps/voicemail/leave_voicemail_external_notification/run-test   run=1
+  [run-test] tests/apps/voicemail/leave_voicemail_forwarding/run-test   run=1
+  [run-test] tests/apps/voicemail/leave_voicemail_forwarding_auto_urgent/run-test   run=1
+  [run-test] tests/apps/voicemail/leave_voicemail_nominal/run-test   run=1
+  [run-test] tests/apps/voicemail/leave_voicemail_priority/run-test   run=1
+  [run-test] tests/apps/voicemail/play_message/run-test   run=1
+  [run-test] tests/apps/voicemail/polling/poll_multiple_mailboxes/run-test   run=1
+  [run-test] tests/apps/voicemail/polling/poll_no_subs/run-test   run=1
+  [run-test] tests/apps/voicemail/polling/poll_same_mailbox/run-test   run=1
+  [run-test] tests/apps/voicemail/polling/poll_single_mailbox/run-test   run=1
+  [run-test] tests/apps/voicemail/polling/poll_sub_unsub/run-test   run=1
+  [run-test] tests/blind-transfer-parkingtimeout/run-test   callWhenRunning=1 run=1 running=1 stop=1
+  [run-test] tests/callparking/run-test   run=1
+  [run-test] tests/callparking_retrieval/run-test   run=1
+  [run-test] tests/cause_answered_elsewhere/run-test   run=1
+  [run-test] tests/channels/iax2/acl_call/run-test   run=1
+  [run-test] tests/channels/iax2/hangupcause/run-test   run=1
+  [run-test] tests/channels/pjsip/acl_call/run-test   run=1
+  [run-test] tests/channels/pjsip/call_pickup/run-test   run=1
+  [run-test] tests/channels/pjsip/hold/run-test   run=1
+  [run-test] tests/channels/pjsip/hold_ice/run-test   run=1
+  [run-test] tests/channels/pjsip/hold_inactive/run-test   run=1
+  [run-test] tests/channels/pjsip/rtp_ptime/non-transcode/run-test   run=1
+  [run-test] tests/channels/pjsip/rtp_ptime/transcode/run-test   run=1
+  [run-test] tests/channels/pjsip/sdp_offer_answer/attribute_passthrough/speex_h263_h264/run-test   run=1
+  [run-test] tests/channels/pjsip/subscriptions/mwi/missing_aor/run-test   run=1
+  [run-test] tests/channels/pjsip/subscriptions/mwi/no_accept_header/run-test   run=1
+  [run-test] tests/channels/pjsip/subscriptions/presence/digium_presence/run-test   run=1
+  [run-test] tests/channels/pjsip/subscriptions/presence/no_accept_header/run-test   run=1
+  [run-test] tests/connected_line/subroutine/run-test   run=1
+  [run-test] tests/fastagi/channel-status/run-test   run=1
+  [run-test] tests/fastagi/connect/run-test   run=1
+  [run-test] tests/fastagi/control-stream-file/run-test   run=1
+  [run-test] tests/fastagi/database/run-test   run=1
+  [run-test] tests/fastagi/execute/run-test   run=1
+  [run-test] tests/fastagi/get-data/run-test   run=1
+  [run-test] tests/fastagi/hangup/run-test   run=1
+  [run-test] tests/fastagi/record-file/run-test   run=1
+  [run-test] tests/fastagi/say-alpha/run-test   run=1
+  [run-test] tests/fastagi/say-date/run-test   run=1
+  [run-test] tests/fastagi/say-datetime/run-test   run=1
+  [run-test] tests/fastagi/say-digits/run-test   run=1
+  [run-test] tests/fastagi/say-number/run-test   run=1
+  [run-test] tests/fastagi/say-phonetic/run-test   run=1
+  [run-test] tests/fastagi/say-time/run-test   run=1
+  [run-test] tests/fastagi/stream-file/run-test   run=1
+  [run-test] tests/fastagi/wait-for-digit/run-test   callWhenRunning=1 run=1 running=1 stop=1
+  [run-test] tests/fax/pjsip/gateway_g711_t38/run-test   run=1
+  [run-test] tests/fax/pjsip/gateway_native_t38/run-test   run=1
+  [run-test] tests/fax/pjsip/gateway_t38_g711_rx/run-test   run=1
+  [run-test] tests/fax/pjsip/gateway_t38_g711_tx/run-test   run=1
+  [run-test] tests/fax/pjsip/t38/run-test   run=1
+  [run-test] tests/fax/pjsip/t38_enabled_two_reinvite_on_a_leg/run-test   run=1
+  [run-test] tests/fax/pjsip/t38_enabled_two_reinvite_on_b_leg/run-test   run=1
+  [run-test] tests/fax/pjsip/t38_fast_reject/run-test   run=1
+  [run-test] tests/fax/pjsip/t38_with_auth/run-test   run=1
+  [run-test] tests/feature_attended_transfer/run-test   run=1
+  [run-test] tests/feature_blonde_transfer/run-test   run=1
+  [run-test] tests/feature_call_pickup/run-test   run=1
+  [run-test] tests/funcs/func_jitterbuffer/run-test   run=1
+  [run-test] tests/funcs/func_presencestate/run-test   run=1 stop=1
+  [run-test] tests/funcs/func_srv/run-test   run=1
+  [run-test] tests/hangup/handlers/run-test   run=1
+  [run-test] tests/hangup/handlers_endbeforehexten/run-test   run=1
+  [run-test] tests/http_server/acl/run-test   run=1
+  [run-test] tests/http_server/servername/run-test   run=1
+  [run-test] tests/manager/acl-login/run-test   run=1
+  [run-test] tests/manager/danger/dangerous/run-test   run=1
+  [run-test] tests/manager/danger/safe/run-test   run=1
+  [run-test] tests/manager/login/run-test   run=1
+  [run-test] tests/manager/mixmonitor/mixmonitor_id/run-test   run=1 stop=1
+  [run-test] tests/masquerade/run-test   run=1
+  [run-test] tests/pbx/call-files/run-test   run=1
+  [run-test] tests/pbx/callerid_match/run-test   run=1
+  [run-test] tests/pbx/dialplan_reload/run-test   run=1
+  [run-test] tests/pbx/dialplan_save/run-test   run=1
+  [run-test] tests/pbx/merge_contexts/run-test   run=1
+  [run-test] tests/pbx/pbx_lua_background/run-test   run=1
+  [run-test] tests/pbx/pbx_lua_goto/run-test   run=1
+  [run-test] tests/phoneprov/res_phoneprov_pjsip/run-test   run=1
+  [run-test] tests/predial/run-test   run=1
+  [run-test] tests/redirecting/subroutine/run-test   run=1
+  [run-test] tests/regressions/M18882/run-test   run=1
+  [run-test] tests/rest_api/CORS/run-test   run=1
+  [run-test] tests/rest_api/applications/channel-subscriptions/originate_to_other_stasis_app/local_channels/run-test   run=1
+  [run-test] tests/rest_api/applications/channel-subscriptions/originate_to_other_stasis_app/non_local_channels/run-test   run=1
+  [module  ] tests/rest_api/applications/stasisstatus/test_case.py   run=1
+  [run-test] tests/rest_api/authentication/run-test   run=1
+  [run-test] tests/rest_api/authentication_user_acl/run-test   run=1
+  [run-test] tests/rest_api/channels/redirect/nominal/run-test   run=1
+  [run-test] tests/rest_api/chunked-transfer/run-test   run=1
+  [run-test] tests/rest_api/content-type/run-test   run=1
+  [run-test] tests/rest_api/request-bodies/run-test   run=1
+  [run-test] tests/rest_api/websocket/outbound_websocket/local_ari_user_read_only/run-test   run=1
+  [run-test] tests/rest_api/websocket/outbound_websocket/per_call/run-test   run=1
+  [run-test] tests/rest_api/websocket/outbound_websocket/persistent/run-test   run=1
+  [run-test] tests/rest_api/websocket/rest_over_websocket/bad_requests/run-test   run=1
+  [run-test] tests/rest_api/websocket/rest_over_websocket/parallel_requests/run-test   run=1
+  [run-test] tests/rest_api/websocket/rest_over_websocket/single_requests/run-test   run=1
+  [run-test] tests/skeleton_test/run-test   run=1
+  [run-test] tests/udptl/run-test   run=1
+  [run-test] tests/udptl_v6/run-test   run=1

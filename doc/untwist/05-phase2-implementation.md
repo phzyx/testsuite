@@ -13,6 +13,13 @@ is complete in the sense that matters for starting Phase B: the suite runs on th
 asyncio event loop through the `asterisk.aio` shim, there is **no Twisted import or
 dependency anywhere** (AST gate + `pip check` green, venv stripped in Step 6).
 
+> **B0 DECISION (recorded 2026-07-04, see `B0-decisions.md`): D1 — remove the
+> `defer` shim this phase.** Evidence: the AST manifest shows the caller surface
+> outside the shim is 61 `Deferred`/`DeferredList`/`maybeDeferred`/`gatherResults`
+> references across 22 files, concentrated in the repeated `*_test_condition.py`
+> pattern plus `sipp.py`/`apptest.py`/`asterisk.py`/`test_case.py` — bounded and
+> migratable in B5. §9/§13 read this as D1 (DoD requires zero `Deferred` constructs).
+
 Phase B removes the *scaffolding* — definitely the `reactor` shim, and (per a B0
 scope decision) the `defer` shim — so the codebase reads as idiomatic asyncio
 (design §1.1 decision 6). The **`reactor` shim removal is unconditional.** The
@@ -1091,6 +1098,16 @@ so the gate can assert the count does not grow.** (Moot under the preferred D1 p
 where the count is zero.)
 
 ## 10. Step B6 — starpy modernization (implements the B0 decision)
+
+> **B0 DECISION (recorded 2026-07-04, see `B0-decisions.md`): B — scope starpy
+> modernization out to Phase C.** Evidence: the fork is already Twisted-free via
+> its own `starpy/_async.py`, and `tests/test_async_smoke.py` passes fully (AMI
+> login+ping, FastAGI dialog, and the risky auto-reconnect path). Phase B therefore
+> **retains `_async.py` and keeps the FastAGI TCP-compat path** (§7.3), does NOT
+> re-pin the fork SHA, and **narrows the §8 gate scope** so the "zero
+> `asterisk.aio.reactor`/`defer`" end state does not include the fork's own shim
+> (the no-Twisted gate still applies to the fork and is already green). Option A
+> below is retained for reference / Phase C and is NOT executed this phase.
 
 The **decision A/B was made in B0** (§4.4) because it feeds the TCP and Deferred
 strategy; this step *implements* it. starpy carries its own full shim (`_async.py`,

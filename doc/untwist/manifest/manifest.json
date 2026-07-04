@@ -1,0 +1,2436 @@
+{
+  "defer_grand_total": 106,
+  "defer_totals": {
+    "AlreadyCalledError": 2,
+    "Deferred": 27,
+    "DeferredList": 4,
+    "TimeoutError": 1,
+    "defer.AlreadyCalledError": 5,
+    "defer.Deferred": 36,
+    "defer.DeferredList": 20,
+    "fail": 1,
+    "gatherResults": 1,
+    "maybeDeferred": 8,
+    "succeed": 1
+  },
+  "files_with_reactor_or_defer": 214,
+  "lifecycle_owners": {
+    "doc/untwist/test_ari_parity.py": {
+      "counts": {
+        "callWhenRunning": 1,
+        "run": 1,
+        "stop": 2
+      },
+      "is_run_test": false
+    },
+    "doc/untwist/test_core_runtime.py": {
+      "counts": {
+        "callWhenRunning": 1,
+        "run": 1,
+        "stop": 2
+      },
+      "is_run_test": false
+    },
+    "doc/untwist/test_dns_parity.py": {
+      "counts": {
+        "callWhenRunning": 1,
+        "run": 1,
+        "stop": 2
+      },
+      "is_run_test": false
+    },
+    "doc/untwist/test_http_parity.py": {
+      "counts": {
+        "callWhenRunning": 1,
+        "run": 1,
+        "stop": 2
+      },
+      "is_run_test": false
+    },
+    "doc/untwist/test_ssh_parity.py": {
+      "counts": {
+        "callWhenRunning": 1,
+        "run": 1,
+        "stop": 2
+      },
+      "is_run_test": false
+    },
+    "doc/untwist/test_ws_parity.py": {
+      "counts": {
+        "callWhenRunning": 1,
+        "run": 1,
+        "stop": 2
+      },
+      "is_run_test": false
+    },
+    "lib/python/asterisk/aio/test_aio.py": {
+      "counts": {
+        "callWhenRunning": 25,
+        "run": 26,
+        "running": 6,
+        "stop": 41
+      },
+      "is_run_test": false
+    },
+    "lib/python/asterisk/asterisk.py": {
+      "counts": {
+        "callWhenRunning": 1
+      },
+      "is_run_test": false
+    },
+    "lib/python/asterisk/pcap.py": {
+      "counts": {
+        "run": 1,
+        "stop": 1
+      },
+      "is_run_test": false
+    },
+    "lib/python/asterisk/test_case.py": {
+      "counts": {
+        "callWhenRunning": 1,
+        "running": 1,
+        "stop": 1
+      },
+      "is_run_test": false
+    },
+    "lib/python/asterisk/test_runner.py": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": false
+    },
+    "tests/agi/exit_status/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/agi/nominal/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/apps/bridge/bridge_transfer_callee/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/apps/chanspy/chanspy_w_mixmonitor/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/apps/confbridge/confbridge_nominal/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/apps/confbridge/confbridge_recording/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/apps/directed_pickup/pickup_chan/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/apps/directory/directory_attendant_exit/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/apps/directory/directory_context_operator_exit/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/apps/directory/directory_operator_exit/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/apps/mixmonitor/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/apps/mixmonitor_audiohook_inherit/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/apps/mixmonitor_duplex/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/apps/mixmonitor_rxtx/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/apps/page/page_baseline/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/apps/queues/position_priority_maxlen/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/apps/queues/queue_baseline/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/apps/queues/queue_transfer_callee/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/apps/queues/reason_pause_ami/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/apps/queues/reload_queue_members/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/apps/queues/set_penalty/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/apps/voicemail/authenticate_extensions/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/apps/voicemail/authenticate_invalid_mailbox/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/apps/voicemail/authenticate_invalid_password/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/apps/voicemail/authenticate_nominal/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/apps/voicemail/check_voicemail_callback/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/apps/voicemail/check_voicemail_delete/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/apps/voicemail/check_voicemail_dialout/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/apps/voicemail/check_voicemail_envelope/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/apps/voicemail/check_voicemail_forward/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/apps/voicemail/check_voicemail_forward_hangup/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/apps/voicemail/check_voicemail_forward_with_prepend/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/apps/voicemail/check_voicemail_new_user/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/apps/voicemail/check_voicemail_new_user_hangup/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/apps/voicemail/check_voicemail_nominal/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/apps/voicemail/check_voicemail_options_change_password/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/apps/voicemail/check_voicemail_options_change_password_spooldir/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/apps/voicemail/check_voicemail_options_record_busy/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/apps/voicemail/check_voicemail_options_record_name/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/apps/voicemail/check_voicemail_options_record_temp/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/apps/voicemail/check_voicemail_options_record_unavail/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/apps/voicemail/check_voicemail_reply/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/apps/voicemail/check_voicemail_while_leaving_msg/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/apps/voicemail/func_vmcount/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/apps/voicemail/leave_voicemail_contexts/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/apps/voicemail/leave_voicemail_external_notification/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/apps/voicemail/leave_voicemail_forwarding/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/apps/voicemail/leave_voicemail_forwarding_auto_urgent/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/apps/voicemail/leave_voicemail_nominal/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/apps/voicemail/leave_voicemail_priority/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/apps/voicemail/play_message/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/apps/voicemail/polling/poll_multiple_mailboxes/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/apps/voicemail/polling/poll_no_subs/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/apps/voicemail/polling/poll_same_mailbox/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/apps/voicemail/polling/poll_single_mailbox/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/apps/voicemail/polling/poll_sub_unsub/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/blind-transfer-parkingtimeout/run-test": {
+      "counts": {
+        "callWhenRunning": 1,
+        "run": 1,
+        "running": 1,
+        "stop": 1
+      },
+      "is_run_test": true
+    },
+    "tests/callparking/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/callparking_retrieval/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/cause_answered_elsewhere/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/channels/iax2/acl_call/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/channels/iax2/hangupcause/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/channels/pjsip/acl_call/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/channels/pjsip/call_pickup/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/channels/pjsip/hold/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/channels/pjsip/hold_ice/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/channels/pjsip/hold_inactive/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/channels/pjsip/rtp_ptime/non-transcode/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/channels/pjsip/rtp_ptime/transcode/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/channels/pjsip/sdp_offer_answer/attribute_passthrough/speex_h263_h264/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/channels/pjsip/subscriptions/mwi/missing_aor/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/channels/pjsip/subscriptions/mwi/no_accept_header/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/channels/pjsip/subscriptions/presence/digium_presence/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/channels/pjsip/subscriptions/presence/no_accept_header/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/connected_line/subroutine/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/fastagi/channel-status/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/fastagi/connect/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/fastagi/control-stream-file/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/fastagi/database/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/fastagi/execute/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/fastagi/get-data/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/fastagi/hangup/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/fastagi/record-file/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/fastagi/say-alpha/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/fastagi/say-date/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/fastagi/say-datetime/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/fastagi/say-digits/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/fastagi/say-number/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/fastagi/say-phonetic/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/fastagi/say-time/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/fastagi/stream-file/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/fastagi/wait-for-digit/run-test": {
+      "counts": {
+        "callWhenRunning": 1,
+        "run": 1,
+        "running": 1,
+        "stop": 1
+      },
+      "is_run_test": true
+    },
+    "tests/fax/pjsip/gateway_g711_t38/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/fax/pjsip/gateway_native_t38/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/fax/pjsip/gateway_t38_g711_rx/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/fax/pjsip/gateway_t38_g711_tx/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/fax/pjsip/t38/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/fax/pjsip/t38_enabled_two_reinvite_on_a_leg/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/fax/pjsip/t38_enabled_two_reinvite_on_b_leg/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/fax/pjsip/t38_fast_reject/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/fax/pjsip/t38_with_auth/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/feature_attended_transfer/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/feature_blonde_transfer/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/feature_call_pickup/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/funcs/func_jitterbuffer/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/funcs/func_presencestate/run-test": {
+      "counts": {
+        "run": 1,
+        "stop": 1
+      },
+      "is_run_test": true
+    },
+    "tests/funcs/func_srv/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/hangup/handlers/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/hangup/handlers_endbeforehexten/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/http_server/acl/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/http_server/servername/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/manager/acl-login/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/manager/danger/dangerous/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/manager/danger/safe/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/manager/login/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/manager/mixmonitor/mixmonitor_id/run-test": {
+      "counts": {
+        "run": 1,
+        "stop": 1
+      },
+      "is_run_test": true
+    },
+    "tests/masquerade/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/pbx/call-files/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/pbx/callerid_match/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/pbx/dialplan_reload/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/pbx/dialplan_save/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/pbx/merge_contexts/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/pbx/pbx_lua_background/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/pbx/pbx_lua_goto/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/phoneprov/res_phoneprov_pjsip/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/predial/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/redirecting/subroutine/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/regressions/M18882/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/rest_api/CORS/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/rest_api/applications/channel-subscriptions/originate_to_other_stasis_app/local_channels/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/rest_api/applications/channel-subscriptions/originate_to_other_stasis_app/non_local_channels/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/rest_api/applications/stasisstatus/test_case.py": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": false
+    },
+    "tests/rest_api/authentication/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/rest_api/authentication_user_acl/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/rest_api/channels/redirect/nominal/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/rest_api/chunked-transfer/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/rest_api/content-type/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/rest_api/request-bodies/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/rest_api/websocket/outbound_websocket/local_ari_user_read_only/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/rest_api/websocket/outbound_websocket/per_call/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/rest_api/websocket/outbound_websocket/persistent/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/rest_api/websocket/rest_over_websocket/bad_requests/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/rest_api/websocket/rest_over_websocket/parallel_requests/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/rest_api/websocket/rest_over_websocket/single_requests/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/skeleton_test/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/udptl/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    },
+    "tests/udptl_v6/run-test": {
+      "counts": {
+        "run": 1
+      },
+      "is_run_test": true
+    }
+  },
+  "parsed": 393,
+  "per_file": {
+    "doc/untwist/test_ari_parity.py": {
+      "defer": {},
+      "reactor": {
+        "callLater": 1,
+        "callWhenRunning": 1,
+        "listenTCP": 1,
+        "run": 1,
+        "stop": 2
+      }
+    },
+    "doc/untwist/test_core_runtime.py": {
+      "defer": {
+        "defer.AlreadyCalledError": 1,
+        "defer.Deferred": 1
+      },
+      "reactor": {
+        "callLater": 1,
+        "callWhenRunning": 1,
+        "run": 1,
+        "spawnProcess": 1,
+        "stop": 2
+      }
+    },
+    "doc/untwist/test_dns_parity.py": {
+      "defer": {},
+      "reactor": {
+        "callLater": 1,
+        "callWhenRunning": 1,
+        "run": 1,
+        "stop": 2
+      }
+    },
+    "doc/untwist/test_http_parity.py": {
+      "defer": {},
+      "reactor": {
+        "callLater": 1,
+        "callWhenRunning": 1,
+        "run": 1,
+        "stop": 2
+      }
+    },
+    "doc/untwist/test_ssh_parity.py": {
+      "defer": {},
+      "reactor": {
+        "callLater": 1,
+        "callWhenRunning": 1,
+        "run": 1,
+        "stop": 2
+      }
+    },
+    "doc/untwist/test_ws_parity.py": {
+      "defer": {},
+      "reactor": {
+        "callInThread": 1,
+        "callLater": 1,
+        "callWhenRunning": 1,
+        "listenTCP": 1,
+        "run": 1,
+        "stop": 2
+      }
+    },
+    "lib/python/asterisk/aio/protocols.py": {
+      "defer": {
+        "Deferred": 1
+      },
+      "reactor": {}
+    },
+    "lib/python/asterisk/aio/reactor.py": {
+      "defer": {
+        "Deferred": 1
+      },
+      "reactor": {}
+    },
+    "lib/python/asterisk/aio/test_aio.py": {
+      "defer": {
+        "AlreadyCalledError": 2,
+        "Deferred": 24,
+        "DeferredList": 4,
+        "TimeoutError": 1,
+        "fail": 1,
+        "gatherResults": 1,
+        "maybeDeferred": 8,
+        "succeed": 1
+      },
+      "reactor": {
+        "_connectors": 1,
+        "_delayed_calls": 1,
+        "_failure": 1,
+        "_loop": 1,
+        "_pending_binds": 1,
+        "_ports": 1,
+        "_process_transports": 1,
+        "_stop_future": 1,
+        "_tasks": 1,
+        "_when_running": 1,
+        "callInThread": 1,
+        "callLater": 27,
+        "callWhenRunning": 25,
+        "connectTCP": 4,
+        "listenTCP": 3,
+        "listenUDP": 3,
+        "run": 26,
+        "running": 6,
+        "spawnProcess": 7,
+        "stop": 41
+      }
+    },
+    "lib/python/asterisk/aio/utils.py": {
+      "defer": {
+        "Deferred": 1
+      },
+      "reactor": {}
+    },
+    "lib/python/asterisk/ami.py": {
+      "defer": {},
+      "reactor": {
+        "callLater": 1
+      }
+    },
+    "lib/python/asterisk/apptest.py": {
+      "defer": {
+        "defer.Deferred": 6
+      },
+      "reactor": {
+        "callLater": 6
+      }
+    },
+    "lib/python/asterisk/ari.py": {
+      "defer": {},
+      "reactor": {
+        "_ensure_loop": 2,
+        "callLater": 4
+      }
+    },
+    "lib/python/asterisk/asterisk.py": {
+      "defer": {
+        "defer.AlreadyCalledError": 3,
+        "defer.Deferred": 4
+      },
+      "reactor": {
+        "callLater": 8,
+        "callWhenRunning": 1,
+        "spawnProcess": 1
+      }
+    },
+    "lib/python/asterisk/channel_test_condition.py": {
+      "defer": {
+        "defer.Deferred": 1,
+        "defer.DeferredList": 1
+      },
+      "reactor": {}
+    },
+    "lib/python/asterisk/confbridge.py": {
+      "defer": {},
+      "reactor": {
+        "callLater": 2
+      }
+    },
+    "lib/python/asterisk/dns_server.py": {
+      "defer": {},
+      "reactor": {
+        "listenTCP": 1,
+        "listenUDP": 1
+      }
+    },
+    "lib/python/asterisk/extension_bank.py": {
+      "defer": {},
+      "reactor": {
+        "callLater": 1
+      }
+    },
+    "lib/python/asterisk/fd_test_condition.py": {
+      "defer": {
+        "defer.Deferred": 2,
+        "defer.DeferredList": 2
+      },
+      "reactor": {}
+    },
+    "lib/python/asterisk/http_static_server.py": {
+      "defer": {},
+      "reactor": {
+        "addAsyncCleanup": 1,
+        "addStartupBind": 1
+      }
+    },
+    "lib/python/asterisk/lock_test_condition.py": {
+      "defer": {
+        "defer.Deferred": 1,
+        "defer.DeferredList": 1
+      },
+      "reactor": {}
+    },
+    "lib/python/asterisk/matcher_listener.py": {
+      "defer": {},
+      "reactor": {
+        "listenUDP": 1
+      }
+    },
+    "lib/python/asterisk/media_websocket.py": {
+      "defer": {},
+      "reactor": {
+        "_ensure_loop": 3,
+        "callLater": 1
+      }
+    },
+    "lib/python/asterisk/originate.py": {
+      "defer": {},
+      "reactor": {
+        "callLater": 5
+      }
+    },
+    "lib/python/asterisk/pcap.py": {
+      "defer": {},
+      "reactor": {
+        "run": 1,
+        "stop": 1
+      }
+    },
+    "lib/python/asterisk/pcap_proxy.py": {
+      "defer": {},
+      "reactor": {
+        "listenUDP": 1
+      }
+    },
+    "lib/python/asterisk/pjsip_channel_test_condition.py": {
+      "defer": {
+        "defer.Deferred": 1,
+        "defer.DeferredList": 1
+      },
+      "reactor": {}
+    },
+    "lib/python/asterisk/pluggable_modules.py": {
+      "defer": {},
+      "reactor": {
+        "callLater": 2,
+        "listenTCP": 1
+      }
+    },
+    "lib/python/asterisk/realtime_test_module.py": {
+      "defer": {},
+      "reactor": {
+        "addAsyncCleanup": 1,
+        "addStartupBind": 1
+      }
+    },
+    "lib/python/asterisk/self_test/harness_shared.py": {
+      "defer": {
+        "defer.Deferred": 1
+      },
+      "reactor": {}
+    },
+    "lib/python/asterisk/sip_channel_test_condition.py": {
+      "defer": {
+        "defer.Deferred": 1,
+        "defer.DeferredList": 1
+      },
+      "reactor": {}
+    },
+    "lib/python/asterisk/sip_dialog_test_condition.py": {
+      "defer": {
+        "defer.Deferred": 3,
+        "defer.DeferredList": 1
+      },
+      "reactor": {}
+    },
+    "lib/python/asterisk/sipp.py": {
+      "defer": {
+        "defer.AlreadyCalledError": 1,
+        "defer.Deferred": 5,
+        "defer.DeferredList": 2
+      },
+      "reactor": {
+        "callLater": 3,
+        "spawnProcess": 1
+      }
+    },
+    "lib/python/asterisk/sipp_iterator.py": {
+      "defer": {},
+      "reactor": {
+        "callLater": 4
+      }
+    },
+    "lib/python/asterisk/taskprocessor_test_condition.py": {
+      "defer": {
+        "defer.Deferred": 2,
+        "defer.DeferredList": 2
+      },
+      "reactor": {}
+    },
+    "lib/python/asterisk/test_case.py": {
+      "defer": {
+        "defer.Deferred": 1,
+        "defer.DeferredList": 2
+      },
+      "reactor": {
+        "callLater": 3,
+        "callWhenRunning": 1,
+        "listenTCP": 1,
+        "running": 1,
+        "stop": 1
+      }
+    },
+    "lib/python/asterisk/test_conditions.py": {
+      "defer": {
+        "defer.Deferred": 2
+      },
+      "reactor": {}
+    },
+    "lib/python/asterisk/test_runner.py": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "lib/python/asterisk/thread_test_condition.py": {
+      "defer": {
+        "defer.Deferred": 2,
+        "defer.DeferredList": 2
+      },
+      "reactor": {}
+    },
+    "tests/agi/exit_status/run-test": {
+      "defer": {},
+      "reactor": {
+        "callLater": 1,
+        "run": 1
+      }
+    },
+    "tests/agi/nominal/run-test": {
+      "defer": {},
+      "reactor": {
+        "callLater": 1,
+        "run": 1
+      }
+    },
+    "tests/apps/bridge/bridge_transfer_callee/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/apps/chanspy/chanspy_w_mixmonitor/run-test": {
+      "defer": {},
+      "reactor": {
+        "callLater": 10,
+        "run": 1
+      }
+    },
+    "tests/apps/confbridge/confbridge_nominal/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/apps/confbridge/confbridge_recording/run-test": {
+      "defer": {},
+      "reactor": {
+        "callLater": 1,
+        "run": 1
+      }
+    },
+    "tests/apps/dial/dial_dtmf_hangup_cancel/send_dtmf.py": {
+      "defer": {},
+      "reactor": {
+        "callLater": 1
+      }
+    },
+    "tests/apps/dial/dial_hangup/hangup.py": {
+      "defer": {},
+      "reactor": {
+        "callLater": 1
+      }
+    },
+    "tests/apps/dial/dial_parallel/dial_parallel_all_cancel/send_dtmf.py": {
+      "defer": {},
+      "reactor": {
+        "callLater": 1
+      }
+    },
+    "tests/apps/directed_pickup/pickup_chan/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/apps/directory/directory_attendant_exit/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/apps/directory/directory_context_operator_exit/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/apps/directory/directory_operator_exit/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/apps/mixmonitor/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/apps/mixmonitor_audiohook_inherit/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/apps/mixmonitor_duplex/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/apps/mixmonitor_rxtx/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/apps/page/page_baseline/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/apps/queues/position_priority_maxlen/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/apps/queues/queue_baseline/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/apps/queues/queue_transfer_callee/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/apps/queues/reason_pause_ami/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/apps/queues/reload_queue_members/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/apps/queues/set_penalty/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/apps/voicemail/authenticate_extensions/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/apps/voicemail/authenticate_invalid_mailbox/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/apps/voicemail/authenticate_invalid_password/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/apps/voicemail/authenticate_nominal/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/apps/voicemail/check_voicemail_callback/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/apps/voicemail/check_voicemail_delete/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/apps/voicemail/check_voicemail_dialout/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/apps/voicemail/check_voicemail_envelope/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/apps/voicemail/check_voicemail_forward/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/apps/voicemail/check_voicemail_forward_hangup/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/apps/voicemail/check_voicemail_forward_with_prepend/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/apps/voicemail/check_voicemail_new_user/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/apps/voicemail/check_voicemail_new_user_hangup/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/apps/voicemail/check_voicemail_nominal/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/apps/voicemail/check_voicemail_options_change_password/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/apps/voicemail/check_voicemail_options_change_password_spooldir/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/apps/voicemail/check_voicemail_options_record_busy/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/apps/voicemail/check_voicemail_options_record_name/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/apps/voicemail/check_voicemail_options_record_temp/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/apps/voicemail/check_voicemail_options_record_unavail/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/apps/voicemail/check_voicemail_reply/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/apps/voicemail/check_voicemail_while_leaving_msg/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/apps/voicemail/func_vmcount/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/apps/voicemail/leave_voicemail_contexts/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/apps/voicemail/leave_voicemail_external_notification/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/apps/voicemail/leave_voicemail_forwarding/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/apps/voicemail/leave_voicemail_forwarding_auto_urgent/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/apps/voicemail/leave_voicemail_nominal/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/apps/voicemail/leave_voicemail_priority/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/apps/voicemail/play_message/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/apps/voicemail/polling/poll_multiple_mailboxes/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/apps/voicemail/polling/poll_no_subs/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/apps/voicemail/polling/poll_same_mailbox/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/apps/voicemail/polling/poll_single_mailbox/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/apps/voicemail/polling/poll_sub_unsub/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/blind-transfer-parkingtimeout/run-test": {
+      "defer": {},
+      "reactor": {
+        "callLater": 3,
+        "callWhenRunning": 1,
+        "listenTCP": 1,
+        "run": 1,
+        "running": 1,
+        "stop": 1
+      }
+    },
+    "tests/callparking/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/callparking_retrieval/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/cause_answered_elsewhere/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/channels/iax2/acl_call/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/channels/iax2/hangupcause/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/channels/pjsip/acl_call/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/channels/pjsip/call_pickup/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/channels/pjsip/hold/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/channels/pjsip/hold_ice/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/channels/pjsip/hold_inactive/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/channels/pjsip/keep_alive/keep_alive.py": {
+      "defer": {},
+      "reactor": {
+        "connectTCP": 1
+      }
+    },
+    "tests/channels/pjsip/rtp/bind_rtp_to_media_address/rtp.py": {
+      "defer": {},
+      "reactor": {
+        "listenUDP": 1
+      }
+    },
+    "tests/channels/pjsip/rtp/rtp_keepalive/base/rtp.py": {
+      "defer": {},
+      "reactor": {
+        "listenUDP": 1
+      }
+    },
+    "tests/channels/pjsip/rtp/rtp_keepalive/direct_media/rtp.py": {
+      "defer": {},
+      "reactor": {
+        "listenUDP": 2
+      }
+    },
+    "tests/channels/pjsip/rtp_ptime/non-transcode/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/channels/pjsip/rtp_ptime/transcode/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/channels/pjsip/sdp_offer_answer/attribute_passthrough/speex_h263_h264/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/channels/pjsip/subscriptions/mwi/missing_aor/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/channels/pjsip/subscriptions/mwi/no_accept_header/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/channels/pjsip/subscriptions/presence/digium_presence/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/channels/pjsip/subscriptions/presence/no_accept_header/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/channels/pjsip/subscriptions/presence/presence_pidf/state_check.py": {
+      "defer": {},
+      "reactor": {
+        "callLater": 1
+      }
+    },
+    "tests/channels/pjsip/subscriptions/presence/presence_xpidf/state_check.py": {
+      "defer": {},
+      "reactor": {
+        "callLater": 1
+      }
+    },
+    "tests/channels/pjsip/subscriptions/rls/rls_test.py": {
+      "defer": {},
+      "reactor": {
+        "callLater": 3
+      }
+    },
+    "tests/channels/websocket/inbound/basic-call/media_client.py": {
+      "defer": {},
+      "reactor": {
+        "callInThread": 1
+      }
+    },
+    "tests/channels/websocket/outbound/basic-call/media_server.py": {
+      "defer": {},
+      "reactor": {
+        "callInThread": 1,
+        "listenTCP": 1
+      }
+    },
+    "tests/channels/websocket/outbound/flow-control/media_server.py": {
+      "defer": {},
+      "reactor": {
+        "callInThread": 1,
+        "listenTCP": 1
+      }
+    },
+    "tests/codecs/audio_analyzer.py": {
+      "defer": {},
+      "reactor": {
+        "callLater": 1
+      }
+    },
+    "tests/connected_line/subroutine/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/fastagi/channel-status/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/fastagi/connect/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/fastagi/control-stream-file/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/fastagi/database/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/fastagi/execute/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/fastagi/get-data/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/fastagi/hangup/run-test": {
+      "defer": {},
+      "reactor": {
+        "callLater": 1,
+        "run": 1
+      }
+    },
+    "tests/fastagi/record-file/run-test": {
+      "defer": {},
+      "reactor": {
+        "callLater": 5,
+        "run": 1
+      }
+    },
+    "tests/fastagi/say-alpha/run-test": {
+      "defer": {},
+      "reactor": {
+        "listenTCP": 2,
+        "run": 1
+      }
+    },
+    "tests/fastagi/say-date/run-test": {
+      "defer": {},
+      "reactor": {
+        "listenTCP": 2,
+        "run": 1
+      }
+    },
+    "tests/fastagi/say-datetime/run-test": {
+      "defer": {},
+      "reactor": {
+        "listenTCP": 2,
+        "run": 1
+      }
+    },
+    "tests/fastagi/say-digits/run-test": {
+      "defer": {},
+      "reactor": {
+        "listenTCP": 2,
+        "run": 1
+      }
+    },
+    "tests/fastagi/say-number/run-test": {
+      "defer": {},
+      "reactor": {
+        "listenTCP": 2,
+        "run": 1
+      }
+    },
+    "tests/fastagi/say-phonetic/run-test": {
+      "defer": {},
+      "reactor": {
+        "listenTCP": 2,
+        "run": 1
+      }
+    },
+    "tests/fastagi/say-time/run-test": {
+      "defer": {},
+      "reactor": {
+        "listenTCP": 2,
+        "run": 1
+      }
+    },
+    "tests/fastagi/stream-file/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/fastagi/wait-for-digit/run-test": {
+      "defer": {},
+      "reactor": {
+        "callLater": 1,
+        "callWhenRunning": 1,
+        "listenTCP": 1,
+        "run": 1,
+        "running": 1,
+        "stop": 1
+      }
+    },
+    "tests/fax/pjsip/gateway_g711_t38/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/fax/pjsip/gateway_native_t38/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/fax/pjsip/gateway_t38_g711_rx/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/fax/pjsip/gateway_t38_g711_tx/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/fax/pjsip/t38/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/fax/pjsip/t38_enabled_two_reinvite_on_a_leg/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/fax/pjsip/t38_enabled_two_reinvite_on_b_leg/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/fax/pjsip/t38_fast_reject/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/fax/pjsip/t38_with_auth/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/feature_attended_transfer/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/feature_blonde_transfer/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/feature_call_pickup/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/funcs/func_jitterbuffer/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/funcs/func_presencestate/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1,
+        "stop": 1
+      }
+    },
+    "tests/funcs/func_srv/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/hangup/handlers/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/hangup/handlers_endbeforehexten/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/hep/hep_capture_node.py": {
+      "defer": {},
+      "reactor": {
+        "listenUDP": 1
+      }
+    },
+    "tests/http_server/acl/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/http_server/servername/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/manager/acl-login/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/manager/danger/dangerous/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/manager/danger/safe/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/manager/device_state_list/ami_device_state_list.py": {
+      "defer": {
+        "defer.DeferredList": 1
+      },
+      "reactor": {}
+    },
+    "tests/manager/exten_state_list/ami_exten_state_list.py": {
+      "defer": {
+        "defer.DeferredList": 1
+      },
+      "reactor": {}
+    },
+    "tests/manager/login/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/manager/mixmonitor/mixmonitor_id/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1,
+        "stop": 1
+      }
+    },
+    "tests/manager/presence_state_list/ami_presence_state_list.py": {
+      "defer": {
+        "defer.DeferredList": 1
+      },
+      "reactor": {}
+    },
+    "tests/masquerade/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/pbx/call-files/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/pbx/call_file_retries_archive/retries_archive.py": {
+      "defer": {},
+      "reactor": {
+        "callLater": 1
+      }
+    },
+    "tests/pbx/callerid_match/run-test": {
+      "defer": {},
+      "reactor": {
+        "callLater": 2,
+        "run": 1
+      }
+    },
+    "tests/pbx/dialplan_reload/run-test": {
+      "defer": {},
+      "reactor": {
+        "callLater": 1,
+        "run": 1
+      }
+    },
+    "tests/pbx/dialplan_save/run-test": {
+      "defer": {},
+      "reactor": {
+        "callLater": 12,
+        "run": 1
+      }
+    },
+    "tests/pbx/manager_extensions/ami_extension_control.py": {
+      "defer": {
+        "defer.DeferredList": 1
+      },
+      "reactor": {}
+    },
+    "tests/pbx/merge_contexts/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/pbx/pbx_lua_background/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/pbx/pbx_lua_goto/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/phoneprov/res_phoneprov_pjsip/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/predial/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/redirecting/subroutine/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/regressions/M18882/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/rest_api/CORS/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/rest_api/applications/channel-subscriptions/originate_to_other_stasis_app/local_channels/run-test": {
+      "defer": {},
+      "reactor": {
+        "callLater": 1,
+        "run": 1
+      }
+    },
+    "tests/rest_api/applications/channel-subscriptions/originate_to_other_stasis_app/non_local_channels/run-test": {
+      "defer": {},
+      "reactor": {
+        "callLater": 2,
+        "run": 1
+      }
+    },
+    "tests/rest_api/applications/stasisstatus/ari_client.py": {
+      "defer": {
+        "defer.Deferred": 2
+      },
+      "reactor": {
+        "callLater": 8
+      }
+    },
+    "tests/rest_api/applications/stasisstatus/test_case.py": {
+      "defer": {
+        "defer.Deferred": 1
+      },
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/rest_api/authentication/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/rest_api/authentication_user_acl/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/rest_api/channels/redirect/nominal/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/rest_api/chunked-transfer/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/rest_api/content-type/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/rest_api/external_interaction/attended_transfer/attended_transfer.py": {
+      "defer": {},
+      "reactor": {
+        "callLater": 1
+      }
+    },
+    "tests/rest_api/message/message_modules.py": {
+      "defer": {
+        "defer.DeferredList": 1
+      },
+      "reactor": {}
+    },
+    "tests/rest_api/recording/format_unavailable/recording.py": {
+      "defer": {},
+      "reactor": {
+        "callLater": 1
+      }
+    },
+    "tests/rest_api/recording/stored/copy/nominal/recording.py": {
+      "defer": {},
+      "reactor": {
+        "callLater": 1
+      }
+    },
+    "tests/rest_api/recording/stored/copy/off-nominal/recording.py": {
+      "defer": {},
+      "reactor": {
+        "callLater": 1
+      }
+    },
+    "tests/rest_api/request-bodies/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/rest_api/websocket/outbound_websocket/local_ari_user_read_only/run-test": {
+      "defer": {},
+      "reactor": {
+        "listenTCP": 1,
+        "run": 1
+      }
+    },
+    "tests/rest_api/websocket/outbound_websocket/per_call/run-test": {
+      "defer": {},
+      "reactor": {
+        "callLater": 1,
+        "listenTCP": 1,
+        "run": 1
+      }
+    },
+    "tests/rest_api/websocket/outbound_websocket/persistent/run-test": {
+      "defer": {},
+      "reactor": {
+        "listenTCP": 1,
+        "run": 1
+      }
+    },
+    "tests/rest_api/websocket/rest_over_websocket/bad_requests/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/rest_api/websocket/rest_over_websocket/parallel_requests/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/rest_api/websocket/rest_over_websocket/single_requests/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/rtp/strict_rtp/strict_rtp_seqno/strict_rtp.py": {
+      "defer": {},
+      "reactor": {
+        "listenUDP": 2
+      }
+    },
+    "tests/rtp/strict_rtp/strict_rtp_yes/strict_rtp.py": {
+      "defer": {},
+      "reactor": {
+        "listenUDP": 1
+      }
+    },
+    "tests/skeleton_test/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/udptl/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    },
+    "tests/udptl_v6/run-test": {
+      "defer": {},
+      "reactor": {
+        "run": 1
+      }
+    }
+  },
+  "reactor_grand_total": 503,
+  "reactor_totals": {
+    "_connectors": 1,
+    "_delayed_calls": 1,
+    "_ensure_loop": 5,
+    "_failure": 1,
+    "_loop": 1,
+    "_pending_binds": 1,
+    "_ports": 1,
+    "_process_transports": 1,
+    "_stop_future": 1,
+    "_tasks": 1,
+    "_when_running": 1,
+    "addAsyncCleanup": 2,
+    "addStartupBind": 2,
+    "callInThread": 5,
+    "callLater": 137,
+    "callWhenRunning": 35,
+    "connectTCP": 5,
+    "listenTCP": 29,
+    "listenUDP": 14,
+    "run": 181,
+    "running": 9,
+    "spawnProcess": 10,
+    "stop": 59
+  },
+  "root": "/usr/src/phzyx/testsuite",
+  "scanned": 393,
+  "skipped_non_python": 0
+}
