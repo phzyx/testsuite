@@ -659,12 +659,16 @@ fire-and-forget**; single- and multi-Asterisk ordered teardown; stray-task cance
 ## 6. Step B2 — Migrate ALL entrypoints onto the native runtime
 
 Before touching any per-family resource contract, move **every** entrypoint onto the
-B1 runtime so only one lifecycle model exists. This is `test_runner` plus the **146
-extensionless `run-test` scripts**, each of which imports the shim and calls
-`reactor.run()` (and some queue their kickoff via `callWhenRunning`) — **and any
-per-test helper module that owns the loop**, such as
+B1 runtime so only one lifecycle model exists. The `tests/` tree holds **159
+extensionless `run-test` files: 147 Python entrypoints and 12 non-Python (shell/lua)
+harnesses** that are out of scope for this Python migration. Of the 147 Python
+entrypoints, **146 own the loop directly** — each imports the shim and calls
+`reactor.run()` (and some queue their kickoff via `callWhenRunning`) — **and the
+remaining 1 is helper-owned**: `tests/rest_api/applications/stasisstatus/run-test` has
+no `reactor.run()` of its own; its loop is driven by
 `tests/rest_api/applications/stasisstatus/test_case.py`, which calls `reactor.run()`
-inside a constructor (points 4–5 below). Doing this after
+inside a constructor (points 4–5 below). So B2 migrates `test_runner` plus **147 Python
+entrypoints** (146 direct reactor owners + 1 helper-owned). Doing this after
 the per-family conversions would force the common library to support two incompatible
 lifecycles at once (legacy synchronous `reactor.run()` owners *and* the native owner).
 

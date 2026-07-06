@@ -1,5 +1,5 @@
 # reactor/defer manifest  (root=.)
-scanned=395 parsed=395 skipped_non_python=0 files_with_usage=212
+scanned=396 parsed=396 skipped_non_python=0 files_with_usage=212
 
 ## reactor.* totals  (grand=587)
   reactor._ensure_loop         6

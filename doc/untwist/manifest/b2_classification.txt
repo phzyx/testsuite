@@ -1,0 +1,189 @@
+# B2.0 entrypoint classification
+run-test files: 159   (python: 147, shell: 12, with reactor.run: 146)
+
+## migration strategies
+  constructor-only   60
+  hand-convert       59
+  helper-owned       1
+  hook-convert       27
+  shell              12
+
+## dimension totals (independent; a file may set several)
+  custom_assertions  55
+  direct_lifecycle   4
+  helper_owned       1
+  multiple_objects   23
+  post_run_cleanup   58
+  pre_run            64
+
+## non-run-test loop owners (reactor.run inside a def/ctor)
+  tests/rest_api/applications/stasisstatus/test_case.py  [StasisStatusTestCase.__init__]
+
+## hand-convert (59)
+  tests/agi/exit_status/run-test   custom-assert
+  tests/agi/nominal/run-test   custom-assert
+  tests/apps/confbridge/confbridge_nominal/run-test   pre-run post-cleanup custom-assert
+  tests/apps/queues/queue_baseline/run-test   pre-run post-cleanup custom-assert
+  tests/apps/queues/queue_transfer_callee/run-test   pre-run post-cleanup custom-assert
+  tests/apps/voicemail/authenticate_nominal/run-test   pre-run post-cleanup custom-assert
+  tests/apps/voicemail/check_voicemail_callback/run-test   pre-run post-cleanup custom-assert multi-object
+  tests/apps/voicemail/check_voicemail_delete/run-test   pre-run post-cleanup custom-assert multi-object
+  tests/apps/voicemail/check_voicemail_dialout/run-test   pre-run post-cleanup custom-assert multi-object
+  tests/apps/voicemail/check_voicemail_envelope/run-test   pre-run post-cleanup custom-assert multi-object
+  tests/apps/voicemail/check_voicemail_forward/run-test   pre-run post-cleanup custom-assert multi-object
+  tests/apps/voicemail/check_voicemail_forward_hangup/run-test   pre-run post-cleanup custom-assert multi-object
+  tests/apps/voicemail/check_voicemail_forward_with_prepend/run-test   pre-run post-cleanup custom-assert multi-object
+  tests/apps/voicemail/check_voicemail_new_user/run-test   pre-run post-cleanup custom-assert multi-object
+  tests/apps/voicemail/check_voicemail_new_user_hangup/run-test   pre-run post-cleanup custom-assert multi-object
+  tests/apps/voicemail/check_voicemail_nominal/run-test   pre-run post-cleanup custom-assert multi-object
+  tests/apps/voicemail/check_voicemail_options_change_password/run-test   pre-run post-cleanup custom-assert multi-object
+  tests/apps/voicemail/check_voicemail_options_record_busy/run-test   pre-run post-cleanup custom-assert multi-object
+  tests/apps/voicemail/check_voicemail_options_record_name/run-test   pre-run post-cleanup custom-assert multi-object
+  tests/apps/voicemail/check_voicemail_options_record_temp/run-test   pre-run post-cleanup custom-assert multi-object
+  tests/apps/voicemail/check_voicemail_options_record_unavail/run-test   pre-run post-cleanup custom-assert multi-object
+  tests/apps/voicemail/check_voicemail_reply/run-test   pre-run post-cleanup custom-assert multi-object
+  tests/apps/voicemail/check_voicemail_while_leaving_msg/run-test   pre-run post-cleanup custom-assert multi-object
+  tests/apps/voicemail/func_vmcount/run-test   pre-run post-cleanup custom-assert
+  tests/apps/voicemail/leave_voicemail_contexts/run-test   custom-assert multi-object
+  tests/apps/voicemail/leave_voicemail_external_notification/run-test   pre-run post-cleanup custom-assert multi-object
+  tests/apps/voicemail/leave_voicemail_forwarding/run-test   pre-run post-cleanup custom-assert multi-object
+  tests/apps/voicemail/leave_voicemail_forwarding_auto_urgent/run-test   pre-run post-cleanup custom-assert multi-object
+  tests/apps/voicemail/leave_voicemail_nominal/run-test   pre-run post-cleanup custom-assert multi-object
+  tests/apps/voicemail/leave_voicemail_priority/run-test   pre-run post-cleanup custom-assert multi-object
+  tests/blind-transfer-parkingtimeout/run-test   post-cleanup direct-lifecycle=callWhenRunning,running,stop
+  tests/callparking/run-test   pre-run post-cleanup custom-assert
+  tests/callparking_retrieval/run-test   custom-assert
+  tests/channels/iax2/acl_call/run-test   pre-run custom-assert
+  tests/channels/pjsip/acl_call/run-test   pre-run custom-assert
+  tests/channels/pjsip/hold/run-test   custom-assert
+  tests/channels/pjsip/hold_inactive/run-test   custom-assert
+  tests/channels/pjsip/rtp_ptime/non-transcode/run-test   pre-run custom-assert
+  tests/channels/pjsip/rtp_ptime/transcode/run-test   pre-run custom-assert
+  tests/fastagi/channel-status/run-test   pre-run post-cleanup custom-assert
+  tests/fastagi/database/run-test   pre-run post-cleanup custom-assert
+  tests/fastagi/execute/run-test   custom-assert
+  tests/fastagi/say-alpha/run-test   custom-assert
+  tests/fastagi/say-date/run-test   custom-assert
+  tests/fastagi/say-datetime/run-test   custom-assert
+  tests/fastagi/say-digits/run-test   custom-assert
+  tests/fastagi/say-number/run-test   custom-assert
+  tests/fastagi/say-phonetic/run-test   custom-assert
+  tests/fastagi/say-time/run-test   custom-assert
+  tests/fastagi/wait-for-digit/run-test   direct-lifecycle=callWhenRunning,running,stop
+  tests/fax/pjsip/t38_enabled_two_reinvite_on_a_leg/run-test   pre-run custom-assert
+  tests/fax/pjsip/t38_enabled_two_reinvite_on_b_leg/run-test   pre-run custom-assert
+  tests/fax/pjsip/t38_fast_reject/run-test   pre-run custom-assert
+  tests/funcs/func_presencestate/run-test   direct-lifecycle=stop
+  tests/hangup/handlers/run-test   custom-assert
+  tests/hangup/handlers_endbeforehexten/run-test   custom-assert
+  tests/manager/mixmonitor/mixmonitor_id/run-test   direct-lifecycle=stop
+  tests/masquerade/run-test   custom-assert
+  tests/predial/run-test   custom-assert
+
+## helper-owned (1)
+  tests/rest_api/applications/stasisstatus/run-test
+
+## hook-convert (27)
+  tests/apps/directed_pickup/pickup_chan/run-test   pre-run post-cleanup
+  tests/apps/directory/directory_attendant_exit/run-test   pre-run post-cleanup
+  tests/apps/directory/directory_context_operator_exit/run-test   pre-run post-cleanup
+  tests/apps/directory/directory_operator_exit/run-test   pre-run post-cleanup
+  tests/apps/page/page_baseline/run-test   pre-run post-cleanup
+  tests/apps/queues/reason_pause_ami/run-test   pre-run post-cleanup
+  tests/apps/queues/set_penalty/run-test   pre-run post-cleanup
+  tests/apps/voicemail/authenticate_extensions/run-test   pre-run post-cleanup
+  tests/apps/voicemail/authenticate_invalid_mailbox/run-test   pre-run post-cleanup
+  tests/apps/voicemail/authenticate_invalid_password/run-test   pre-run post-cleanup
+  tests/channels/pjsip/sdp_offer_answer/attribute_passthrough/speex_h263_h264/run-test   pre-run post-cleanup
+  tests/connected_line/subroutine/run-test   pre-run post-cleanup
+  tests/fastagi/connect/run-test   pre-run post-cleanup
+  tests/fastagi/control-stream-file/run-test   pre-run post-cleanup
+  tests/fastagi/stream-file/run-test   pre-run post-cleanup
+  tests/manager/danger/dangerous/run-test   pre-run post-cleanup
+  tests/manager/danger/safe/run-test   pre-run post-cleanup
+  tests/manager/login/run-test   pre-run post-cleanup
+  tests/pbx/dialplan_reload/run-test   pre-run post-cleanup
+  tests/pbx/dialplan_save/run-test   pre-run post-cleanup
+  tests/pbx/merge_contexts/run-test   pre-run post-cleanup
+  tests/pbx/pbx_lua_background/run-test   pre-run post-cleanup
+  tests/pbx/pbx_lua_goto/run-test   pre-run post-cleanup
+  tests/redirecting/subroutine/run-test   pre-run post-cleanup
+  tests/regressions/M18882/run-test   pre-run post-cleanup
+  tests/udptl/run-test   pre-run post-cleanup
+  tests/udptl_v6/run-test   pre-run post-cleanup
+
+## constructor-only (60)
+  tests/apps/bridge/bridge_transfer_callee/run-test
+  tests/apps/chanspy/chanspy_w_mixmonitor/run-test
+  tests/apps/confbridge/confbridge_recording/run-test
+  tests/apps/mixmonitor/run-test
+  tests/apps/mixmonitor_audiohook_inherit/run-test
+  tests/apps/mixmonitor_duplex/run-test
+  tests/apps/mixmonitor_rxtx/run-test
+  tests/apps/queues/position_priority_maxlen/run-test
+  tests/apps/queues/reload_queue_members/run-test
+  tests/apps/voicemail/check_voicemail_options_change_password_spooldir/run-test
+  tests/apps/voicemail/play_message/run-test
+  tests/apps/voicemail/polling/poll_multiple_mailboxes/run-test
+  tests/apps/voicemail/polling/poll_no_subs/run-test
+  tests/apps/voicemail/polling/poll_same_mailbox/run-test
+  tests/apps/voicemail/polling/poll_single_mailbox/run-test
+  tests/apps/voicemail/polling/poll_sub_unsub/run-test
+  tests/cause_answered_elsewhere/run-test
+  tests/channels/iax2/hangupcause/run-test
+  tests/channels/pjsip/call_pickup/run-test
+  tests/channels/pjsip/hold_ice/run-test
+  tests/channels/pjsip/subscriptions/mwi/missing_aor/run-test
+  tests/channels/pjsip/subscriptions/mwi/no_accept_header/run-test
+  tests/channels/pjsip/subscriptions/presence/digium_presence/run-test
+  tests/channels/pjsip/subscriptions/presence/no_accept_header/run-test
+  tests/fastagi/get-data/run-test
+  tests/fastagi/hangup/run-test
+  tests/fastagi/record-file/run-test
+  tests/fax/pjsip/gateway_g711_t38/run-test
+  tests/fax/pjsip/gateway_native_t38/run-test
+  tests/fax/pjsip/gateway_t38_g711_rx/run-test
+  tests/fax/pjsip/gateway_t38_g711_tx/run-test
+  tests/fax/pjsip/t38/run-test
+  tests/fax/pjsip/t38_with_auth/run-test
+  tests/feature_attended_transfer/run-test
+  tests/feature_blonde_transfer/run-test
+  tests/feature_call_pickup/run-test
+  tests/funcs/func_jitterbuffer/run-test
+  tests/funcs/func_srv/run-test
+  tests/http_server/acl/run-test
+  tests/http_server/servername/run-test
+  tests/manager/acl-login/run-test
+  tests/pbx/call-files/run-test
+  tests/pbx/callerid_match/run-test
+  tests/phoneprov/res_phoneprov_pjsip/run-test
+  tests/rest_api/CORS/run-test
+  tests/rest_api/applications/channel-subscriptions/originate_to_other_stasis_app/local_channels/run-test
+  tests/rest_api/applications/channel-subscriptions/originate_to_other_stasis_app/non_local_channels/run-test
+  tests/rest_api/authentication/run-test
+  tests/rest_api/authentication_user_acl/run-test
+  tests/rest_api/channels/redirect/nominal/run-test
+  tests/rest_api/chunked-transfer/run-test
+  tests/rest_api/content-type/run-test
+  tests/rest_api/request-bodies/run-test
+  tests/rest_api/websocket/outbound_websocket/local_ari_user_read_only/run-test
+  tests/rest_api/websocket/outbound_websocket/per_call/run-test
+  tests/rest_api/websocket/outbound_websocket/persistent/run-test
+  tests/rest_api/websocket/rest_over_websocket/bad_requests/run-test
+  tests/rest_api/websocket/rest_over_websocket/parallel_requests/run-test
+  tests/rest_api/websocket/rest_over_websocket/single_requests/run-test
+  tests/skeleton_test/run-test
+
+## shell (12)
+  tests/apps/queues/gosub_test/run-test
+  tests/apps/queues/ringinuse_and_pause/run-test
+  tests/apps/queues/wrapup_time/run-test
+  tests/apps/queues/wrapup_time_per_member/run-test
+  tests/cdr/app_dial_G_flag/run-test
+  tests/cdr/app_queue/run-test
+  tests/example/run-test
+  tests/manager/action-events-response/run-test
+  tests/manager/authlimit/run-test
+  tests/manager/authtimeout/run-test
+  tests/manager/response-time/run-test
+  tests/pbx/call-files2/run-test

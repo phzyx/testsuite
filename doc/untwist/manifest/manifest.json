@@ -977,7 +977,7 @@
       "is_run_test": true
     }
   },
-  "parsed": 395,
+  "parsed": 396,
   "per_file": {
     "doc/untwist/test_ari_parity.py": {
       "defer": {},
@@ -2387,6 +2387,6 @@
     "stop": 88
   },
   "root": "/usr/src/phzyx/testsuite",
-  "scanned": 395,
+  "scanned": 396,
   "skipped_non_python": 0
 }
