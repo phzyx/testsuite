@@ -1749,8 +1749,11 @@ class StartupDriverTests(_LoopTestCase):
         self.assertEqual(self.runtime.live_resources(), [])
 
     def test_sequential_reuse_same_runtime(self):
-        # After a clean start_all/run_async/_finish the runtime is STOPPED with
-        # a cleared completion and empty queues, so it can be driven again.
+        # After a clean start_all/run_async/_finish the runtime is STOPPED. A
+        # STOPPED runtime refuses registrations (it is a spent teardown target),
+        # so reuse must first reset() it back to a clean COLLECTING baseline --
+        # the single documented gate between runs. reset() succeeds because the
+        # finished run left no live resources.
         counts = {'runs': 0}
 
         def kickoff():
@@ -1759,6 +1762,9 @@ class StartupDriverTests(_LoopTestCase):
 
         async def go():
             for _ in range(2):
+                self.assertEqual(self.runtime.live_resources(), [])
+                self.runtime.reset(self.loop)
+                self.assertIs(self.runtime.state, _RuntimeState.COLLECTING)
                 reactor.callWhenRunning(kickoff)
                 await self.runtime.start_all()
                 await self.runtime.run_async()
@@ -2287,6 +2293,360 @@ class MainEntrypointTests(unittest.TestCase):
         rt = rt_box['rt']
         self.assertIs(rt.state, _RuntimeState.STOPPED)
         self.assertIsNone(get_current_runtime())           # still detached
+
+
+# --------------------------------------------------------------------------- #
+# B1.4: teardown late-registration policy -- once ordered shutdown is running
+# (state STOPPING) every registration entry point refuses cleanly, so a callback
+# firing during teardown cannot slip a resource past the snapshot-based cleanup
+# or queue work that survives the run (design doc point 4).
+# --------------------------------------------------------------------------- #
+class TeardownPolicyTests(_LoopTestCase):
+    """A callback firing during ordered shutdown must not register live work."""
+
+    def _drive(self, coro):
+        return self.loop.run_until_complete(coro)
+
+    def test_registrations_during_teardown_are_refused(self):
+        # An async cleanup runs *inside* _shutdown (state STOPPING). From there we
+        # attempt every kind of late registration and prove each is refused: no
+        # timer fires, no kickoff fires, no port/task is tracked, and no deferred
+        # cleanup is queued -- the runtime lands STOPPED owning nothing.
+        seen = {}
+        fired = {'timer': False, 'kickoff': False, 'late_cleanup': False,
+                 'from_thread': False, 'in_thread': False}
+
+        async def late_cleanup():
+            fired['late_cleanup'] = True
+
+        class _LateModule(object):
+            pass
+
+        async def probe():
+            # Runs during teardown.
+            seen['state'] = self.runtime.state
+
+            dc = self.runtime.callLater(
+                0, lambda: fired.__setitem__('timer', True))
+            seen['timer_active'] = dc.active()
+            seen['timer_tracked'] = dc in self.runtime._delayed_calls
+
+            self.runtime.callWhenRunning(
+                lambda: fired.__setitem__('kickoff', True))
+            seen['kickoff_queued'] = len(self.runtime._when_running)
+
+            port = self.runtime.listenTCP(0, _DroppingServerFactory())
+            seen['port_closed'] = port._closed
+            seen['port_tracked'] = port in self.runtime._ports
+
+            udp = self.runtime.listenUDP(0, _EchoServer({}, {}))
+            seen['udp_closed'] = udp._closed
+            seen['udp_tracked'] = udp in self.runtime._ports
+
+            conn = self.runtime.connectTCP(
+                '127.0.0.1', 9, _RecordingClientFactory([]))
+            seen['conn_stopped'] = conn._stopped
+            seen['conn_tracked'] = conn in self.runtime._connectors
+
+            proc = self.runtime.spawnProcess(
+                _CollectingProcess({}), sys.executable,
+                [sys.executable, '-c', 'pass'])
+            seen['proc_returned'] = proc is not None
+            seen['proc_tracked'] = len(self.runtime._process_transports)
+
+            seen['task_result'] = self.runtime.create_task(asyncio.sleep(10))
+            seen['tasks_len'] = len(self.runtime._tasks)
+
+            # callInThread must FIRE its Deferred (not hang shutdown).
+            in_thread_d = self.runtime.callInThread(
+                lambda: fired.__setitem__('in_thread', True))
+            seen['in_thread_fired'] = in_thread_d.called
+
+            self.runtime.addStartupBind(lambda: asyncio.sleep(0))
+            seen['binds_queued'] = len(self.runtime._pending_binds)
+
+            self.runtime.addAsyncCleanup(late_cleanup)
+            # The current cleanup list is mid-iteration; a late add must not be
+            # appended for deferral.
+            seen['cleanups_len'] = len(self.runtime._async_cleanups)
+
+            self.runtime.callFromThread(
+                lambda: fired.__setitem__('from_thread', True))
+
+            mod = _LateModule()
+            self.runtime.register_module(mod)
+            seen['module_tracked'] = mod in self.runtime._modules
+
+        async def go():
+            self.runtime.addAsyncCleanup(probe)
+            reactor.callWhenRunning(reactor.stop)
+            await self.runtime.start_all()
+            await self.runtime.run_async()
+            await self.runtime._finish()
+
+        self._drive(go())
+        self.assertIs(seen['state'], _RuntimeState.STOPPING)
+        self.assertFalse(seen['timer_active'])      # callLater handed back inert
+        self.assertFalse(seen['timer_tracked'])     # not added to the registry
+        self.assertEqual(seen['kickoff_queued'], 0)  # callWhenRunning refused
+        self.assertTrue(seen['port_closed'])        # listenTCP returned closed
+        self.assertFalse(seen['port_tracked'])      # not added to the registry
+        self.assertTrue(seen['udp_closed'])         # listenUDP returned closed
+        self.assertFalse(seen['udp_tracked'])       # not added to the registry
+        self.assertTrue(seen['conn_stopped'])       # connectTCP returned stopped
+        self.assertFalse(seen['conn_tracked'])      # not added to the registry
+        self.assertTrue(seen['proc_returned'])      # spawnProcess handed a proxy
+        self.assertEqual(seen['proc_tracked'], 0)   # no transport registered
+        self.assertIsNone(seen['task_result'])      # create_task refused (None)
+        self.assertEqual(seen['tasks_len'], 0)      # nothing scheduled/tracked
+        self.assertTrue(seen['in_thread_fired'])    # callInThread Deferred fired
+        self.assertEqual(seen['binds_queued'], 0)   # addStartupBind refused
+        # Only 'probe' itself is in the cleanup list (the late add was refused).
+        self.assertEqual(seen['cleanups_len'], 1)
+        self.assertFalse(seen['module_tracked'])    # register_module refused
+
+        self.assertFalse(fired['timer'])            # never fired
+        self.assertFalse(fired['kickoff'])          # never fired
+        self.assertFalse(fired['late_cleanup'])     # never deferred/run
+        self.assertFalse(fired['from_thread'])      # callFromThread refused
+        self.assertFalse(fired['in_thread'])        # callInThread never ran fn
+        self.assertIs(self.runtime.state, _RuntimeState.STOPPED)
+        self.assertEqual(self.runtime.live_resources(), [])
+
+    def test_stopped_runtime_refuses_registrations(self):
+        # A runtime left STOPPED after a completed run is a spent teardown
+        # target, not a valid registration surface. Every entry point must refuse
+        # until reset() returns it to COLLECTING (design doc point 4: STOPPED is
+        # included in the teardown gate on purpose).
+        fired = {'timer': False, 'kickoff': False}
+
+        async def go():
+            reactor.callWhenRunning(reactor.stop)
+            await self.runtime.start_all()
+            await self.runtime.run_async()
+            await self.runtime._finish()
+
+        self._drive(go())
+        self.assertIs(self.runtime.state, _RuntimeState.STOPPED)
+
+        dc = self.runtime.callLater(0, lambda: fired.__setitem__('timer', True))
+        self.assertFalse(dc.active())
+        self.assertNotIn(dc, self.runtime._delayed_calls)
+
+        self.runtime.callWhenRunning(
+            lambda: fired.__setitem__('kickoff', True))
+        self.assertEqual(self.runtime._when_running, [])
+
+        port = self.runtime.listenTCP(0, _DroppingServerFactory())
+        self.assertTrue(port._closed)
+        self.assertNotIn(port, self.runtime._ports)
+
+        # create_task refuses without scheduling: returns None, coro not left
+        # un-awaited, nothing tracked.
+        self.assertIsNone(self.runtime.create_task(asyncio.sleep(10)))
+        self.assertEqual(self.runtime._tasks, set())
+
+        # callInThread fires its Deferred (no hang) without submitting work.
+        in_thread_d = self.runtime.callInThread(lambda: None)
+        self.assertTrue(in_thread_d.called)
+
+        mod = object()
+        self.runtime.register_module(mod)
+        self.assertNotIn(mod, self.runtime._modules)
+
+        # Nothing was queued for a hypothetical next run.
+        self.assertEqual(self.runtime.live_resources(), [])
+
+    def test_refusals_are_safe_after_loop_closed(self):
+        # Production condition: after a run the loop is CLOSED. Every refusal
+        # path must decline without touching the closed loop -- no
+        # "Event loop is closed" RuntimeError -- and callInThread must still
+        # fire its Deferred rather than deadlock an awaiter.
+        reports = []
+        self.loop.set_exception_handler(lambda loop, ctx: reports.append(ctx))
+        holder = {}
+
+        async def boom():
+            raise ValueError('failed before loop closed')
+
+        async def go():
+            reactor.callWhenRunning(reactor.stop)
+            await self.runtime.start_all()
+            await self.runtime.run_async()
+            # Create + finish a failing task while the loop is open; hand it to
+            # track_task only AFTER the loop is closed.
+            holder['failed'] = asyncio.ensure_future(boom())
+            await asyncio.sleep(0)                 # let boom raise
+            await self.runtime._finish()
+
+        self._drive(go())
+        self.assertIs(self.runtime.state, _RuntimeState.STOPPED)
+        self.assertTrue(holder['failed'].done())
+
+        # Close the run's loop, mimicking asyncio.run() teardown.
+        self.loop.close()
+        self.assertTrue(self.loop.is_closed())
+
+        # callLater: inert, never scheduled on the closed loop.
+        dc = self.runtime.callLater(0, lambda: None)
+        self.assertFalse(dc.active())
+
+        # callFromThread: no-op, no raise.
+        self.runtime.callFromThread(lambda: None)
+
+        # callInThread: immediately-fired (failed) Deferred, no executor work.
+        d = self.runtime.callInThread(lambda: None)
+        self.assertTrue(d.called)
+
+        # create_task: refused, returns None, coroutine closed (not scheduled).
+        self.assertIsNone(self.runtime.create_task(asyncio.sleep(10)))
+        self.assertEqual(self.runtime._tasks, set())
+
+        # track_task on an ALREADY-FAILED task: exception retrieved
+        # SYNCHRONOUSLY (a done-callback would schedule through the closed loop
+        # and raise) and reported.
+        self.runtime.track_task(holder['failed'], fatal=False)
+        self.assertNotIn(holder['failed'], self.runtime._tasks)
+        self.assertTrue(any(isinstance(c.get('exception'), ValueError)
+                            for c in reports))
+        self.assertIsNone(self.runtime._failure)
+
+    def test_midrun_shim_timer_is_torn_down_by_runtime_shutdown(self):
+        # Single-registry ownership: a callLater scheduled mid-run through the
+        # reactor facade lands in the runtime's own registry and is cancelled by
+        # the ordered shutdown -- it neither fires after the run nor leaks.
+        fired = {'late': False}
+
+        def on_running():
+            # A long timer that must NOT survive teardown.
+            reactor.callLater(30, lambda: fired.__setitem__('late', True))
+            reactor.stop()
+
+        async def go():
+            reactor.callWhenRunning(on_running)
+            await self.runtime.start_all()
+            await self.runtime.run_async()
+            await self.runtime._finish()
+
+        self._drive(go())
+        self.assertFalse(fired['late'])
+        self.assertEqual(self.runtime._delayed_calls, set())
+        self.assertEqual(self.runtime.live_resources(), [])
+
+
+# --------------------------------------------------------------------------- #
+# B1.4: owned-task exception policy -- every runtime-owned task has its exception
+# retrieved (no "task exception was never retrieved"); a fatal task stores the
+# first failure and stops the runtime, a non-fatal one is dispatched to
+# loop.call_exception_handler (design doc point 4).
+# --------------------------------------------------------------------------- #
+class OwnedTaskExceptionTests(_LoopTestCase):
+    """create_task/track_task retain background tasks and govern their errors."""
+
+    def _drive(self, coro):
+        return self.loop.run_until_complete(coro)
+
+    def test_nonfatal_task_exception_reported_not_fatal(self):
+        reports = []
+        self.loop.set_exception_handler(lambda loop, ctx: reports.append(ctx))
+
+        async def boom():
+            raise ValueError('non-fatal background boom')
+
+        async def go():
+            await self.runtime.start_all()          # -> RUNNING
+            self.runtime.create_task(boom(), fatal=False)
+            await asyncio.sleep(0)                    # let boom raise
+            await asyncio.sleep(0)                    # let the done-callback run
+            reactor.stop()
+            await self.runtime.run_async()
+            await self.runtime._finish()
+
+        self._drive(go())
+        # Retrieved + reported to the loop handler, run not aborted.
+        self.assertTrue(any(isinstance(c.get('exception'), ValueError)
+                            for c in reports))
+        self.assertIsNone(self.runtime._failure)
+        self.assertEqual(self.runtime._tasks, set())
+
+    def test_fatal_task_stores_first_failure_and_stops(self):
+        async def boom():
+            raise RuntimeError('fatal background boom')
+
+        async def go():
+            await self.runtime.start_all()          # -> RUNNING
+            self.runtime.create_task(boom(), fatal=True)
+            # A fatal task drives stop() -> completion resolves -> run_async
+            # returns without an explicit reactor.stop().
+            await self.runtime.run_async()
+            await self.runtime._finish()
+
+        self._drive(go())
+        self.assertIsInstance(self.runtime._failure, RuntimeError)
+        self.assertIn('fatal background boom', str(self.runtime._failure))
+        self.assertEqual(self.runtime._tasks, set())
+
+    def test_tracked_task_is_retained_then_cancelled_at_shutdown(self):
+        # The registry holds a strong ref (retention) and the ordered shutdown
+        # cancels + drains it -- no leak, no early GC.
+        box = {}
+
+        async def worker():
+            await asyncio.sleep(30)
+
+        def on_running():
+            box['task'] = self.runtime.create_task(worker())
+            box['tracked'] = box['task'] in self.runtime._tasks
+            reactor.stop()
+
+        async def go():
+            reactor.callWhenRunning(on_running)
+            await self.runtime.start_all()
+            await self.runtime.run_async()
+            await self.runtime._finish()
+
+        self._drive(go())
+        self.assertTrue(box['tracked'])                 # retained while running
+        self.assertTrue(box['task'].cancelled())        # torn down at shutdown
+        self.assertEqual(self.runtime._tasks, set())
+        self.assertEqual(self.runtime.live_resources(), [])
+
+    def test_already_failed_task_adopted_during_teardown_is_reported(self):
+        # A task handed to track_task after teardown has begun is NOT tracked and
+        # is cancelled, but if it has ALREADY failed the cancel is a no-op and the
+        # exception policy still runs: the error is retrieved (no "task exception
+        # was never retrieved") and reported to the loop handler.
+        reports = []
+        self.loop.set_exception_handler(lambda loop, ctx: reports.append(ctx))
+        seen = {}
+
+        async def boom():
+            raise ValueError('failed before adoption')
+
+        async def probe():
+            # Runs during teardown (STOPPING).
+            failed = asyncio.ensure_future(boom())
+            await asyncio.sleep(0)              # let boom raise; task now done
+            self.assertTrue(failed.done())
+            self.runtime.track_task(failed, fatal=False)
+            seen['tracked'] = failed in self.runtime._tasks   # False: refused
+            seen['cancelled'] = failed.cancelled()            # False: already done
+            await asyncio.sleep(0)             # let the done-callback report
+
+        async def go():
+            self.runtime.addAsyncCleanup(probe)
+            reactor.callWhenRunning(reactor.stop)
+            await self.runtime.start_all()
+            await self.runtime.run_async()
+            await self.runtime._finish()
+
+        self._drive(go())
+        self.assertFalse(seen['tracked'])       # not adopted into the snapshot
+        self.assertFalse(seen['cancelled'])     # cancel was a no-op on a done task
+        # The already-set exception was retrieved and reported, not swallowed.
+        self.assertTrue(any(isinstance(c.get('exception'), ValueError)
+                            for c in reports))
+        self.assertIsNone(self.runtime._failure)
 
 
 if __name__ == '__main__':

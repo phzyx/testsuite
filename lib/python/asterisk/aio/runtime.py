@@ -102,6 +102,27 @@ class _DelayedCall(object):
         self._scheduled_time = time.time() + delay
         self._handle = runtime._loop.call_later(delay, self._fire)
 
+    @classmethod
+    def inert(cls, runtime, delay, fn, args, kw):
+        """Build a DelayedCall that never scheduled anything on the loop.
+
+        Used when ``callLater`` is refused during teardown: after the run the
+        loop may be closed, so we must not call ``loop.call_later`` at all. The
+        returned call is already inert (``active()`` is False) and holds no loop
+        handle, so it neither fires nor needs cancelling.
+        """
+        self = cls.__new__(cls)
+        self._runtime = runtime
+        self._delay = delay
+        self._fn = fn
+        self._args = args
+        self._kw = kw
+        self._cancelled = True   # inert: active() is False
+        self._called = False
+        self._scheduled_time = time.time() + delay
+        self._handle = None
+        return self
+
     def _fire(self):
         self._called = True
         self._runtime._delayed_calls.discard(self)
@@ -440,6 +461,28 @@ class AsyncTestRuntime(object):
         return self._state in (_RuntimeState.STARTING, _RuntimeState.RUNNING,
                                _RuntimeState.STOPPING)
 
+    def _tearing_down(self):
+        """True once ordered shutdown has begun (STOPPING) or finished (STOPPED).
+
+        Both shutdown owners set STOPPING *before* running ``_shutdown`` and flip
+        to STOPPED once it completes (native ``_finish``; legacy ``run``'s
+        ``finally``), so a registration issued from a callback firing *during*
+        teardown -- a process-exit, a connection-lost, an async cleanup -- as
+        well as any registration attempted against an already-finished run
+        observes this as True. Every registration entry point consults it and
+        refuses cleanly, so a resource cannot slip past the snapshot-based
+        cleanup or queue work that survives into another run (design doc
+        point 4).
+
+        STOPPED is included on purpose: a finished runtime is not a valid
+        registration target. Sequential reuse must first return the runtime to a
+        clean COLLECTING baseline via ``reset()`` (or install a fresh runtime);
+        only then do registrations for the next run land. This keeps "no callback
+        may queue work for the next run" enforceable -- the reset is the single
+        gate between runs, not an implicit "register while STOPPED" path.
+        """
+        return self._state in (_RuntimeState.STOPPING, _RuntimeState.STOPPED)
+
     def live_resources(self):
         """Return sorted names of registries still holding a live resource.
 
@@ -582,7 +625,13 @@ class AsyncTestRuntime(object):
         lifecycle driven by ``start_all`` and ``_shutdown``. Registration order
         is preserved: ``start()`` runs in this order, ``close()`` in the same
         (forward) order.
+
+        A module offered during teardown is refused: the close snapshot has
+        already been taken, so appending it here would either discard it
+        unclosed or leak it into another run (design doc point 4).
         """
+        if self._tearing_down():
+            return
         self._modules.append(module)
 
     async def _start_modules(self):
@@ -1004,6 +1053,9 @@ class AsyncTestRuntime(object):
     # -- scheduling ------------------------------------------------------- #
     def callWhenRunning(self, fn, *args, **kw):
         """Call ``fn`` as soon as the runtime is running."""
+        if self._tearing_down():
+            # Never fire a kickoff during/after teardown -- the run is ending.
+            return
         if self._state == _RuntimeState.RUNNING:
             self._ensure_loop().call_soon(fn, *args, **kw)
         else:
@@ -1011,6 +1063,12 @@ class AsyncTestRuntime(object):
 
     def callLater(self, delay, fn, *args, **kw):
         """Schedule ``fn`` after ``delay`` seconds; return a _DelayedCall."""
+        if self._tearing_down():
+            # Refuse BEFORE touching the loop: once STOPPED the loop may be
+            # closed, so calling loop.call_later would raise. Hand back an inert
+            # DelayedCall that never scheduled anything (active() is False) and
+            # is not tracked.
+            return _DelayedCall.inert(self, delay, fn, args, kw)
         self._ensure_loop()
         dc = _DelayedCall(self, delay, fn, args, kw)
         self._delayed_calls.add(dc)
@@ -1018,12 +1076,25 @@ class AsyncTestRuntime(object):
 
     def callFromThread(self, fn, *args, **kw):
         """Schedule ``fn`` to run in the runtime thread (thread-safe)."""
+        if self._tearing_down():
+            # Refuse cross-thread scheduling once teardown has begun: the call
+            # would run after the shutdown snapshot (or into another run).
+            return
         self._ensure_loop().call_soon_threadsafe(lambda: fn(*args, **kw))
 
     def callInThread(self, fn, *args, **kw):
         """Run ``fn`` in a worker thread; return a Deferred with the result."""
-        loop = self._ensure_loop()
         deferred = Deferred()
+        if self._tearing_down():
+            # Refuse new executor work during teardown, but FIRE the Deferred so
+            # an awaiter resolves instead of deadlocking shutdown: errback with
+            # ReactorNotRunning rather than handing back an inert (never-fired)
+            # Deferred. No job is submitted and the loop is not touched, so a
+            # closed loop is safe (design doc point 4).
+            deferred.errback(ReactorNotRunning(
+                "callInThread refused: runtime is shutting down"))
+            return deferred
+        loop = self._ensure_loop()
         fut = loop.run_in_executor(None, lambda: fn(*args, **kw))
         self._tasks.add(fut)
 
@@ -1036,6 +1107,103 @@ class AsyncTestRuntime(object):
 
         fut.add_done_callback(_done)
         return deferred
+
+    # -- background tasks ------------------------------------------------- #
+    def track_task(self, task, fatal=False):
+        """Adopt an already-scheduled asyncio Task into the runtime registry.
+
+        Gives a module (or internal code) a single place to hand off a
+        background task so it is (a) held by a strong reference -- neither GC'd
+        early nor leaked past shutdown -- and (b) governed by the owned-task
+        exception policy (design doc point 4). On completion the task's exception
+        is always *retrieved*, so Python never emits "task exception was never
+        retrieved"; but retrieval does not erase a real error:
+
+          - a task marked ``fatal`` stores the FIRST failure on ``_failure`` and
+            stops the runtime (drives completion -> ordered shutdown -> re-raise
+            through ``_main``);
+          - a non-fatal task's exception is dispatched to
+            ``loop.call_exception_handler`` (reported, not swallowed), preserving
+            visibility while keeping task hygiene.
+
+        A task adopted after teardown has begun is cancelled immediately (it must
+        not survive the shutdown snapshot), but the exception policy is installed
+        *first*: a task that has already failed by the time it is handed off still
+        has its exception retrieved and reported (a late cancel does not overwrite
+        an exception that is already set), and a still-running task is cancelled
+        and drained through the same callback. The task is not added to ``_tasks``
+        (the snapshot is closed) but is returned so the caller can await it.
+        """
+        if self._tearing_down():
+            if task.done():
+                # Already finished: retrieve the exception SYNCHRONOUSLY. A
+                # done-callback would be scheduled through the task's loop
+                # (loop.call_soon), which raises if that loop is already closed
+                # (the STOPPED-after-close case). Doing it inline retrieves +
+                # reports an already-failed task safely with no loop work.
+                self._retrieve_task_exception(task, fatal)
+                return task
+            # Still pending: cancel it (it must not survive the snapshot) and
+            # drain the cancellation through a done-callback -- but only if its
+            # loop is still open. On a closed loop a pending task can neither
+            # advance nor be scheduled, so there is nothing left to drain and
+            # touching the loop would raise.
+            if not task.get_loop().is_closed():
+                task.add_done_callback(
+                    lambda t: self._retrieve_task_exception(t, fatal))
+                task.cancel()
+            return task
+        self._tasks.add(task)
+
+        def _done(t):
+            self._tasks.discard(t)
+            self._retrieve_task_exception(t, fatal)
+
+        task.add_done_callback(_done)
+        return task
+
+    def _retrieve_task_exception(self, task, fatal):
+        """Retrieve an owned task's exception and apply the exception policy.
+
+        Always called from a task done-callback so Python never emits "task
+        exception was never retrieved". A cancelled task carries no error. A
+        real exception on a ``fatal`` task records the FIRST failure and stops
+        the runtime; on a non-fatal task it is dispatched to
+        ``loop.call_exception_handler`` (reported, not swallowed).
+        """
+        if task.cancelled():
+            return
+        exc = task.exception()
+        if exc is None:
+            return
+        if fatal:
+            self._fatal(exc)
+        else:
+            self._ensure_loop().call_exception_handler({
+                'message': 'runtime-tracked background task raised',
+                'exception': exc,
+                'task': task,
+            })
+
+    def create_task(self, coro, fatal=False):
+        """Schedule ``coro`` as a runtime-owned background task.
+
+        Convenience wrapper over ``track_task``: schedules the coroutine on the
+        runtime's loop and adopts the resulting task under the same retention +
+        exception policy. Prefer this over a bare ``asyncio.create_task`` for
+        module background work so the task is centrally torn down at shutdown.
+
+        Refused during teardown: the gate is checked BEFORE scheduling (once
+        STOPPED the loop may be closed, so ``ensure_future`` would raise), the
+        coroutine is closed so it is not left un-awaited, and ``None`` is
+        returned -- no task was created to hand back.
+        """
+        if self._tearing_down():
+            coro.close()
+            return None
+        loop = self._ensure_loop()
+        return self.track_task(asyncio.ensure_future(coro, loop=loop),
+                               fatal=fatal)
 
     # -- async server helpers --------------------------------------------- #
     def addStartupBind(self, make_coro, apply=None, label='startup'):
@@ -1053,6 +1221,10 @@ class AsyncTestRuntime(object):
         reuse the same awaited-startup + failure-surfacing path as listenTCP.
         """
         self._ensure_loop()
+        if self._tearing_down():
+            # Refuse a bind requested during teardown: the factory is never
+            # invoked, so nothing is scheduled and no coroutine is created.
+            return
         self._register_bind(make_coro, apply or (lambda result: None), None,
                             label)
 
@@ -1062,6 +1234,11 @@ class AsyncTestRuntime(object):
         Used for resources whose teardown is asynchronous (e.g. aiohttp's
         ``AppRunner.cleanup``). Cleanups run before straggler-task cancellation.
         """
+        if self._tearing_down():
+            # The async-cleanup phase has already run (or is running) its
+            # snapshot; a cleanup registered this late must never be deferred to
+            # the next run, so reject it rather than append (design doc point 4).
+            return
         self._async_cleanups.append(cleanup)
 
     # -- networking ------------------------------------------------------- #
@@ -1082,6 +1259,10 @@ class AsyncTestRuntime(object):
 
         loop = self._ensure_loop()
         handle = _Port()
+        if self._tearing_down():
+            # Opened during teardown: bind nothing, return a closed handle.
+            handle._closed = True
+            return handle
         self._ports.append(handle)
 
         sock = _socket.socket(_socket.AF_INET, _socket.SOCK_DGRAM)
@@ -1119,6 +1300,10 @@ class AsyncTestRuntime(object):
         """Listen for TCP connections, building protocols from ``factory``."""
         loop = self._ensure_loop()
         handle = _Port()
+        if self._tearing_down():
+            # Opened during teardown: bind nothing, return a closed handle.
+            handle._closed = True
+            return handle
         self._ports.append(handle)
 
         def _bind():
@@ -1142,6 +1327,11 @@ class AsyncTestRuntime(object):
         """
         self._ensure_loop()
         connector = _Connector(self, host, port, factory, timeout, bindAddress)
+        if self._tearing_down():
+            # Requested during teardown: hand back a stopped connector that
+            # never attempts a connection and is not tracked for cleanup.
+            connector._stopped = True
+            return connector
         self._connectors.append(connector)
         connector.connect()
         return connector
@@ -1166,6 +1356,11 @@ class AsyncTestRuntime(object):
         # protocol.transport is None.
         if getattr(processProtocol, 'transport', None) is None:
             processProtocol.transport = _PendingProcessTransport()
+
+        if self._tearing_down():
+            # Requested during teardown: spawn nothing and register nothing.
+            # The connector proxies the (never-connected) placeholder transport.
+            return _ProcessConnector(processProtocol)
 
         def _bind():
             return loop.subprocess_exec(lambda: processProtocol,
@@ -1199,6 +1394,13 @@ class AsyncTestRuntime(object):
         ``on_error(exc)`` handles a bind failure; when None, the failure is fatal
         and stops the runtime (and aborts the pre-run startup drain).
         """
+        if self._tearing_down():
+            # Defensive chokepoint: a bind reaching here during teardown (e.g. a
+            # reconnect attempt driven by a late callback) is refused outright.
+            # Nothing is scheduled and nothing is queued, so no task can survive
+            # the shutdown snapshot or repopulate the next run's registries. The
+            # public entry points already guard, so this is belt-and-braces.
+            return
         if self._state == _RuntimeState.RUNNING:
             task = asyncio.ensure_future(make_coro())
             self._tasks.add(task)
