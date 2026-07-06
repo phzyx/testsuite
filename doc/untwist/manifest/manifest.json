@@ -13,7 +13,7 @@
     "maybeDeferred": 8,
     "succeed": 1
   },
-  "files_with_reactor_or_defer": 213,
+  "files_with_reactor_or_defer": 212,
   "lifecycle_owners": {
     "doc/untwist/test_ari_parity.py": {
       "counts": {
@@ -75,13 +75,6 @@
     "lib/python/asterisk/asterisk.py": {
       "counts": {
         "callWhenRunning": 1
-      },
-      "is_run_test": false
-    },
-    "lib/python/asterisk/pcap.py": {
-      "counts": {
-        "run": 1,
-        "stop": 1
       },
       "is_run_test": false
     },
@@ -984,7 +977,7 @@
       "is_run_test": true
     }
   },
-  "parsed": 394,
+  "parsed": 395,
   "per_file": {
     "doc/untwist/test_ari_parity.py": {
       "defer": {},
@@ -1187,13 +1180,6 @@
       "defer": {},
       "reactor": {
         "callLater": 5
-      }
-    },
-    "lib/python/asterisk/pcap.py": {
-      "defer": {},
-      "reactor": {
-        "run": 1,
-        "stop": 1
       }
     },
     "lib/python/asterisk/pcap_proxy.py": {
@@ -2384,7 +2370,7 @@
       }
     }
   },
-  "reactor_grand_total": 587,
+  "reactor_grand_total": 585,
   "reactor_totals": {
     "_ensure_loop": 6,
     "addAsyncCleanup": 2,
@@ -2395,12 +2381,12 @@
     "connectTCP": 5,
     "listenTCP": 29,
     "listenUDP": 14,
-    "run": 189,
+    "run": 188,
     "running": 14,
     "spawnProcess": 11,
-    "stop": 89
+    "stop": 88
   },
   "root": "/usr/src/phzyx/testsuite",
-  "scanned": 394,
+  "scanned": 395,
   "skipped_non_python": 0
 }

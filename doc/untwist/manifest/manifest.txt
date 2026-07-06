@@ -1,7 +1,7 @@
 # reactor/defer manifest  (root=.)
-scanned=394 parsed=394 skipped_non_python=0 files_with_usage=213
+scanned=395 parsed=395 skipped_non_python=0 files_with_usage=212
 
-## reactor.* totals  (grand=587)
+## reactor.* totals  (grand=585)
   reactor._ensure_loop         6
   reactor.addAsyncCleanup      2
   reactor.addStartupBind       4
@@ -11,10 +11,10 @@ scanned=394 parsed=394 skipped_non_python=0 files_with_usage=213
   reactor.connectTCP           5
   reactor.listenTCP            29
   reactor.listenUDP            14
-  reactor.run                  189
+  reactor.run                  188
   reactor.running              14
   reactor.spawnProcess         11
-  reactor.stop                 89
+  reactor.stop                 88
 
 ## defer totals  (grand=106)
   AlreadyCalledError         2
@@ -29,7 +29,7 @@ scanned=394 parsed=394 skipped_non_python=0 files_with_usage=213
   maybeDeferred              8
   succeed                    1
 
-## lifecycle owners (157)  [run/stop/running/callWhenRunning]
+## lifecycle owners (156)  [run/stop/running/callWhenRunning]
   [module  ] doc/untwist/test_ari_parity.py   callWhenRunning=1 run=1 stop=2
   [module  ] doc/untwist/test_core_runtime.py   callWhenRunning=1 run=1 stop=2
   [module  ] doc/untwist/test_dns_parity.py   callWhenRunning=1 run=1 stop=2
@@ -38,7 +38,6 @@ scanned=394 parsed=394 skipped_non_python=0 files_with_usage=213
   [module  ] doc/untwist/test_ws_parity.py   callWhenRunning=1 run=1 stop=2
   [module  ] lib/python/asterisk/aio/test_aio.py   callWhenRunning=56 run=35 running=11 stop=71
   [module  ] lib/python/asterisk/asterisk.py   callWhenRunning=1
-  [module  ] lib/python/asterisk/pcap.py   run=1 stop=1
   [module  ] lib/python/asterisk/test_case.py   callWhenRunning=1 running=1 stop=1
   [run-test] tests/agi/exit_status/run-test   run=1
   [run-test] tests/agi/nominal/run-test   run=1
