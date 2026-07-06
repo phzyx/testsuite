@@ -13,7 +13,7 @@
     "maybeDeferred": 8,
     "succeed": 1
   },
-  "files_with_reactor_or_defer": 137,
+  "files_with_reactor_or_defer": 129,
   "lifecycle_owners": {
     "doc/untwist/test_ari_parity.py": {
       "counts": {
@@ -85,18 +85,6 @@
         "stop": 1
       },
       "is_run_test": false
-    },
-    "tests/agi/exit_status/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
-    "tests/agi/nominal/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
     },
     "tests/apps/confbridge/confbridge_nominal/run-test": {
       "counts": {
@@ -281,12 +269,6 @@
       },
       "is_run_test": true
     },
-    "tests/callparking_retrieval/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
     "tests/channels/iax2/acl_call/run-test": {
       "counts": {
         "run": 1
@@ -294,18 +276,6 @@
       "is_run_test": true
     },
     "tests/channels/pjsip/acl_call/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
-    "tests/channels/pjsip/hold/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
-    "tests/channels/pjsip/hold_inactive/run-test": {
       "counts": {
         "run": 1
       },
@@ -330,54 +300,6 @@
       "is_run_test": true
     },
     "tests/fastagi/database/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
-    "tests/fastagi/execute/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
-    "tests/fastagi/say-alpha/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
-    "tests/fastagi/say-date/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
-    "tests/fastagi/say-datetime/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
-    "tests/fastagi/say-digits/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
-    "tests/fastagi/say-number/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
-    "tests/fastagi/say-phonetic/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
-    "tests/fastagi/say-time/run-test": {
       "counts": {
         "run": 1
       },
@@ -417,34 +339,10 @@
       },
       "is_run_test": true
     },
-    "tests/hangup/handlers/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
-    "tests/hangup/handlers_endbeforehexten/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
     "tests/manager/mixmonitor/mixmonitor_id/run-test": {
       "counts": {
         "run": 1,
         "stop": 1
-      },
-      "is_run_test": true
-    },
-    "tests/masquerade/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
-    "tests/predial/run-test": {
-      "counts": {
-        "run": 1
       },
       "is_run_test": true
     },
@@ -760,15 +658,13 @@
     "tests/agi/exit_status/run-test": {
       "defer": {},
       "reactor": {
-        "callLater": 1,
-        "run": 1
+        "callLater": 1
       }
     },
     "tests/agi/nominal/run-test": {
       "defer": {},
       "reactor": {
-        "callLater": 1,
-        "run": 1
+        "callLater": 1
       }
     },
     "tests/apps/chanspy/chanspy_w_mixmonitor/run-test": {
@@ -986,12 +882,6 @@
         "run": 1
       }
     },
-    "tests/callparking_retrieval/run-test": {
-      "defer": {},
-      "reactor": {
-        "run": 1
-      }
-    },
     "tests/channels/iax2/acl_call/run-test": {
       "defer": {},
       "reactor": {
@@ -999,18 +889,6 @@
       }
     },
     "tests/channels/pjsip/acl_call/run-test": {
-      "defer": {},
-      "reactor": {
-        "run": 1
-      }
-    },
-    "tests/channels/pjsip/hold/run-test": {
-      "defer": {},
-      "reactor": {
-        "run": 1
-      }
-    },
-    "tests/channels/pjsip/hold_inactive/run-test": {
       "defer": {},
       "reactor": {
         "run": 1
@@ -1108,12 +986,6 @@
         "run": 1
       }
     },
-    "tests/fastagi/execute/run-test": {
-      "defer": {},
-      "reactor": {
-        "run": 1
-      }
-    },
     "tests/fastagi/hangup/run-test": {
       "defer": {},
       "reactor": {
@@ -1129,50 +1001,43 @@
     "tests/fastagi/say-alpha/run-test": {
       "defer": {},
       "reactor": {
-        "listenTCP": 2,
-        "run": 1
+        "listenTCP": 2
       }
     },
     "tests/fastagi/say-date/run-test": {
       "defer": {},
       "reactor": {
-        "listenTCP": 2,
-        "run": 1
+        "listenTCP": 2
       }
     },
     "tests/fastagi/say-datetime/run-test": {
       "defer": {},
       "reactor": {
-        "listenTCP": 2,
-        "run": 1
+        "listenTCP": 2
       }
     },
     "tests/fastagi/say-digits/run-test": {
       "defer": {},
       "reactor": {
-        "listenTCP": 2,
-        "run": 1
+        "listenTCP": 2
       }
     },
     "tests/fastagi/say-number/run-test": {
       "defer": {},
       "reactor": {
-        "listenTCP": 2,
-        "run": 1
+        "listenTCP": 2
       }
     },
     "tests/fastagi/say-phonetic/run-test": {
       "defer": {},
       "reactor": {
-        "listenTCP": 2,
-        "run": 1
+        "listenTCP": 2
       }
     },
     "tests/fastagi/say-time/run-test": {
       "defer": {},
       "reactor": {
-        "listenTCP": 2,
-        "run": 1
+        "listenTCP": 2
       }
     },
     "tests/fastagi/wait-for-digit/run-test": {
@@ -1211,18 +1076,6 @@
         "stop": 1
       }
     },
-    "tests/hangup/handlers/run-test": {
-      "defer": {},
-      "reactor": {
-        "run": 1
-      }
-    },
-    "tests/hangup/handlers_endbeforehexten/run-test": {
-      "defer": {},
-      "reactor": {
-        "run": 1
-      }
-    },
     "tests/hep/hep_capture_node.py": {
       "defer": {},
       "reactor": {
@@ -1254,12 +1107,6 @@
       },
       "reactor": {}
     },
-    "tests/masquerade/run-test": {
-      "defer": {},
-      "reactor": {
-        "run": 1
-      }
-    },
     "tests/pbx/call_file_retries_archive/retries_archive.py": {
       "defer": {},
       "reactor": {
@@ -1289,12 +1136,6 @@
         "defer.DeferredList": 1
       },
       "reactor": {}
-    },
-    "tests/predial/run-test": {
-      "defer": {},
-      "reactor": {
-        "run": 1
-      }
     },
     "tests/rest_api/applications/channel-subscriptions/originate_to_other_stasis_app/local_channels/run-test": {
       "defer": {},
@@ -1386,7 +1227,7 @@
       }
     }
   },
-  "reactor_grand_total": 502,
+  "reactor_grand_total": 485,
   "reactor_totals": {
     "_ensure_loop": 6,
     "addAsyncCleanup": 2,
@@ -1397,7 +1238,7 @@
     "connectTCP": 5,
     "listenTCP": 29,
     "listenUDP": 14,
-    "run": 101,
+    "run": 84,
     "running": 14,
     "spawnProcess": 11,
     "stop": 89

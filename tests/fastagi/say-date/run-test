@@ -12,6 +12,7 @@ import sys
 import logging
 
 from asterisk.aio import reactor
+from asterisk.test_runner import run_test_object
 from starpy import fastagi
 
 sys.path.append("lib/python")
@@ -82,8 +83,7 @@ class FastAGISayDateTest(TestCase):
         self.launch_test()
 
 def main():
-    test = FastAGISayDateTest()
-    reactor.run()
+    test = run_test_object(FastAGISayDateTest)
     if test.passed is not True or test.notified is not True:
         return 1
 

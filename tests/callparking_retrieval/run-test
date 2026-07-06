@@ -9,7 +9,7 @@ the GNU General Public License Version 2.
 
 import sys
 import logging
-from asterisk.aio import reactor
+from asterisk.test_runner import run_test_object
 
 sys.path.append("lib/python")
 from asterisk.test_case import TestCase
@@ -116,8 +116,7 @@ class ParkRetrieveTest(TestCase):
 def main():
     """Entry function"""
     # Run ParkRetrieve Test
-    test = ParkRetrieveTest()
-    reactor.run()
+    test = run_test_object(ParkRetrieveTest)
     if test.passed:
         LOGGER.info("Test Passed")
         return 0

@@ -14,7 +14,7 @@ sys.path.append("lib/python")
 
 from asterisk.test_case import TestCase
 from asterisk.sipp import SIPpScenario
-from asterisk.aio import reactor
+from asterisk.test_runner import run_test_object
 
 LOGGER = logging.getLogger(__name__)
 INJECT_FILE = "inject.csv"
@@ -216,8 +216,7 @@ class SIPHold(TestCase):
 
 def main():
     ''' Run the test and check the results '''
-    test = SIPHold()
-    reactor.run()
+    test = run_test_object(SIPHold)
 
     if (test.moh_start_events != len(test.sipp_scn_phone_a)):
         LOGGER.error("Failed to receive %d MOH start events (received %d)" %
