@@ -133,96 +133,80 @@
    "primary_bucket": "migrated"
   },
   {
-   "ctor_count": 1,
+   "ctor_count": 0,
    "custom_assertions": false,
    "direct_lifecycle": false,
    "direct_lifecycle_attrs": [],
    "file": "tests/apps/directed_pickup/pickup_chan/run-test",
    "has_main": true,
-   "has_reactor_run": true,
+   "has_reactor_run": false,
    "helper_owned": false,
    "language": "python",
-   "migrated": false,
-   "migration_strategy": "hook-convert",
+   "migrated": true,
+   "migration_strategy": "migrated",
    "multiple_objects": false,
-   "post_run_calls": [
-    "stop_asterisk"
-   ],
-   "post_run_cleanup": true,
-   "pre_run": true,
-   "pre_run_calls": [
-    "start_asterisk"
-   ],
-   "primary_bucket": "hook-convert"
+   "post_run_calls": [],
+   "post_run_cleanup": false,
+   "pre_run": false,
+   "pre_run_calls": [],
+   "primary_bucket": "migrated"
   },
   {
-   "ctor_count": 1,
+   "ctor_count": 0,
    "custom_assertions": false,
    "direct_lifecycle": false,
    "direct_lifecycle_attrs": [],
    "file": "tests/apps/directory/directory_attendant_exit/run-test",
    "has_main": true,
-   "has_reactor_run": true,
+   "has_reactor_run": false,
    "helper_owned": false,
    "language": "python",
-   "migrated": false,
-   "migration_strategy": "hook-convert",
+   "migrated": true,
+   "migration_strategy": "migrated",
    "multiple_objects": false,
-   "post_run_calls": [
-    "stop_asterisk"
-   ],
-   "post_run_cleanup": true,
-   "pre_run": true,
-   "pre_run_calls": [
-    "start_asterisk"
-   ],
-   "primary_bucket": "hook-convert"
+   "post_run_calls": [],
+   "post_run_cleanup": false,
+   "pre_run": false,
+   "pre_run_calls": [],
+   "primary_bucket": "migrated"
   },
   {
-   "ctor_count": 1,
+   "ctor_count": 0,
    "custom_assertions": false,
    "direct_lifecycle": false,
    "direct_lifecycle_attrs": [],
    "file": "tests/apps/directory/directory_context_operator_exit/run-test",
    "has_main": true,
-   "has_reactor_run": true,
+   "has_reactor_run": false,
    "helper_owned": false,
    "language": "python",
-   "migrated": false,
-   "migration_strategy": "hook-convert",
+   "migrated": true,
+   "migration_strategy": "migrated",
    "multiple_objects": false,
-   "post_run_calls": [
-    "stop_asterisk"
-   ],
-   "post_run_cleanup": true,
-   "pre_run": true,
-   "pre_run_calls": [
-    "start_asterisk"
-   ],
-   "primary_bucket": "hook-convert"
+   "post_run_calls": [],
+   "post_run_cleanup": false,
+   "pre_run": false,
+   "pre_run_calls": [],
+   "primary_bucket": "migrated"
   },
   {
-   "ctor_count": 1,
+   "ctor_count": 0,
    "custom_assertions": false,
    "direct_lifecycle": false,
    "direct_lifecycle_attrs": [],
    "file": "tests/apps/directory/directory_operator_exit/run-test",
    "has_main": true,
-   "has_reactor_run": true,
+   "has_reactor_run": false,
    "helper_owned": false,
    "language": "python",
-   "migrated": false,
-   "migration_strategy": "hook-convert",
+   "migrated": true,
+   "migration_strategy": "migrated",
    "multiple_objects": false,
-   "post_run_calls": [
-    "stop_asterisk"
-   ],
-   "post_run_cleanup": true,
-   "pre_run": true,
-   "pre_run_calls": [
-    "start_asterisk"
-   ],
-   "primary_bucket": "hook-convert"
+   "post_run_calls": [],
+   "post_run_cleanup": false,
+   "pre_run": false,
+   "pre_run_calls": [],
+   "primary_bucket": "migrated"
   },
   {
    "ctor_count": 0,
@@ -301,27 +285,23 @@
    "primary_bucket": "migrated"
   },
   {
-   "ctor_count": 1,
+   "ctor_count": 0,
    "custom_assertions": false,
    "direct_lifecycle": false,
    "direct_lifecycle_attrs": [],
    "file": "tests/apps/page/page_baseline/run-test",
    "has_main": true,
-   "has_reactor_run": true,
+   "has_reactor_run": false,
    "helper_owned": false,
    "language": "python",
-   "migrated": false,
-   "migration_strategy": "hook-convert",
+   "migrated": true,
+   "migration_strategy": "migrated",
    "multiple_objects": false,
-   "post_run_calls": [
-    "stop_asterisk"
-   ],
-   "post_run_cleanup": true,
-   "pre_run": true,
-   "pre_run_calls": [
-    "start_asterisk"
-   ],
-   "primary_bucket": "hook-convert"
+   "post_run_calls": [],
+   "post_run_cleanup": false,
+   "pre_run": false,
+   "pre_run_calls": [],
+   "primary_bucket": "migrated"
   },
   {
    "file": "tests/apps/queues/gosub_test/run-test",
@@ -398,27 +378,23 @@
    "primary_bucket": "hand-convert"
   },
   {
-   "ctor_count": 1,
+   "ctor_count": 0,
    "custom_assertions": false,
    "direct_lifecycle": false,
    "direct_lifecycle_attrs": [],
    "file": "tests/apps/queues/reason_pause_ami/run-test",
    "has_main": true,
-   "has_reactor_run": true,
+   "has_reactor_run": false,
    "helper_owned": false,
    "language": "python",
-   "migrated": false,
-   "migration_strategy": "hook-convert",
+   "migrated": true,
+   "migration_strategy": "migrated",
    "multiple_objects": false,
-   "post_run_calls": [
-    "stop_asterisk"
-   ],
-   "post_run_cleanup": true,
-   "pre_run": true,
-   "pre_run_calls": [
-    "start_asterisk"
-   ],
-   "primary_bucket": "hook-convert"
+   "post_run_calls": [],
+   "post_run_cleanup": false,
+   "pre_run": false,
+   "pre_run_calls": [],
+   "primary_bucket": "migrated"
   },
   {
    "ctor_count": 0,
@@ -447,27 +423,23 @@
    "primary_bucket": "shell"
   },
   {
-   "ctor_count": 1,
+   "ctor_count": 0,
    "custom_assertions": false,
    "direct_lifecycle": false,
    "direct_lifecycle_attrs": [],
    "file": "tests/apps/queues/set_penalty/run-test",
    "has_main": true,
-   "has_reactor_run": true,
+   "has_reactor_run": false,
    "helper_owned": false,
    "language": "python",
-   "migrated": false,
-   "migration_strategy": "hook-convert",
+   "migrated": true,
+   "migration_strategy": "migrated",
    "multiple_objects": false,
-   "post_run_calls": [
-    "stop_asterisk"
-   ],
-   "post_run_cleanup": true,
-   "pre_run": true,
-   "pre_run_calls": [
-    "start_asterisk"
-   ],
-   "primary_bucket": "hook-convert"
+   "post_run_calls": [],
+   "post_run_cleanup": false,
+   "pre_run": false,
+   "pre_run_calls": [],
+   "primary_bucket": "migrated"
   },
   {
    "file": "tests/apps/queues/wrapup_time/run-test",
@@ -1738,27 +1710,23 @@
    "primary_bucket": "migrated"
   },
   {
-   "ctor_count": 1,
+   "ctor_count": 0,
    "custom_assertions": false,
    "direct_lifecycle": false,
    "direct_lifecycle_attrs": [],
    "file": "tests/connected_line/subroutine/run-test",
    "has_main": true,
-   "has_reactor_run": true,
+   "has_reactor_run": false,
    "helper_owned": false,
    "language": "python",
-   "migrated": false,
-   "migration_strategy": "hook-convert",
+   "migrated": true,
+   "migration_strategy": "migrated",
    "multiple_objects": false,
-   "post_run_calls": [
-    "stop_asterisk"
-   ],
-   "post_run_cleanup": true,
-   "pre_run": true,
-   "pre_run_calls": [
-    "start_asterisk"
-   ],
-   "primary_bucket": "hook-convert"
+   "post_run_calls": [],
+   "post_run_cleanup": false,
+   "pre_run": false,
+   "pre_run_calls": [],
+   "primary_bucket": "migrated"
   },
   {
    "file": "tests/example/run-test",
@@ -2529,73 +2497,61 @@
    "primary_bucket": "shell"
   },
   {
-   "ctor_count": 1,
+   "ctor_count": 0,
    "custom_assertions": false,
    "direct_lifecycle": false,
    "direct_lifecycle_attrs": [],
    "file": "tests/manager/danger/dangerous/run-test",
    "has_main": true,
-   "has_reactor_run": true,
+   "has_reactor_run": false,
    "helper_owned": false,
    "language": "python",
-   "migrated": false,
-   "migration_strategy": "hook-convert",
+   "migrated": true,
+   "migration_strategy": "migrated",
    "multiple_objects": false,
-   "post_run_calls": [
-    "stop_asterisk"
-   ],
-   "post_run_cleanup": true,
-   "pre_run": true,
-   "pre_run_calls": [
-    "start_asterisk"
-   ],
-   "primary_bucket": "hook-convert"
+   "post_run_calls": [],
+   "post_run_cleanup": false,
+   "pre_run": false,
+   "pre_run_calls": [],
+   "primary_bucket": "migrated"
   },
   {
-   "ctor_count": 1,
+   "ctor_count": 0,
    "custom_assertions": false,
    "direct_lifecycle": false,
    "direct_lifecycle_attrs": [],
    "file": "tests/manager/danger/safe/run-test",
    "has_main": true,
-   "has_reactor_run": true,
+   "has_reactor_run": false,
    "helper_owned": false,
    "language": "python",
-   "migrated": false,
-   "migration_strategy": "hook-convert",
+   "migrated": true,
+   "migration_strategy": "migrated",
    "multiple_objects": false,
-   "post_run_calls": [
-    "stop_asterisk"
-   ],
-   "post_run_cleanup": true,
-   "pre_run": true,
-   "pre_run_calls": [
-    "start_asterisk"
-   ],
-   "primary_bucket": "hook-convert"
+   "post_run_calls": [],
+   "post_run_cleanup": false,
+   "pre_run": false,
+   "pre_run_calls": [],
+   "primary_bucket": "migrated"
   },
   {
-   "ctor_count": 1,
+   "ctor_count": 0,
    "custom_assertions": false,
    "direct_lifecycle": false,
    "direct_lifecycle_attrs": [],
    "file": "tests/manager/login/run-test",
    "has_main": true,
-   "has_reactor_run": true,
+   "has_reactor_run": false,
    "helper_owned": false,
    "language": "python",
-   "migrated": false,
-   "migration_strategy": "hook-convert",
+   "migrated": true,
+   "migration_strategy": "migrated",
    "multiple_objects": false,
-   "post_run_calls": [
-    "stop_asterisk"
-   ],
-   "post_run_cleanup": true,
-   "pre_run": true,
-   "pre_run_calls": [
-    "start_asterisk"
-   ],
-   "primary_bucket": "hook-convert"
+   "post_run_calls": [],
+   "post_run_cleanup": false,
+   "pre_run": false,
+   "pre_run_calls": [],
+   "primary_bucket": "migrated"
   },
   {
    "ctor_count": 1,
@@ -2692,119 +2648,99 @@
    "primary_bucket": "migrated"
   },
   {
-   "ctor_count": 1,
+   "ctor_count": 0,
    "custom_assertions": false,
    "direct_lifecycle": false,
    "direct_lifecycle_attrs": [],
    "file": "tests/pbx/dialplan_reload/run-test",
    "has_main": true,
-   "has_reactor_run": true,
+   "has_reactor_run": false,
    "helper_owned": false,
    "language": "python",
-   "migrated": false,
-   "migration_strategy": "hook-convert",
+   "migrated": true,
+   "migration_strategy": "migrated",
    "multiple_objects": false,
-   "post_run_calls": [
-    "stop_asterisk"
-   ],
-   "post_run_cleanup": true,
-   "pre_run": true,
-   "pre_run_calls": [
-    "start_asterisk"
-   ],
-   "primary_bucket": "hook-convert"
+   "post_run_calls": [],
+   "post_run_cleanup": false,
+   "pre_run": false,
+   "pre_run_calls": [],
+   "primary_bucket": "migrated"
   },
   {
-   "ctor_count": 1,
+   "ctor_count": 0,
    "custom_assertions": false,
    "direct_lifecycle": false,
    "direct_lifecycle_attrs": [],
    "file": "tests/pbx/dialplan_save/run-test",
    "has_main": true,
-   "has_reactor_run": true,
+   "has_reactor_run": false,
    "helper_owned": false,
    "language": "python",
-   "migrated": false,
-   "migration_strategy": "hook-convert",
+   "migrated": true,
+   "migration_strategy": "migrated",
    "multiple_objects": false,
-   "post_run_calls": [
-    "stop_asterisk"
-   ],
-   "post_run_cleanup": true,
-   "pre_run": true,
-   "pre_run_calls": [
-    "start_asterisk"
-   ],
-   "primary_bucket": "hook-convert"
+   "post_run_calls": [],
+   "post_run_cleanup": false,
+   "pre_run": false,
+   "pre_run_calls": [],
+   "primary_bucket": "migrated"
   },
   {
-   "ctor_count": 1,
+   "ctor_count": 0,
    "custom_assertions": false,
    "direct_lifecycle": false,
    "direct_lifecycle_attrs": [],
    "file": "tests/pbx/merge_contexts/run-test",
    "has_main": true,
-   "has_reactor_run": true,
+   "has_reactor_run": false,
    "helper_owned": false,
    "language": "python",
-   "migrated": false,
-   "migration_strategy": "hook-convert",
+   "migrated": true,
+   "migration_strategy": "migrated",
    "multiple_objects": false,
-   "post_run_calls": [
-    "stop_asterisk"
-   ],
-   "post_run_cleanup": true,
-   "pre_run": true,
-   "pre_run_calls": [
-    "start_asterisk"
-   ],
-   "primary_bucket": "hook-convert"
+   "post_run_calls": [],
+   "post_run_cleanup": false,
+   "pre_run": false,
+   "pre_run_calls": [],
+   "primary_bucket": "migrated"
   },
   {
-   "ctor_count": 1,
+   "ctor_count": 0,
    "custom_assertions": false,
    "direct_lifecycle": false,
    "direct_lifecycle_attrs": [],
    "file": "tests/pbx/pbx_lua_background/run-test",
    "has_main": true,
-   "has_reactor_run": true,
+   "has_reactor_run": false,
    "helper_owned": false,
    "language": "python",
-   "migrated": false,
-   "migration_strategy": "hook-convert",
+   "migrated": true,
+   "migration_strategy": "migrated",
    "multiple_objects": false,
-   "post_run_calls": [
-    "stop_asterisk"
-   ],
-   "post_run_cleanup": true,
-   "pre_run": true,
-   "pre_run_calls": [
-    "start_asterisk"
-   ],
-   "primary_bucket": "hook-convert"
+   "post_run_calls": [],
+   "post_run_cleanup": false,
+   "pre_run": false,
+   "pre_run_calls": [],
+   "primary_bucket": "migrated"
   },
   {
-   "ctor_count": 1,
+   "ctor_count": 0,
    "custom_assertions": false,
    "direct_lifecycle": false,
    "direct_lifecycle_attrs": [],
    "file": "tests/pbx/pbx_lua_goto/run-test",
    "has_main": true,
-   "has_reactor_run": true,
+   "has_reactor_run": false,
    "helper_owned": false,
    "language": "python",
-   "migrated": false,
-   "migration_strategy": "hook-convert",
+   "migrated": true,
+   "migration_strategy": "migrated",
    "multiple_objects": false,
-   "post_run_calls": [
-    "stop_asterisk"
-   ],
-   "post_run_cleanup": true,
-   "pre_run": true,
-   "pre_run_calls": [
-    "start_asterisk"
-   ],
-   "primary_bucket": "hook-convert"
+   "post_run_calls": [],
+   "post_run_cleanup": false,
+   "pre_run": false,
+   "pre_run_calls": [],
+   "primary_bucket": "migrated"
   },
   {
    "ctor_count": 0,
@@ -2847,50 +2783,42 @@
    "primary_bucket": "hand-convert"
   },
   {
-   "ctor_count": 1,
+   "ctor_count": 0,
    "custom_assertions": false,
    "direct_lifecycle": false,
    "direct_lifecycle_attrs": [],
    "file": "tests/redirecting/subroutine/run-test",
    "has_main": true,
-   "has_reactor_run": true,
+   "has_reactor_run": false,
    "helper_owned": false,
    "language": "python",
-   "migrated": false,
-   "migration_strategy": "hook-convert",
+   "migrated": true,
+   "migration_strategy": "migrated",
    "multiple_objects": false,
-   "post_run_calls": [
-    "stop_asterisk"
-   ],
-   "post_run_cleanup": true,
-   "pre_run": true,
-   "pre_run_calls": [
-    "start_asterisk"
-   ],
-   "primary_bucket": "hook-convert"
+   "post_run_calls": [],
+   "post_run_cleanup": false,
+   "pre_run": false,
+   "pre_run_calls": [],
+   "primary_bucket": "migrated"
   },
   {
-   "ctor_count": 1,
+   "ctor_count": 0,
    "custom_assertions": false,
    "direct_lifecycle": false,
    "direct_lifecycle_attrs": [],
    "file": "tests/regressions/M18882/run-test",
    "has_main": true,
-   "has_reactor_run": true,
+   "has_reactor_run": false,
    "helper_owned": false,
    "language": "python",
-   "migrated": false,
-   "migration_strategy": "hook-convert",
+   "migrated": true,
+   "migration_strategy": "migrated",
    "multiple_objects": false,
-   "post_run_calls": [
-    "stop_asterisk"
-   ],
-   "post_run_cleanup": true,
-   "pre_run": true,
-   "pre_run_calls": [
-    "start_asterisk"
-   ],
-   "primary_bucket": "hook-convert"
+   "post_run_calls": [],
+   "post_run_cleanup": false,
+   "pre_run": false,
+   "pre_run_calls": [],
+   "primary_bucket": "migrated"
   },
   {
    "ctor_count": 0,
@@ -3216,50 +3144,42 @@
    "primary_bucket": "migrated"
   },
   {
-   "ctor_count": 1,
+   "ctor_count": 0,
    "custom_assertions": false,
    "direct_lifecycle": false,
    "direct_lifecycle_attrs": [],
    "file": "tests/udptl/run-test",
    "has_main": true,
-   "has_reactor_run": true,
+   "has_reactor_run": false,
    "helper_owned": false,
    "language": "python",
-   "migrated": false,
-   "migration_strategy": "hook-convert",
+   "migrated": true,
+   "migration_strategy": "migrated",
    "multiple_objects": false,
-   "post_run_calls": [
-    "stop_asterisk"
-   ],
-   "post_run_cleanup": true,
-   "pre_run": true,
-   "pre_run_calls": [
-    "start_asterisk"
-   ],
-   "primary_bucket": "hook-convert"
+   "post_run_calls": [],
+   "post_run_cleanup": false,
+   "pre_run": false,
+   "pre_run_calls": [],
+   "primary_bucket": "migrated"
   },
   {
-   "ctor_count": 1,
+   "ctor_count": 0,
    "custom_assertions": false,
    "direct_lifecycle": false,
    "direct_lifecycle_attrs": [],
    "file": "tests/udptl_v6/run-test",
    "has_main": true,
-   "has_reactor_run": true,
+   "has_reactor_run": false,
    "helper_owned": false,
    "language": "python",
-   "migrated": false,
-   "migration_strategy": "hook-convert",
+   "migrated": true,
+   "migration_strategy": "migrated",
    "multiple_objects": false,
-   "post_run_calls": [
-    "stop_asterisk"
-   ],
-   "post_run_cleanup": true,
-   "pre_run": true,
-   "pre_run_calls": [
-    "start_asterisk"
-   ],
-   "primary_bucket": "hook-convert"
+   "post_run_calls": [],
+   "post_run_cleanup": false,
+   "pre_run": false,
+   "pre_run_calls": [],
+   "primary_bucket": "migrated"
   }
  ],
  "summary": {
@@ -3267,10 +3187,10 @@
    "custom_assertions": 55,
    "direct_lifecycle": 4,
    "helper_owned": 1,
-   "migrated": 67,
+   "migrated": 87,
    "multiple_objects": 23,
-   "post_run_cleanup": 51,
-   "pre_run": 57
+   "post_run_cleanup": 31,
+   "pre_run": 37
   },
   "helper_loop_owners": 1,
   "python_entrypoints": 147,
@@ -3278,11 +3198,10 @@
   "strategies": {
    "hand-convert": 59,
    "helper-owned": 1,
-   "hook-convert": 20,
-   "migrated": 67,
+   "migrated": 87,
    "shell": 12
   },
   "total_run_tests": 159,
-  "with_reactor_run": 79
+  "with_reactor_run": 59
  }
 }

@@ -7,7 +7,7 @@ This program is free software, distributed under the terms of
 the GNU General Public License Version 2.
 '''
 import sys
-from asterisk.aio import reactor
+from asterisk.test_runner import run_test_object
 import logging
 
 sys.path.append("lib/python")
@@ -51,10 +51,10 @@ class UdptlTest(TestCase):
 
 def main():
     # Run UDPTL test
-    test = UdptlTest()
-    test.start_asterisk()
-    reactor.run()
-    test.stop_asterisk()
+    test = run_test_object(
+        UdptlTest,
+        before_start=lambda t: t.start_asterisk(),
+        after_run=lambda t: t.stop_asterisk())
 
     if not test.passed:
         return 1

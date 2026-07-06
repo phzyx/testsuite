@@ -10,7 +10,7 @@ the GNU General Public License Version 2.
 import sys
 import logging
 
-from asterisk.aio import reactor
+from asterisk.test_runner import run_test_object
 
 sys.path.append("lib/python")
 from asterisk.test_case import TestCase
@@ -129,10 +129,10 @@ class PickupTest(TestCase):
 
 
 def main():
-    test = PickupTest()
-    test.start_asterisk()
-    reactor.run()
-    test.stop_asterisk()
+    test = run_test_object(
+        PickupTest,
+        before_start=lambda t: t.start_asterisk(),
+        after_run=lambda t: t.stop_asterisk())
     if test.passed != True:
         return 1
     return 0

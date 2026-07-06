@@ -8,7 +8,7 @@ the GNU General Public License Version 2.
 '''
 import sys
 import logging
-from asterisk.aio import reactor
+from asterisk.test_runner import run_test_object
 
 sys.path.append("lib/python")
 from asterisk.test_case import TestCase
@@ -131,10 +131,10 @@ class QueuePenaltyTest(TestCase):
         self.create_ami_factory()
 
 def main():
-    test = QueuePenaltyTest()
-    test.start_asterisk()
-    reactor.run()
-    test.stop_asterisk()
+    test = run_test_object(
+        QueuePenaltyTest,
+        before_start=lambda t: t.start_asterisk(),
+        after_run=lambda t: t.stop_asterisk())
     if test.passed:
         return 0
     return 1
