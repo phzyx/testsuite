@@ -13,7 +13,7 @@ import os
 import logging
 import subprocess
 
-from asterisk.aio import reactor
+from asterisk.test_runner import run_test_object
 
 sys.path.append("lib/python")
 sys.path.append("utils")
@@ -47,10 +47,9 @@ def main():
         }
     ]
 
-    test = SIPpTest(WORKING_DIR, TEST_DIR, SIPP_SCENARIOS, test_config={'memcheck-delay-stop':7})
-    test.reactor_timeout = 100
-
-    reactor.run()
+    test = run_test_object(
+        lambda: SIPpTest(WORKING_DIR, TEST_DIR, SIPP_SCENARIOS, test_config={'memcheck-delay-stop':7}),
+        before_start=lambda t: setattr(t, 'reactor_timeout', 100))
 
     if not test.passed:
         return 1

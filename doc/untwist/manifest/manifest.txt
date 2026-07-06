@@ -1,7 +1,7 @@
 # reactor/defer manifest  (root=.)
-scanned=396 parsed=396 skipped_non_python=0 files_with_usage=129
+scanned=396 parsed=396 skipped_non_python=0 files_with_usage=122
 
-## reactor.* totals  (grand=485)
+## reactor.* totals  (grand=478)
   reactor._ensure_loop         6
   reactor.addAsyncCleanup      2
   reactor.addStartupBind       4
@@ -11,7 +11,7 @@ scanned=396 parsed=396 skipped_non_python=0 files_with_usage=129
   reactor.connectTCP           5
   reactor.listenTCP            29
   reactor.listenUDP            14
-  reactor.run                  84
+  reactor.run                  77
   reactor.running              14
   reactor.spawnProcess         11
   reactor.stop                 89
@@ -29,7 +29,7 @@ scanned=396 parsed=396 skipped_non_python=0 files_with_usage=129
   maybeDeferred              8
   succeed                    1
 
-## lifecycle owners (52)  [run/stop/running/callWhenRunning]
+## lifecycle owners (45)  [run/stop/running/callWhenRunning]
   [module  ] doc/untwist/test_ari_parity.py   callWhenRunning=1 run=1 stop=2
   [module  ] doc/untwist/test_core_runtime.py   callWhenRunning=1 run=1 stop=2
   [module  ] doc/untwist/test_dns_parity.py   callWhenRunning=1 run=1 stop=2
@@ -69,16 +69,9 @@ scanned=396 parsed=396 skipped_non_python=0 files_with_usage=129
   [run-test] tests/apps/voicemail/leave_voicemail_priority/run-test   run=1
   [run-test] tests/blind-transfer-parkingtimeout/run-test   callWhenRunning=1 run=1 running=1 stop=1
   [run-test] tests/callparking/run-test   run=1
-  [run-test] tests/channels/iax2/acl_call/run-test   run=1
-  [run-test] tests/channels/pjsip/acl_call/run-test   run=1
-  [run-test] tests/channels/pjsip/rtp_ptime/non-transcode/run-test   run=1
-  [run-test] tests/channels/pjsip/rtp_ptime/transcode/run-test   run=1
   [run-test] tests/fastagi/channel-status/run-test   run=1
   [run-test] tests/fastagi/database/run-test   run=1
   [run-test] tests/fastagi/wait-for-digit/run-test   callWhenRunning=1 run=1 running=1 stop=1
-  [run-test] tests/fax/pjsip/t38_enabled_two_reinvite_on_a_leg/run-test   run=1
-  [run-test] tests/fax/pjsip/t38_enabled_two_reinvite_on_b_leg/run-test   run=1
-  [run-test] tests/fax/pjsip/t38_fast_reject/run-test   run=1
   [run-test] tests/funcs/func_presencestate/run-test   run=1 stop=1
   [run-test] tests/manager/mixmonitor/mixmonitor_id/run-test   run=1 stop=1
   [module  ] tests/rest_api/applications/stasisstatus/test_case.py   run=1

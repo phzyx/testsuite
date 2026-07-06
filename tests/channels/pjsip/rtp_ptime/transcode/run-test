@@ -9,7 +9,7 @@ import subprocess
 sys.path.append("lib/python")
 sys.path.append("utils")
 
-from asterisk.aio import reactor
+from asterisk.test_runner import run_test_object
 from asterisk.sipp import SIPpTest
 
 WORKING_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -51,13 +51,12 @@ def cleanup():
         os.remove(os.path.join(WORKING_DIR, f))
 
 def main():
-    test = SIPpTest(WORKING_DIR, TEST_DIR, SIPP_SCENARIOS,test_config={'memcheck-delay-stop':7})
-    test.reactor_timeout = 55;
-
     # Run the RTPDUMP tool to capture the logs on B side
     rtpdump = subprocess.Popen(["rtpdump", "-t","5", "-F","ascii","-o",dump_B, "127.0.0.1/8000"])
 
-    reactor.run()
+    test = run_test_object(
+        lambda: SIPpTest(WORKING_DIR, TEST_DIR, SIPP_SCENARIOS,test_config={'memcheck-delay-stop':7}),
+        before_start=lambda t: setattr(t, 'reactor_timeout', 55))
 
     # Kill the RTPDUMP, pass it the signal"
     rtpdump.send_signal(signal.SIGINT)

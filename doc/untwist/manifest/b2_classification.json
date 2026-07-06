@@ -1405,30 +1405,23 @@
    "primary_bucket": "shell"
   },
   {
-   "ctor_count": 1,
-   "custom_assertions": true,
+   "ctor_count": 0,
+   "custom_assertions": false,
    "direct_lifecycle": false,
    "direct_lifecycle_attrs": [],
    "file": "tests/channels/iax2/acl_call/run-test",
    "has_main": true,
-   "has_reactor_run": true,
+   "has_reactor_run": false,
    "helper_owned": false,
    "language": "python",
-   "migrated": false,
-   "migration_strategy": "hand-convert",
+   "migrated": true,
+   "migration_strategy": "migrated",
    "multiple_objects": false,
-   "post_run_calls": [
-    "remove",
-    "report_timeout"
-   ],
+   "post_run_calls": [],
    "post_run_cleanup": false,
-   "pre_run": true,
-   "pre_run_calls": [
-    "copyfile",
-    "dirname",
-    "realpath"
-   ],
-   "primary_bucket": "hand-convert"
+   "pre_run": false,
+   "pre_run_calls": [],
+   "primary_bucket": "migrated"
   },
   {
    "ctor_count": 0,
@@ -1450,29 +1443,23 @@
    "primary_bucket": "migrated"
   },
   {
-   "ctor_count": 1,
-   "custom_assertions": true,
+   "ctor_count": 0,
+   "custom_assertions": false,
    "direct_lifecycle": false,
    "direct_lifecycle_attrs": [],
    "file": "tests/channels/pjsip/acl_call/run-test",
    "has_main": true,
-   "has_reactor_run": true,
+   "has_reactor_run": false,
    "helper_owned": false,
    "language": "python",
-   "migrated": false,
-   "migration_strategy": "hand-convert",
+   "migrated": true,
+   "migration_strategy": "migrated",
    "multiple_objects": false,
-   "post_run_calls": [
-    "remove"
-   ],
+   "post_run_calls": [],
    "post_run_cleanup": false,
-   "pre_run": true,
-   "pre_run_calls": [
-    "copyfile",
-    "dirname",
-    "realpath"
-   ],
-   "primary_bucket": "hand-convert"
+   "pre_run": false,
+   "pre_run_calls": [],
+   "primary_bucket": "migrated"
   },
   {
    "ctor_count": 0,
@@ -1551,56 +1538,42 @@
    "primary_bucket": "migrated"
   },
   {
-   "ctor_count": 1,
-   "custom_assertions": true,
+   "ctor_count": 0,
+   "custom_assertions": false,
    "direct_lifecycle": false,
    "direct_lifecycle_attrs": [],
    "file": "tests/channels/pjsip/rtp_ptime/non-transcode/run-test",
    "has_main": true,
-   "has_reactor_run": true,
+   "has_reactor_run": false,
    "helper_owned": false,
    "language": "python",
-   "migrated": false,
-   "migration_strategy": "hand-convert",
+   "migrated": true,
+   "migration_strategy": "migrated",
    "multiple_objects": false,
-   "post_run_calls": [
-    "call",
-    "cleanup",
-    "send_signal",
-    "wait"
-   ],
+   "post_run_calls": [],
    "post_run_cleanup": false,
-   "pre_run": true,
-   "pre_run_calls": [
-    "Popen"
-   ],
-   "primary_bucket": "hand-convert"
+   "pre_run": false,
+   "pre_run_calls": [],
+   "primary_bucket": "migrated"
   },
   {
-   "ctor_count": 1,
-   "custom_assertions": true,
+   "ctor_count": 0,
+   "custom_assertions": false,
    "direct_lifecycle": false,
    "direct_lifecycle_attrs": [],
    "file": "tests/channels/pjsip/rtp_ptime/transcode/run-test",
    "has_main": true,
-   "has_reactor_run": true,
+   "has_reactor_run": false,
    "helper_owned": false,
    "language": "python",
-   "migrated": false,
-   "migration_strategy": "hand-convert",
+   "migrated": true,
+   "migration_strategy": "migrated",
    "multiple_objects": false,
-   "post_run_calls": [
-    "call",
-    "cleanup",
-    "send_signal",
-    "wait"
-   ],
+   "post_run_calls": [],
    "post_run_cleanup": false,
-   "pre_run": true,
-   "pre_run_calls": [
-    "Popen"
-   ],
-   "primary_bucket": "hand-convert"
+   "pre_run": false,
+   "pre_run_calls": [],
+   "primary_bucket": "migrated"
   },
   {
    "ctor_count": 0,
@@ -2154,80 +2127,61 @@
    "primary_bucket": "migrated"
   },
   {
-   "ctor_count": 1,
-   "custom_assertions": true,
+   "ctor_count": 0,
+   "custom_assertions": false,
    "direct_lifecycle": false,
    "direct_lifecycle_attrs": [],
    "file": "tests/fax/pjsip/t38_enabled_two_reinvite_on_a_leg/run-test",
    "has_main": true,
-   "has_reactor_run": true,
+   "has_reactor_run": false,
    "helper_owned": false,
    "language": "python",
-   "migrated": false,
-   "migration_strategy": "hand-convert",
+   "migrated": true,
+   "migration_strategy": "migrated",
    "multiple_objects": false,
-   "post_run_calls": [
-    "error",
-    "getsize",
-    "send_signal",
-    "wait"
-   ],
+   "post_run_calls": [],
    "post_run_cleanup": false,
-   "pre_run": true,
-   "pre_run_calls": [
-    "Popen"
-   ],
-   "primary_bucket": "hand-convert"
+   "pre_run": false,
+   "pre_run_calls": [],
+   "primary_bucket": "migrated"
   },
   {
-   "ctor_count": 1,
-   "custom_assertions": true,
+   "ctor_count": 0,
+   "custom_assertions": false,
    "direct_lifecycle": false,
    "direct_lifecycle_attrs": [],
    "file": "tests/fax/pjsip/t38_enabled_two_reinvite_on_b_leg/run-test",
    "has_main": true,
-   "has_reactor_run": true,
+   "has_reactor_run": false,
    "helper_owned": false,
    "language": "python",
-   "migrated": false,
-   "migration_strategy": "hand-convert",
+   "migrated": true,
+   "migration_strategy": "migrated",
    "multiple_objects": false,
-   "post_run_calls": [
-    "error",
-    "getsize",
-    "send_signal",
-    "wait"
-   ],
+   "post_run_calls": [],
    "post_run_cleanup": false,
-   "pre_run": true,
-   "pre_run_calls": [
-    "Popen"
-   ],
-   "primary_bucket": "hand-convert"
+   "pre_run": false,
+   "pre_run_calls": [],
+   "primary_bucket": "migrated"
   },
   {
-   "ctor_count": 1,
-   "custom_assertions": true,
+   "ctor_count": 0,
+   "custom_assertions": false,
    "direct_lifecycle": false,
    "direct_lifecycle_attrs": [],
    "file": "tests/fax/pjsip/t38_fast_reject/run-test",
    "has_main": true,
-   "has_reactor_run": true,
+   "has_reactor_run": false,
    "helper_owned": false,
    "language": "python",
-   "migrated": false,
-   "migration_strategy": "hand-convert",
+   "migrated": true,
+   "migration_strategy": "migrated",
    "multiple_objects": false,
-   "post_run_calls": [
-    "call",
-    "debug"
-   ],
+   "post_run_calls": [],
    "post_run_cleanup": false,
-   "pre_run": true,
-   "pre_run_calls": [
-    "NamedTemporaryFile"
-   ],
-   "primary_bucket": "hand-convert"
+   "pre_run": false,
+   "pre_run_calls": [],
+   "primary_bucket": "migrated"
   },
   {
    "ctor_count": 0,
@@ -3164,24 +3118,24 @@
  ],
  "summary": {
   "dimension_totals": {
-   "custom_assertions": 38,
+   "custom_assertions": 31,
    "direct_lifecycle": 4,
    "helper_owned": 1,
-   "migrated": 104,
+   "migrated": 111,
    "multiple_objects": 23,
    "post_run_cleanup": 31,
-   "pre_run": 37
+   "pre_run": 30
   },
   "helper_loop_owners": 1,
   "python_entrypoints": 147,
   "shell_harnesses": 12,
   "strategies": {
-   "hand-convert": 42,
+   "hand-convert": 35,
    "helper-owned": 1,
-   "migrated": 104,
+   "migrated": 111,
    "shell": 12
   },
   "total_run_tests": 159,
-  "with_reactor_run": 42
+  "with_reactor_run": 35
  }
 }

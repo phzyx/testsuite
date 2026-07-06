@@ -17,7 +17,7 @@ import signal
 import subprocess
 import time
 
-from asterisk.aio import reactor
+from asterisk.test_runner import run_test_object
 
 sys.path.append("lib/python")
 sys.path.append("utils")
@@ -59,16 +59,14 @@ SIPP_SCENARIOS = [
 ]
 
 def main():
-    test = SIPpTest(WORKING_DIR, TEST_DIR, SIPP_SCENARIOS)
-		   
-    test.reactor_timeout = 100;
-
     dump_A = WORKING_DIR + "/carrier_rtp.log"
     dump_B = WORKING_DIR + "/customer_rtp.log"
     rtpdump_A = subprocess.Popen(["rtpdump", "-t","5", "-F","ascii","-d","101","-o",dump_A, "127.0.0.1/9000"])
     rtpdump_B = subprocess.Popen(["rtpdump", "-t","5", "-F","ascii","-d","101","-o",dump_B, "127.0.0.1/8000"])
 
-    reactor.run()
+    test = run_test_object(
+        lambda: SIPpTest(WORKING_DIR, TEST_DIR, SIPP_SCENARIOS),
+        before_start=lambda t: setattr(t, 'reactor_timeout', 100))
 
     # Kill the RTPDUMP, pass it the signal"
     rtpdump_A.send_signal(signal.SIGINT)	

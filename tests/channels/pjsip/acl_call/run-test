@@ -3,7 +3,7 @@
 import sys
 import os
 import shutil
-from asterisk.aio import reactor
+from asterisk.test_runner import run_test_object
 
 sys.path.append("lib/python")
 
@@ -127,8 +127,8 @@ def main():
     DB_PATH = TEST_DIR + "/realtime.sqlite3"
     TMP_DB_PATH = "/tmp/realtime.sqlite3"
     shutil.copyfile(DB_PATH, TMP_DB_PATH)
-    test = SIPpTest(WORKING_DIR, TEST_DIR, SIPP_SCENARIOS, test_config={'memcheck-delay-stop': 7})
-    reactor.run()
+    test = run_test_object(
+        lambda: SIPpTest(WORKING_DIR, TEST_DIR, SIPP_SCENARIOS, test_config={'memcheck-delay-stop': 7}))
     os.remove(TMP_DB_PATH)
 
     if test.passed:

@@ -13,7 +13,7 @@
     "maybeDeferred": 8,
     "succeed": 1
   },
-  "files_with_reactor_or_defer": 129,
+  "files_with_reactor_or_defer": 122,
   "lifecycle_owners": {
     "doc/untwist/test_ari_parity.py": {
       "counts": {
@@ -269,30 +269,6 @@
       },
       "is_run_test": true
     },
-    "tests/channels/iax2/acl_call/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
-    "tests/channels/pjsip/acl_call/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
-    "tests/channels/pjsip/rtp_ptime/non-transcode/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
-    "tests/channels/pjsip/rtp_ptime/transcode/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
     "tests/fastagi/channel-status/run-test": {
       "counts": {
         "run": 1
@@ -311,24 +287,6 @@
         "run": 1,
         "running": 1,
         "stop": 1
-      },
-      "is_run_test": true
-    },
-    "tests/fax/pjsip/t38_enabled_two_reinvite_on_a_leg/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
-    "tests/fax/pjsip/t38_enabled_two_reinvite_on_b_leg/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
-    "tests/fax/pjsip/t38_fast_reject/run-test": {
-      "counts": {
-        "run": 1
       },
       "is_run_test": true
     },
@@ -882,18 +840,6 @@
         "run": 1
       }
     },
-    "tests/channels/iax2/acl_call/run-test": {
-      "defer": {},
-      "reactor": {
-        "run": 1
-      }
-    },
-    "tests/channels/pjsip/acl_call/run-test": {
-      "defer": {},
-      "reactor": {
-        "run": 1
-      }
-    },
     "tests/channels/pjsip/keep_alive/keep_alive.py": {
       "defer": {},
       "reactor": {
@@ -916,18 +862,6 @@
       "defer": {},
       "reactor": {
         "listenUDP": 2
-      }
-    },
-    "tests/channels/pjsip/rtp_ptime/non-transcode/run-test": {
-      "defer": {},
-      "reactor": {
-        "run": 1
-      }
-    },
-    "tests/channels/pjsip/rtp_ptime/transcode/run-test": {
-      "defer": {},
-      "reactor": {
-        "run": 1
       }
     },
     "tests/channels/pjsip/subscriptions/presence/presence_pidf/state_check.py": {
@@ -1049,24 +983,6 @@
         "run": 1,
         "running": 1,
         "stop": 1
-      }
-    },
-    "tests/fax/pjsip/t38_enabled_two_reinvite_on_a_leg/run-test": {
-      "defer": {},
-      "reactor": {
-        "run": 1
-      }
-    },
-    "tests/fax/pjsip/t38_enabled_two_reinvite_on_b_leg/run-test": {
-      "defer": {},
-      "reactor": {
-        "run": 1
-      }
-    },
-    "tests/fax/pjsip/t38_fast_reject/run-test": {
-      "defer": {},
-      "reactor": {
-        "run": 1
       }
     },
     "tests/funcs/func_presencestate/run-test": {
@@ -1227,7 +1143,7 @@
       }
     }
   },
-  "reactor_grand_total": 485,
+  "reactor_grand_total": 478,
   "reactor_totals": {
     "_ensure_loop": 6,
     "addAsyncCleanup": 2,
@@ -1238,7 +1154,7 @@
     "connectTCP": 5,
     "listenTCP": 29,
     "listenUDP": 14,
-    "run": 84,
+    "run": 77,
     "running": 14,
     "spawnProcess": 11,
     "stop": 89

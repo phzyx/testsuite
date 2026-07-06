@@ -5,7 +5,7 @@ import logging
 import logging.config
 import os
 import shutil
-from asterisk.aio import reactor
+from asterisk.test_runner import run_test_object
 
 sys.path.append("lib/python")
 
@@ -165,8 +165,7 @@ def main():
     DB_PATH = TEST_DIR + "/realtime.sqlite3"
     TMP_DB_PATH = "/tmp/realtime.sqlite3"
     shutil.copyfile(DB_PATH, TMP_DB_PATH)
-    test = IAX2ACLTest()
-    reactor.run()
+    test = run_test_object(IAX2ACLTest)
     os.remove(TMP_DB_PATH)
 
     if not test.phase_evaluation_reached:
