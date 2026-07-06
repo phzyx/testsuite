@@ -11,6 +11,7 @@ the GNU General Public License Version 2.
 """
 
 import asyncio
+import inspect
 import sys
 import logging
 import logging.config
@@ -351,6 +352,152 @@ async def _main(test_directory, test_config, result):
         failure = runtime._failure
         runtime._failure = None
         raise failure
+
+
+async def _maybe_await(value):
+    """Await ``value`` if it is awaitable, otherwise return it unchanged.
+
+    In-loop hooks (``before_start``/``after_run``) may be written as plain
+    callables (returning ``None``), coroutine functions, or functions that
+    return a shim ``Deferred``. All three shapes are awaitable-or-not; this
+    normalizes them so the hook driver can ``await`` uniformly.
+    """
+    if inspect.isawaitable(value):
+        return await value
+    return value
+
+
+async def _run_object_async(factory, before_start, after_run, result):
+    """Async core of ``run_test_object``: the ``run-test`` analogue of ``_main``.
+
+    Where ``_main`` builds the test object from a parsed test-config, this builds
+    it from a caller-supplied ``factory`` -- the shape a ``run-test`` script needs
+    now that construction must happen *inside* the running loop (B1). The
+    lifecycle is otherwise identical to ``_main``: install a fresh per-run
+    runtime first (so ``reactor.*`` registrations from the constructor land in
+    it), construct via ``factory()``, drive the shared startup state machine
+    (``start_all``) and await completion (``run_async``), then run the single
+    ordered teardown in ``finally`` on every exit path and detach.
+
+    The optional hooks replace work a legacy script did *around* ``reactor.run()``
+    but that ``asyncio.run()`` would otherwise strand on a closed loop:
+
+      * ``before_start(test)`` runs *before* ``start_all`` -- the slot a script
+        used for pre-run work (e.g. ``start_asterisk()``) issued before
+        ``reactor.run()``.
+      * ``after_run(test)`` runs *after* ``run_async`` returns but *before* the
+        ``finally`` teardown and, crucially, before ``asyncio.run()`` closes the
+        loop -- the slot for post-run work (e.g. ``stop_asterisk()``) a script
+        issued after ``reactor.run()``. Running it here upholds the B2 invariant
+        that no loop-dependent step is left for after the loop is gone.
+
+    Either hook may be sync or async (see ``_maybe_await``). The constructed test
+    object is handed back through ``result`` so the caller can evaluate it after
+    shutdown, exactly as ``main`` does with ``_main``.
+
+    Failure precedence (single most important guarantee): a construction / hook /
+    startup error is *captured*, not allowed to propagate straight out, so ordered
+    teardown always runs and, afterwards, exactly one failure is raised in strict
+    precedence order --
+
+      1. the stored runtime fatal (the real mid-run/startup test failure),
+      2. the hook / setup error,
+      3. the teardown error.
+
+    Capturing is what upholds the fatal-error guarantee: without it a raising
+    ``after_run`` would unwind past the fatal re-raise and mask the original
+    runtime failure. The winner propagates; every lower-precedence error is
+    surfaced in the log rather than silently lost.
+    """
+    runtime = new_runtime(asyncio.get_running_loop())
+    hook_error = None       # construction / before_start / startup / after_run
+    teardown_error = None   # ordered _shutdown failure
+    try:
+        test_object = factory()
+        if test_object is not None:
+            # Retain for result evaluation even if a later hook / startup raises
+            # (teardown still runs in finally).
+            result['test_object'] = test_object
+
+            # Pre-run hook, inside the loop, before the startup state machine.
+            if before_start is not None:
+                await _maybe_await(before_start(test_object))
+
+            # Drive the shared startup state machine, then await completion.
+            await runtime.start_all()
+            await runtime.run_async()
+
+            # Post-run hook: runs while the loop is still open, before teardown
+            # and before asyncio.run() closes the loop. A fatal mid-run error
+            # resolves completion via stop() (run_async returns normally), so
+            # this still runs -- matching a legacy script's post-run line
+            # executing after reactor.run() returned.
+            if after_run is not None:
+                await _maybe_await(after_run(test_object))
+    except Exception as exc:
+        # Capture rather than propagate: teardown must still run, and a stored
+        # runtime fatal must take precedence over this hook/setup error below.
+        hook_error = exc
+    finally:
+        # Single ordered teardown, run on every exit path, then detach.
+        try:
+            await runtime._finish()
+        except Exception as exc:
+            teardown_error = exc
+        finally:
+            detach_runtime(runtime)
+
+    # Apply explicit precedence over the three independent failure channels. The
+    # highest-precedence one propagates; the rest are logged so nothing is lost.
+    fatal = runtime._failure
+    runtime._failure = None
+
+    primary = None
+    superseded = []
+    for candidate in (fatal, hook_error, teardown_error):
+        if candidate is None:
+            continue
+        if primary is None:
+            primary = candidate
+        else:
+            superseded.append(candidate)
+
+    for exc in superseded:
+        LOGGER.error("error superseded by a higher-precedence failure",
+                     exc_info=exc)
+    if primary is not None:
+        raise primary
+
+
+def run_test_object(factory, before_start=None, after_run=None):
+    """Construct, run, and tear down a ``run-test`` test object under asyncio.
+
+    The shared entrypoint helper for migrated ``run-test`` scripts. It wraps
+    ``asyncio.run()`` (which owns the loop end-to-end: creates it, and on exit
+    cancels stragglers, shuts down async generators and the default executor,
+    then closes it) around ``_run_object_async``. Because construction must now
+    happen inside the running loop, it takes a **factory**, not an already-built
+    object::
+
+        test = run_test_object(YourTest)                    # constructor-only
+        if not test.passed:
+            return 1
+
+    Scripts that did work around ``reactor.run()`` pass the corresponding hook,
+    which runs *inside* the loop so nothing loop-dependent is left for after
+    ``asyncio.run()`` returns::
+
+        test = run_test_object(UdptlTest,
+                               before_start=lambda t: t.start_asterisk(),
+                               after_run=lambda t: t.stop_asterisk())
+
+    Returns the constructed test object after shutdown (or ``None`` if the
+    factory produced nothing) so callers keep their custom post-run assertions
+    beyond ``test.passed``.
+    """
+    result = {}
+    asyncio.run(_run_object_async(factory, before_start, after_run, result))
+    return result.get('test_object')
 
 
 def main(argv=None):

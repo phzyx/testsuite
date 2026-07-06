@@ -37,6 +37,7 @@ from asterisk.aio.runtime import (
     new_runtime, install_runtime, detach_runtime, get_current_runtime,
     current_runtime,
 )
+from asterisk.test_runner import run_test_object
 
 
 class _LoopTestCase(unittest.TestCase):
@@ -2938,6 +2939,203 @@ class TeardownCorrectnessTests(_LoopTestCase):
             rt_logger.setLevel(prev_level)
         self.assertIn('original fatal legacy failure', str(ctx.exception))
         self.assertIs(self.runtime.state, _RuntimeState.STOPPED)
+
+
+class _RunTestObjectFake(object):
+    """Minimal ``run-test`` object for exercising ``run_test_object``.
+
+    Mirrors the shape a real run-test relies on: construction registers a
+    ``callWhenRunning`` kickoff that records it ran, flips ``passed``, and stops
+    the runtime so ``run_async()`` returns. Construction, kickoff, and hooks all
+    append to a shared ``log`` so ordering can be asserted. An optional
+    ``on_running`` callback fires inside the kickoff (before ``stop()``) to let a
+    test inject mid-run behavior (e.g. a fatal owned task).
+    """
+
+    def __init__(self, log, on_running=None):
+        self.log = log
+        self.passed = False
+        self._on_running_extra = on_running
+        log.append('construct')
+        reactor.callWhenRunning(self._kick)
+
+    def _kick(self):
+        self.log.append('running')
+        self.passed = True
+        if self._on_running_extra is not None:
+            self._on_running_extra(self)
+        reactor.stop()
+
+
+class RunTestObjectTests(unittest.TestCase):
+    """B2.1: ``run_test_object`` builds the object inside the loop via a factory,
+    drives the B1 lifecycle, runs optional in-loop ``before_start``/``after_run``
+    hooks (before the loop closes), returns the object after shutdown, and
+    detaches the runtime.
+
+    Not a ``_LoopTestCase``: ``run_test_object`` owns the loop end-to-end through
+    ``asyncio.run()``, so these drive it synchronously with no ambient loop.
+    """
+
+    def setUp(self):
+        # Start from an empty holder so the helper's new_runtime install is
+        # unobstructed regardless of a prior test's runtime.
+        detach_runtime()
+
+    def tearDown(self):
+        detach_runtime()
+
+    def test_constructor_only_runs_and_returns_object(self):
+        # Bare factory form: build, run, tear down, return the object.
+        log = []
+        test = run_test_object(lambda: _RunTestObjectFake(log))
+        self.assertIsNotNone(test)
+        self.assertTrue(test.passed)
+        self.assertEqual(log, ['construct', 'running'])
+        # Runtime detached after the run (holder empty for the next run).
+        self.assertIsNone(get_current_runtime())
+
+    def test_hooks_run_inside_loop_in_order(self):
+        # before_start runs before the kickoff; after_run runs after it. The
+        # exact order proves before_start is pre-run and after_run is post-run.
+        log = []
+        test = run_test_object(
+            lambda: _RunTestObjectFake(log),
+            before_start=lambda t: log.append('before'),
+            after_run=lambda t: log.append('after'))
+        self.assertEqual(log, ['construct', 'before', 'running', 'after'])
+        self.assertTrue(test.passed)
+
+    def test_after_run_executes_before_loop_closes(self):
+        # The B2 invariant: a post-run, loop-dependent step must run BEFORE
+        # asyncio.run() closes the loop. Capture the loop inside after_run and
+        # assert it was open there but closed once the helper returned.
+        seen = {}
+
+        def after_run(_test):
+            loop = asyncio.get_running_loop()
+            seen['loop'] = loop
+            seen['closed_during'] = loop.is_closed()
+
+        run_test_object(lambda: _RunTestObjectFake([]), after_run=after_run)
+        self.assertIn('loop', seen)
+        self.assertFalse(seen['closed_during'])    # loop live inside after_run
+        self.assertTrue(seen['loop'].is_closed())  # closed after the helper
+
+    def test_async_hooks_are_awaited(self):
+        # Hooks may be coroutine functions; the helper awaits them in place.
+        log = []
+
+        async def before_start(_test):
+            await asyncio.sleep(0)
+            log.append('before-async')
+
+        async def after_run(_test):
+            await asyncio.sleep(0)
+            log.append('after-async')
+
+        run_test_object(lambda: _RunTestObjectFake(log),
+                        before_start=before_start, after_run=after_run)
+        self.assertEqual(
+            log, ['construct', 'before-async', 'running', 'after-async'])
+
+    def test_factory_returning_none_returns_none(self):
+        # A factory that builds nothing: no object to run, helper returns None,
+        # teardown still runs, and the runtime is detached.
+        self.assertIsNone(run_test_object(lambda: None))
+        self.assertIsNone(get_current_runtime())
+
+    def test_before_start_failure_propagates_and_detaches(self):
+        # A raising pre-run hook aborts before startup; the error propagates and
+        # the runtime is still torn down and detached.
+        def before_start(_test):
+            raise ValueError('pre-run boom')
+
+        log = []
+        with self.assertRaises(ValueError) as ctx:
+            run_test_object(lambda: _RunTestObjectFake(log),
+                            before_start=before_start)
+        self.assertIn('pre-run boom', str(ctx.exception))
+        self.assertEqual(log, ['construct'])   # kickoff never flushed
+        self.assertIsNone(get_current_runtime())
+
+    def test_after_run_failure_propagates_and_detaches(self):
+        # A raising post-run hook on an otherwise-clean run is a real failure:
+        # it propagates, and the runtime is still torn down and detached.
+        def after_run(_test):
+            raise ValueError('post-run boom')
+
+        log = []
+        with self.assertRaises(ValueError) as ctx:
+            run_test_object(lambda: _RunTestObjectFake(log),
+                            after_run=after_run)
+        self.assertIn('post-run boom', str(ctx.exception))
+        self.assertEqual(log, ['construct', 'running'])
+        self.assertIsNone(get_current_runtime())
+
+    def test_fatal_mid_run_error_propagates_after_teardown(self):
+        # A fatal owned-task failure stores runtime._failure and stops the run;
+        # run_test_object re-raises it AFTER teardown, and after_run (a
+        # loop-dependent post-run step) still runs before the loop closes.
+        log = []
+
+        async def failing():
+            raise RuntimeError('fatal mid-run')
+
+        def on_running(_test):
+            get_current_runtime().create_task(failing(), fatal=True)
+
+        rt_logger = logging.getLogger('asterisk.aio.runtime')
+        prev_level = rt_logger.level
+        rt_logger.setLevel(logging.CRITICAL)
+        try:
+            with self.assertRaises(RuntimeError) as ctx:
+                run_test_object(
+                    lambda: _RunTestObjectFake(log, on_running=on_running),
+                    after_run=lambda t: log.append('after'))
+        finally:
+            rt_logger.setLevel(prev_level)
+        self.assertIn('fatal mid-run', str(ctx.exception))
+        self.assertIn('after', log)   # post-run hook still ran, loop still open
+        self.assertIsNone(get_current_runtime())
+
+    def test_fatal_error_takes_precedence_over_failing_after_run(self):
+        # Combined-failure precedence: when a fatal owned task has stored
+        # _failure AND after_run raises, the ORIGINAL fatal must propagate --
+        # the later hook error must not mask it. The hook still runs, and its
+        # error is superseded (logged), not raised.
+        log = []
+
+        async def failing():
+            raise RuntimeError('original fatal')
+
+        def on_running(_test):
+            get_current_runtime().create_task(failing(), fatal=True)
+
+        def after_run(_test):
+            log.append('after')
+            raise ValueError('after hook failed')
+
+        # The superseded hook error is logged on 'test_runner'; the fatal task's
+        # retrieval logs on 'asterisk.aio.runtime'. Silence both.
+        loggers = [logging.getLogger('asterisk.aio.runtime'),
+                   logging.getLogger('test_runner')]
+        prev = [lg.level for lg in loggers]
+        for lg in loggers:
+            lg.setLevel(logging.CRITICAL)
+        try:
+            with self.assertRaises(RuntimeError) as ctx:
+                run_test_object(
+                    lambda: _RunTestObjectFake(log, on_running=on_running),
+                    after_run=after_run)
+        finally:
+            for lg, level in zip(loggers, prev):
+                lg.setLevel(level)
+        # Fatal is primary; the after_run ValueError did NOT win.
+        self.assertIn('original fatal', str(ctx.exception))
+        self.assertNotIsInstance(ctx.exception, ValueError)
+        self.assertIn('after', log)   # after_run still ran before teardown
+        self.assertIsNone(get_current_runtime())
 
 
 if __name__ == '__main__':
