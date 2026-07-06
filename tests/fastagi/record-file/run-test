@@ -13,6 +13,7 @@ from asterisk.aio import reactor
 
 sys.path.append("lib/python")
 from asterisk.test_case import TestCase
+from asterisk.test_runner import run_test_object
 
 testdir = "tests/fastagi"
 
@@ -114,8 +115,7 @@ class FastAGIRecordFileTest(TestCase):
 
 
 def main():
-    test = FastAGIRecordFileTest()
-    reactor.run()
+    test = run_test_object(FastAGIRecordFileTest)
     if test.passed is not True:
         return 1
 

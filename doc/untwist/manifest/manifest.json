@@ -13,7 +13,7 @@
     "maybeDeferred": 8,
     "succeed": 1
   },
-  "files_with_reactor_or_defer": 212,
+  "files_with_reactor_or_defer": 198,
   "lifecycle_owners": {
     "doc/untwist/test_ari_parity.py": {
       "counts": {
@@ -212,24 +212,6 @@
       },
       "is_run_test": true
     },
-    "tests/apps/voicemail/authenticate_extensions/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
-    "tests/apps/voicemail/authenticate_invalid_mailbox/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
-    "tests/apps/voicemail/authenticate_invalid_password/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
     "tests/apps/voicemail/authenticate_nominal/run-test": {
       "counts": {
         "run": 1
@@ -297,12 +279,6 @@
       "is_run_test": true
     },
     "tests/apps/voicemail/check_voicemail_options_change_password/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
-    "tests/apps/voicemail/check_voicemail_options_change_password_spooldir/run-test": {
       "counts": {
         "run": 1
       },
@@ -381,42 +357,6 @@
       "is_run_test": true
     },
     "tests/apps/voicemail/leave_voicemail_priority/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
-    "tests/apps/voicemail/play_message/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
-    "tests/apps/voicemail/polling/poll_multiple_mailboxes/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
-    "tests/apps/voicemail/polling/poll_no_subs/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
-    "tests/apps/voicemail/polling/poll_same_mailbox/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
-    "tests/apps/voicemail/polling/poll_single_mailbox/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
-    "tests/apps/voicemail/polling/poll_sub_unsub/run-test": {
       "counts": {
         "run": 1
       },
@@ -545,18 +485,6 @@
       },
       "is_run_test": true
     },
-    "tests/fastagi/connect/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
-    "tests/fastagi/control-stream-file/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
     "tests/fastagi/database/run-test": {
       "counts": {
         "run": 1
@@ -564,24 +492,6 @@
       "is_run_test": true
     },
     "tests/fastagi/execute/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
-    "tests/fastagi/get-data/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
-    "tests/fastagi/hangup/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
-    "tests/fastagi/record-file/run-test": {
       "counts": {
         "run": 1
       },
@@ -624,12 +534,6 @@
       "is_run_test": true
     },
     "tests/fastagi/say-time/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
-    "tests/fastagi/stream-file/run-test": {
       "counts": {
         "run": 1
       },
@@ -1427,24 +1331,6 @@
         "run": 1
       }
     },
-    "tests/apps/voicemail/authenticate_extensions/run-test": {
-      "defer": {},
-      "reactor": {
-        "run": 1
-      }
-    },
-    "tests/apps/voicemail/authenticate_invalid_mailbox/run-test": {
-      "defer": {},
-      "reactor": {
-        "run": 1
-      }
-    },
-    "tests/apps/voicemail/authenticate_invalid_password/run-test": {
-      "defer": {},
-      "reactor": {
-        "run": 1
-      }
-    },
     "tests/apps/voicemail/authenticate_nominal/run-test": {
       "defer": {},
       "reactor": {
@@ -1512,12 +1398,6 @@
       }
     },
     "tests/apps/voicemail/check_voicemail_options_change_password/run-test": {
-      "defer": {},
-      "reactor": {
-        "run": 1
-      }
-    },
-    "tests/apps/voicemail/check_voicemail_options_change_password_spooldir/run-test": {
       "defer": {},
       "reactor": {
         "run": 1
@@ -1596,42 +1476,6 @@
       }
     },
     "tests/apps/voicemail/leave_voicemail_priority/run-test": {
-      "defer": {},
-      "reactor": {
-        "run": 1
-      }
-    },
-    "tests/apps/voicemail/play_message/run-test": {
-      "defer": {},
-      "reactor": {
-        "run": 1
-      }
-    },
-    "tests/apps/voicemail/polling/poll_multiple_mailboxes/run-test": {
-      "defer": {},
-      "reactor": {
-        "run": 1
-      }
-    },
-    "tests/apps/voicemail/polling/poll_no_subs/run-test": {
-      "defer": {},
-      "reactor": {
-        "run": 1
-      }
-    },
-    "tests/apps/voicemail/polling/poll_same_mailbox/run-test": {
-      "defer": {},
-      "reactor": {
-        "run": 1
-      }
-    },
-    "tests/apps/voicemail/polling/poll_single_mailbox/run-test": {
-      "defer": {},
-      "reactor": {
-        "run": 1
-      }
-    },
-    "tests/apps/voicemail/polling/poll_sub_unsub/run-test": {
       "defer": {},
       "reactor": {
         "run": 1
@@ -1830,18 +1674,6 @@
         "run": 1
       }
     },
-    "tests/fastagi/connect/run-test": {
-      "defer": {},
-      "reactor": {
-        "run": 1
-      }
-    },
-    "tests/fastagi/control-stream-file/run-test": {
-      "defer": {},
-      "reactor": {
-        "run": 1
-      }
-    },
     "tests/fastagi/database/run-test": {
       "defer": {},
       "reactor": {
@@ -1854,24 +1686,16 @@
         "run": 1
       }
     },
-    "tests/fastagi/get-data/run-test": {
-      "defer": {},
-      "reactor": {
-        "run": 1
-      }
-    },
     "tests/fastagi/hangup/run-test": {
       "defer": {},
       "reactor": {
-        "callLater": 1,
-        "run": 1
+        "callLater": 1
       }
     },
     "tests/fastagi/record-file/run-test": {
       "defer": {},
       "reactor": {
-        "callLater": 5,
-        "run": 1
+        "callLater": 5
       }
     },
     "tests/fastagi/say-alpha/run-test": {
@@ -1920,12 +1744,6 @@
       "defer": {},
       "reactor": {
         "listenTCP": 2,
-        "run": 1
-      }
-    },
-    "tests/fastagi/stream-file/run-test": {
-      "defer": {},
-      "reactor": {
         "run": 1
       }
     },
@@ -2370,7 +2188,7 @@
       }
     }
   },
-  "reactor_grand_total": 589,
+  "reactor_grand_total": 573,
   "reactor_totals": {
     "_ensure_loop": 6,
     "addAsyncCleanup": 2,
@@ -2381,7 +2199,7 @@
     "connectTCP": 5,
     "listenTCP": 29,
     "listenUDP": 14,
-    "run": 188,
+    "run": 172,
     "running": 14,
     "spawnProcess": 11,
     "stop": 89

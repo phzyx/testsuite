@@ -1,7 +1,7 @@
 # reactor/defer manifest  (root=.)
-scanned=396 parsed=396 skipped_non_python=0 files_with_usage=212
+scanned=396 parsed=396 skipped_non_python=0 files_with_usage=198
 
-## reactor.* totals  (grand=589)
+## reactor.* totals  (grand=573)
   reactor._ensure_loop         6
   reactor.addAsyncCleanup      2
   reactor.addStartupBind       4
@@ -11,7 +11,7 @@ scanned=396 parsed=396 skipped_non_python=0 files_with_usage=212
   reactor.connectTCP           5
   reactor.listenTCP            29
   reactor.listenUDP            14
-  reactor.run                  188
+  reactor.run                  172
   reactor.running              14
   reactor.spawnProcess         11
   reactor.stop                 89
@@ -29,7 +29,7 @@ scanned=396 parsed=396 skipped_non_python=0 files_with_usage=212
   maybeDeferred              8
   succeed                    1
 
-## lifecycle owners (156)  [run/stop/running/callWhenRunning]
+## lifecycle owners (140)  [run/stop/running/callWhenRunning]
   [module  ] doc/untwist/test_ari_parity.py   callWhenRunning=1 run=1 stop=2
   [module  ] doc/untwist/test_core_runtime.py   callWhenRunning=1 run=1 stop=2
   [module  ] doc/untwist/test_dns_parity.py   callWhenRunning=1 run=1 stop=2
@@ -60,9 +60,6 @@ scanned=396 parsed=396 skipped_non_python=0 files_with_usage=212
   [run-test] tests/apps/queues/reason_pause_ami/run-test   run=1
   [run-test] tests/apps/queues/reload_queue_members/run-test   run=1
   [run-test] tests/apps/queues/set_penalty/run-test   run=1
-  [run-test] tests/apps/voicemail/authenticate_extensions/run-test   run=1
-  [run-test] tests/apps/voicemail/authenticate_invalid_mailbox/run-test   run=1
-  [run-test] tests/apps/voicemail/authenticate_invalid_password/run-test   run=1
   [run-test] tests/apps/voicemail/authenticate_nominal/run-test   run=1
   [run-test] tests/apps/voicemail/check_voicemail_callback/run-test   run=1
   [run-test] tests/apps/voicemail/check_voicemail_delete/run-test   run=1
@@ -75,7 +72,6 @@ scanned=396 parsed=396 skipped_non_python=0 files_with_usage=212
   [run-test] tests/apps/voicemail/check_voicemail_new_user_hangup/run-test   run=1
   [run-test] tests/apps/voicemail/check_voicemail_nominal/run-test   run=1
   [run-test] tests/apps/voicemail/check_voicemail_options_change_password/run-test   run=1
-  [run-test] tests/apps/voicemail/check_voicemail_options_change_password_spooldir/run-test   run=1
   [run-test] tests/apps/voicemail/check_voicemail_options_record_busy/run-test   run=1
   [run-test] tests/apps/voicemail/check_voicemail_options_record_name/run-test   run=1
   [run-test] tests/apps/voicemail/check_voicemail_options_record_temp/run-test   run=1
@@ -89,12 +85,6 @@ scanned=396 parsed=396 skipped_non_python=0 files_with_usage=212
   [run-test] tests/apps/voicemail/leave_voicemail_forwarding_auto_urgent/run-test   run=1
   [run-test] tests/apps/voicemail/leave_voicemail_nominal/run-test   run=1
   [run-test] tests/apps/voicemail/leave_voicemail_priority/run-test   run=1
-  [run-test] tests/apps/voicemail/play_message/run-test   run=1
-  [run-test] tests/apps/voicemail/polling/poll_multiple_mailboxes/run-test   run=1
-  [run-test] tests/apps/voicemail/polling/poll_no_subs/run-test   run=1
-  [run-test] tests/apps/voicemail/polling/poll_same_mailbox/run-test   run=1
-  [run-test] tests/apps/voicemail/polling/poll_single_mailbox/run-test   run=1
-  [run-test] tests/apps/voicemail/polling/poll_sub_unsub/run-test   run=1
   [run-test] tests/blind-transfer-parkingtimeout/run-test   callWhenRunning=1 run=1 running=1 stop=1
   [run-test] tests/callparking/run-test   run=1
   [run-test] tests/callparking_retrieval/run-test   run=1
@@ -115,13 +105,8 @@ scanned=396 parsed=396 skipped_non_python=0 files_with_usage=212
   [run-test] tests/channels/pjsip/subscriptions/presence/no_accept_header/run-test   run=1
   [run-test] tests/connected_line/subroutine/run-test   run=1
   [run-test] tests/fastagi/channel-status/run-test   run=1
-  [run-test] tests/fastagi/connect/run-test   run=1
-  [run-test] tests/fastagi/control-stream-file/run-test   run=1
   [run-test] tests/fastagi/database/run-test   run=1
   [run-test] tests/fastagi/execute/run-test   run=1
-  [run-test] tests/fastagi/get-data/run-test   run=1
-  [run-test] tests/fastagi/hangup/run-test   run=1
-  [run-test] tests/fastagi/record-file/run-test   run=1
   [run-test] tests/fastagi/say-alpha/run-test   run=1
   [run-test] tests/fastagi/say-date/run-test   run=1
   [run-test] tests/fastagi/say-datetime/run-test   run=1
@@ -129,7 +114,6 @@ scanned=396 parsed=396 skipped_non_python=0 files_with_usage=212
   [run-test] tests/fastagi/say-number/run-test   run=1
   [run-test] tests/fastagi/say-phonetic/run-test   run=1
   [run-test] tests/fastagi/say-time/run-test   run=1
-  [run-test] tests/fastagi/stream-file/run-test   run=1
   [run-test] tests/fastagi/wait-for-digit/run-test   callWhenRunning=1 run=1 running=1 stop=1
   [run-test] tests/fax/pjsip/gateway_g711_t38/run-test   run=1
   [run-test] tests/fax/pjsip/gateway_native_t38/run-test   run=1

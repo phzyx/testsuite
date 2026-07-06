@@ -39,15 +39,23 @@ conversion, silently dropping the post-run checks. Dimensions are now orthogonal
                              ``reactor.callWhenRunning`` (often in a non-TestCase
                              helper).
   * ``helper_owned``      -- a Python entrypoint whose ``main`` has no
-                             ``reactor.run()``: the loop is driven by a helper
-                             module (see ``non_run_test_loop_owners``). Handled in
-                             B2.3.
+                             ``reactor.run()`` AND does not call ``run_test_object``:
+                             the loop is driven by a bespoke helper module (e.g. a
+                             constructor that owns a blocking reactor -- see
+                             ``non_run_test_loop_owners``). Handled in B2.3.
+  * ``migrated``          -- ``main`` already calls ``run_test_object(...)``: the
+                             script has been converted off the reactor onto the
+                             async helper. A distinct dimension from ``helper_owned``
+                             so migration progress is not conflated with the
+                             still-legacy constructor-owns-reactor scripts.
 
 Derived migration strategy (``requires_hand_convert`` wins)
 -----------------------------------------------------------
   * ``shell``            -- non-Python harness (out of B2's Python-migration scope).
   * ``parse-error``      -- a Python shebang that failed to parse (a real problem).
-  * ``helper-owned``     -- loop owned by a helper module (B2.3).
+  * ``migrated``         -- already converted: ``main`` calls ``run_test_object``.
+  * ``helper-owned``     -- loop owned by a bespoke helper module, not yet
+                            converted (B2.3).
   * ``hand-convert``     -- ``custom_assertions`` OR ``multiple_objects`` OR
                             ``direct_lifecycle``. Takes PRECEDENCE over hook
                             conversion: if a script needs hand attention for any
@@ -99,6 +107,18 @@ def _is_reactor_run_call(node):
     """True if ``node`` is an ``ast.Call`` of ``reactor.run(...)``."""
     return (isinstance(node, ast.Call)
             and _reactor_attr(node.func) == 'run')
+
+
+def _calls_run_test_object(tree):
+    """True if ``run_test_object(...)`` is called anywhere in ``tree``. This is
+    the structural signature of a script already migrated onto the async helper
+    (the loop is owned by ``run_test_object``, not a raw ``reactor.run()``).
+    Matches only the bare-name call, never the ``from ... import`` alias."""
+    for node in ast.walk(tree):
+        if (isinstance(node, ast.Call) and isinstance(node.func, ast.Name)
+                and node.func.id == 'run_test_object'):
+            return True
+    return False
 
 
 def _method_name(call):
@@ -362,6 +382,8 @@ def migration_strategy(rec):
         return 'shell'
     if rec.get('primary_bucket') == 'parse-error' or rec.get('parse_error'):
         return 'parse-error'
+    if rec.get('migrated'):
+        return 'migrated'
     if rec.get('helper_owned'):
         return 'helper-owned'
     if (rec['custom_assertions'] or rec['multiple_objects']
@@ -409,12 +431,17 @@ def collect(root):
         lifecycle = scan_file_reactor_lifecycle(tree)
 
         has_run = main_info.get('has_reactor_run', False)
+        migrated = _calls_run_test_object(tree)
         rec = {
             'file': rel,
             'language': 'python',
             'has_main': main_fn is not None,
             'has_reactor_run': has_run,
-            'helper_owned': not has_run,
+            'migrated': migrated,
+            # A migrated script has no raw reactor.run(), but it is NOT a
+            # bespoke-helper loop owner: keep the two disjoint so migration
+            # progress is not conflated with the constructor-owns-reactor case.
+            'helper_owned': (not has_run) and not migrated,
             'ctor_count': main_info.get('ctor_count', 0),
             'pre_run': main_info.get('pre_run', False),
             'pre_run_calls': sorted(set(main_info.get('pre_run_calls', []))),
@@ -465,7 +492,7 @@ def build_report(records, helper_owners):
     strategies = {}
     dimension_totals = {k: 0 for k in (
         'pre_run', 'post_run_cleanup', 'custom_assertions',
-        'multiple_objects', 'direct_lifecycle', 'helper_owned')}
+        'multiple_objects', 'direct_lifecycle', 'helper_owned', 'migrated')}
     python = shell = with_run = 0
     for rec in records:
         key = rec.get('migration_strategy', 'parse-error')
@@ -519,7 +546,7 @@ def render_txt(report):
     else:
         lines.append('  (none)')
     lines.append('')
-    for strat in ('hand-convert', 'helper-owned', 'hook-convert',
+    for strat in ('migrated', 'hand-convert', 'helper-owned', 'hook-convert',
                   'constructor-only', 'parse-error', 'shell'):
         members = [r for r in report['run_tests']
                    if r.get('migration_strategy') == strat]

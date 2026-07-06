@@ -15,6 +15,7 @@ from asterisk.aio import reactor
 
 sys.path.append("lib/python")
 from asterisk.test_case import TestCase
+from asterisk.test_runner import run_test_object
 
 LOGGER = logging.getLogger(__name__)
 
@@ -95,8 +96,7 @@ class FastAGIHangupTest(TestCase):
         self.launch_test()
 
 def main():
-    test = FastAGIHangupTest()
-    reactor.run()
+    test = run_test_object(FastAGIHangupTest)
     if test.passed is not True:
         return 1
 

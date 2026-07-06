@@ -1,23 +1,43 @@
 # B2.0 entrypoint classification
-run-test files: 159   (python: 147, shell: 12, with reactor.run: 146)
+run-test files: 159   (python: 147, shell: 12, with reactor.run: 130)
 
 ## migration strategies
-  constructor-only   60
+  constructor-only   50
   hand-convert       59
   helper-owned       1
-  hook-convert       27
+  hook-convert       21
+  migrated           16
   shell              12
 
 ## dimension totals (independent; a file may set several)
   custom_assertions  55
   direct_lifecycle   4
   helper_owned       1
+  migrated           16
   multiple_objects   23
-  post_run_cleanup   58
-  pre_run            64
+  post_run_cleanup   52
+  pre_run            58
 
 ## non-run-test loop owners (reactor.run inside a def/ctor)
   tests/rest_api/applications/stasisstatus/test_case.py  [StasisStatusTestCase.__init__]
+
+## migrated (16)
+  tests/apps/voicemail/authenticate_extensions/run-test
+  tests/apps/voicemail/authenticate_invalid_mailbox/run-test
+  tests/apps/voicemail/authenticate_invalid_password/run-test
+  tests/apps/voicemail/check_voicemail_options_change_password_spooldir/run-test
+  tests/apps/voicemail/play_message/run-test
+  tests/apps/voicemail/polling/poll_multiple_mailboxes/run-test
+  tests/apps/voicemail/polling/poll_no_subs/run-test
+  tests/apps/voicemail/polling/poll_same_mailbox/run-test
+  tests/apps/voicemail/polling/poll_single_mailbox/run-test
+  tests/apps/voicemail/polling/poll_sub_unsub/run-test
+  tests/fastagi/connect/run-test
+  tests/fastagi/control-stream-file/run-test
+  tests/fastagi/get-data/run-test
+  tests/fastagi/hangup/run-test
+  tests/fastagi/record-file/run-test
+  tests/fastagi/stream-file/run-test
 
 ## hand-convert (59)
   tests/agi/exit_status/run-test   custom-assert
@@ -83,7 +103,7 @@ run-test files: 159   (python: 147, shell: 12, with reactor.run: 146)
 ## helper-owned (1)
   tests/rest_api/applications/stasisstatus/run-test
 
-## hook-convert (27)
+## hook-convert (21)
   tests/apps/directed_pickup/pickup_chan/run-test   pre-run post-cleanup
   tests/apps/directory/directory_attendant_exit/run-test   pre-run post-cleanup
   tests/apps/directory/directory_context_operator_exit/run-test   pre-run post-cleanup
@@ -91,14 +111,8 @@ run-test files: 159   (python: 147, shell: 12, with reactor.run: 146)
   tests/apps/page/page_baseline/run-test   pre-run post-cleanup
   tests/apps/queues/reason_pause_ami/run-test   pre-run post-cleanup
   tests/apps/queues/set_penalty/run-test   pre-run post-cleanup
-  tests/apps/voicemail/authenticate_extensions/run-test   pre-run post-cleanup
-  tests/apps/voicemail/authenticate_invalid_mailbox/run-test   pre-run post-cleanup
-  tests/apps/voicemail/authenticate_invalid_password/run-test   pre-run post-cleanup
   tests/channels/pjsip/sdp_offer_answer/attribute_passthrough/speex_h263_h264/run-test   pre-run post-cleanup
   tests/connected_line/subroutine/run-test   pre-run post-cleanup
-  tests/fastagi/connect/run-test   pre-run post-cleanup
-  tests/fastagi/control-stream-file/run-test   pre-run post-cleanup
-  tests/fastagi/stream-file/run-test   pre-run post-cleanup
   tests/manager/danger/dangerous/run-test   pre-run post-cleanup
   tests/manager/danger/safe/run-test   pre-run post-cleanup
   tests/manager/login/run-test   pre-run post-cleanup
@@ -112,7 +126,7 @@ run-test files: 159   (python: 147, shell: 12, with reactor.run: 146)
   tests/udptl/run-test   pre-run post-cleanup
   tests/udptl_v6/run-test   pre-run post-cleanup
 
-## constructor-only (60)
+## constructor-only (50)
   tests/apps/bridge/bridge_transfer_callee/run-test
   tests/apps/chanspy/chanspy_w_mixmonitor/run-test
   tests/apps/confbridge/confbridge_recording/run-test
@@ -122,13 +136,6 @@ run-test files: 159   (python: 147, shell: 12, with reactor.run: 146)
   tests/apps/mixmonitor_rxtx/run-test
   tests/apps/queues/position_priority_maxlen/run-test
   tests/apps/queues/reload_queue_members/run-test
-  tests/apps/voicemail/check_voicemail_options_change_password_spooldir/run-test
-  tests/apps/voicemail/play_message/run-test
-  tests/apps/voicemail/polling/poll_multiple_mailboxes/run-test
-  tests/apps/voicemail/polling/poll_no_subs/run-test
-  tests/apps/voicemail/polling/poll_same_mailbox/run-test
-  tests/apps/voicemail/polling/poll_single_mailbox/run-test
-  tests/apps/voicemail/polling/poll_sub_unsub/run-test
   tests/cause_answered_elsewhere/run-test
   tests/channels/iax2/hangupcause/run-test
   tests/channels/pjsip/call_pickup/run-test
@@ -137,9 +144,6 @@ run-test files: 159   (python: 147, shell: 12, with reactor.run: 146)
   tests/channels/pjsip/subscriptions/mwi/no_accept_header/run-test
   tests/channels/pjsip/subscriptions/presence/digium_presence/run-test
   tests/channels/pjsip/subscriptions/presence/no_accept_header/run-test
-  tests/fastagi/get-data/run-test
-  tests/fastagi/hangup/run-test
-  tests/fastagi/record-file/run-test
   tests/fax/pjsip/gateway_g711_t38/run-test
   tests/fax/pjsip/gateway_native_t38/run-test
   tests/fax/pjsip/gateway_t38_g711_rx/run-test

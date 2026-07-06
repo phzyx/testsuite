@@ -10,10 +10,9 @@ the GNU General Public License Version 2.
 import logging
 import sys
 
-from asterisk.aio import reactor
-
 sys.path.append("lib/python")
 from asterisk.test_case import TestCase
+from asterisk.test_runner import run_test_object
 
 LOGGER = logging.getLogger(__name__)
 
@@ -57,10 +56,9 @@ class FastAGIControlStreamFileTest(TestCase):
 
 
 def main():
-    test = FastAGIControlStreamFileTest()
-    test.start_asterisk()
-    reactor.run()
-    test.stop_asterisk()
+    test = run_test_object(FastAGIControlStreamFileTest,
+                           before_start=lambda t: t.start_asterisk(),
+                           after_run=lambda t: t.stop_asterisk())
     if test.passed is not True:
         return 1
 

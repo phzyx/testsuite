@@ -11,10 +11,9 @@ the GNU General Public License Version 2.
 import sys
 import logging
 
-from asterisk.aio import reactor
-
 sys.path.append("lib/python")
 
+from asterisk.test_runner import run_test_object
 from asterisk.test_state import FailureTestState
 from asterisk.voicemail import TestCondition
 from asterisk.voicemail import VoiceMailTest
@@ -291,8 +290,7 @@ class CheckVoicemailChangePassword(VoiceMailTest):
 
 def main():
     """Main entry point for test."""
-    test = CheckVoicemailChangePassword()
-    reactor.run()
+    test = run_test_object(CheckVoicemailChangePassword)
     return not test.passed
 
 if __name__ == "__main__":
