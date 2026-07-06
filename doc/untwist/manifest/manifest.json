@@ -65,7 +65,7 @@
     },
     "lib/python/asterisk/aio/test_aio.py": {
       "counts": {
-        "callWhenRunning": 56,
+        "callWhenRunning": 58,
         "run": 35,
         "running": 11,
         "stop": 71
@@ -1068,7 +1068,7 @@
         "addStartupBind": 2,
         "callInThread": 1,
         "callLater": 43,
-        "callWhenRunning": 56,
+        "callWhenRunning": 58,
         "connectTCP": 4,
         "listenTCP": 3,
         "listenUDP": 3,
@@ -2370,14 +2370,14 @@
       }
     }
   },
-  "reactor_grand_total": 585,
+  "reactor_grand_total": 587,
   "reactor_totals": {
     "_ensure_loop": 6,
     "addAsyncCleanup": 2,
     "addStartupBind": 4,
     "callInThread": 5,
     "callLater": 153,
-    "callWhenRunning": 66,
+    "callWhenRunning": 68,
     "connectTCP": 5,
     "listenTCP": 29,
     "listenUDP": 14,

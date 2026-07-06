@@ -1,13 +1,13 @@
 # reactor/defer manifest  (root=.)
 scanned=395 parsed=395 skipped_non_python=0 files_with_usage=212
 
-## reactor.* totals  (grand=585)
+## reactor.* totals  (grand=587)
   reactor._ensure_loop         6
   reactor.addAsyncCleanup      2
   reactor.addStartupBind       4
   reactor.callInThread         5
   reactor.callLater            153
-  reactor.callWhenRunning      66
+  reactor.callWhenRunning      68
   reactor.connectTCP           5
   reactor.listenTCP            29
   reactor.listenUDP            14
@@ -36,7 +36,7 @@ scanned=395 parsed=395 skipped_non_python=0 files_with_usage=212
   [module  ] doc/untwist/test_http_parity.py   callWhenRunning=1 run=1 stop=2
   [module  ] doc/untwist/test_ssh_parity.py   callWhenRunning=1 run=1 stop=2
   [module  ] doc/untwist/test_ws_parity.py   callWhenRunning=1 run=1 stop=2
-  [module  ] lib/python/asterisk/aio/test_aio.py   callWhenRunning=56 run=35 running=11 stop=71
+  [module  ] lib/python/asterisk/aio/test_aio.py   callWhenRunning=58 run=35 running=11 stop=71
   [module  ] lib/python/asterisk/asterisk.py   callWhenRunning=1
   [module  ] lib/python/asterisk/test_case.py   callWhenRunning=1 running=1 stop=1
   [run-test] tests/agi/exit_status/run-test   run=1

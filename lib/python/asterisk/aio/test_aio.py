@@ -33,7 +33,7 @@ from asterisk.aio.protocols import (
     Protocol, Factory, ClientFactory, _ProcessTransportAdapter,
 )
 from asterisk.aio.runtime import (
-    AsyncTestRuntime, ReactorAlreadyRunning, _RuntimeState,
+    AsyncTestRuntime, ReactorAlreadyRunning, _RuntimeState, _Connector,
     new_runtime, install_runtime, detach_runtime, get_current_runtime,
     current_runtime,
 )
@@ -1966,8 +1966,10 @@ class ModuleLifecycleTests(_LoopTestCase):
         self.assertEqual(b.closed, 0)
         self.assertEqual(self.runtime.live_resources(), [])
 
-    def test_broken_close_is_isolated(self):
-        # One module's close() raising must not skip the others' close().
+    def test_broken_close_is_isolated_but_reported(self):
+        # One module's close() raising must not skip the others' close()
+        # (isolation), but the error must still surface at the end of teardown
+        # rather than be silently swallowed (finding 4: isolated != invisible).
         log = []
         a = _RecordingModule('a', log)
         b = _RecordingModule('b', log, fail_close=True)
@@ -1981,12 +1983,17 @@ class ModuleLifecycleTests(_LoopTestCase):
             await self.runtime.run_async()
             await self.runtime._finish()
 
-        self._drive(go())
-        # b's broken close is swallowed; a and c still close.
+        # b's broken close is isolated (a and c still close) but the single
+        # collected error is re-raised at the end.
+        with self.assertRaises(RuntimeError) as ctx:
+            self._drive(go())
+        self.assertIn('close failed: b', str(ctx.exception))
         self.assertEqual(
             [e for e in log if e[0] == 'close'],
             [('close', 'a'), ('close', 'b'), ('close', 'c')])
         self.assertEqual((a.closed, c.closed), (1, 1))
+        self.assertIs(self.runtime.state, _RuntimeState.STOPPED)
+        self.assertEqual(self.runtime.live_resources(), [])
 
     def test_start_issued_bind_is_drained_before_running(self):
         # A module's start() may enqueue a startup bind; because binds drain
@@ -2289,6 +2296,56 @@ class MainEntrypointTests(unittest.TestCase):
         with self.assertRaises(ValueError) as ctx:
             self._run_main()
         self.assertIn('teardown exploded', str(ctx.exception))
+
+        rt = rt_box['rt']
+        self.assertIs(rt.state, _RuntimeState.STOPPED)
+        self.assertIsNone(get_current_runtime())           # still detached
+
+    def test_main_teardown_failure_does_not_mask_fatal_task(self):
+        # A fatal background task stores runtime._failure and stops the run
+        # *normally* (no exception unwinds through the finally). If the ordered
+        # teardown then ALSO fails, the teardown error must be suppressed and
+        # the ORIGINAL fatal error is what propagates -- otherwise a broken
+        # teardown would hide the real cause of failure (finding 2).
+        rt_box = {}
+        tc = self
+
+        async def boom():
+            raise RuntimeError('original fatal task failure')
+
+        class Obj(object):
+            def __init__(self):
+                self.passed = True
+                self.global_config = tc._Global()
+
+                def spawn_fatal():
+                    get_current_runtime().create_task(boom(), fatal=True)
+                reactor.callWhenRunning(spawn_fatal)
+
+        async def exploding_shutdown():
+            raise ValueError('teardown exploded while a fatal was pending')
+
+        def create_and_sabotage(d, c):
+            rt = get_current_runtime()
+            rt_box['rt'] = rt
+            rt._shutdown = exploding_shutdown
+            return Obj()
+
+        self.test_runner.create_test_object = create_and_sabotage
+        self.test_runner.load_test_modules = lambda c, o: None
+
+        # The fatal task error propagates, NOT the teardown ValueError. The
+        # suppressed teardown error is LOGGER.exception'd by _main; silence it
+        # so the expected traceback does not clutter the test output.
+        tr_logger = logging.getLogger('test_runner')
+        prev_level = tr_logger.level
+        tr_logger.setLevel(logging.CRITICAL)
+        try:
+            with self.assertRaises(RuntimeError) as ctx:
+                self._run_main()
+        finally:
+            tr_logger.setLevel(prev_level)
+        self.assertIn('original fatal task failure', str(ctx.exception))
 
         rt = rt_box['rt']
         self.assertIs(rt.state, _RuntimeState.STOPPED)
@@ -2647,6 +2704,240 @@ class OwnedTaskExceptionTests(_LoopTestCase):
         self.assertTrue(any(isinstance(c.get('exception'), ValueError)
                             for c in reports))
         self.assertIsNone(self.runtime._failure)
+
+
+# --------------------------------------------------------------------------- #
+# B1.x review findings 1/2/3/4: teardown correctness -- ordered shutdown runs
+# every phase best-effort and surfaces (never masks) the errors it collects,
+# the legacy blocking run() preserves a fatal error across a failing teardown,
+# and track_task refuses to silently leak a pending task on a closed loop.
+# --------------------------------------------------------------------------- #
+class TeardownCorrectnessTests(_LoopTestCase):
+
+    def _drive(self, coro):
+        return self.loop.run_until_complete(coro)
+
+    def test_shutdown_continues_through_all_phases_on_port_failure(self):
+        # Finding 1: a failing port stopListening() must NOT abort the phases
+        # after it. The connector is still disconnected and the tracked task is
+        # still cancelled/drained; the port error is re-raised only at the end.
+        class _FailingPort(object):
+            def stopListening(self):
+                raise RuntimeError('port close failed')
+
+        class _RecordingConnector(object):
+            def __init__(self):
+                self.disconnected = False
+
+            def disconnect(self):
+                self.disconnected = True
+
+        port = _FailingPort()
+        connector = _RecordingConnector()
+        task = self.loop.create_task(asyncio.sleep(30))
+        self.runtime._ports.append(port)
+        self.runtime._connectors.append(connector)
+        self.runtime._tasks.add(task)
+
+        with self.assertRaises(RuntimeError) as ctx:
+            self._drive(self.runtime._finish())
+        self.assertIn('port close failed', str(ctx.exception))
+
+        # Phases after the failing port still ran.
+        self.assertTrue(connector.disconnected)
+        self.assertTrue(task.cancelled())
+        self.assertIs(self.runtime.state, _RuntimeState.STOPPED)
+        self.assertEqual(self.runtime.live_resources(), [])
+
+    def test_shutdown_aggregates_multiple_cleanup_errors(self):
+        # Finding 4: an async-cleanup failure and a module close() failure are
+        # both isolated AND both reported -- aggregated into an ExceptionGroup
+        # rather than one silently discarded.
+        async def bad_cleanup():
+            raise ValueError('cleanup failed')
+
+        class _FailingCloseModule(object):
+            async def close(self):
+                raise KeyError('close failed')
+
+        self.runtime.addAsyncCleanup(bad_cleanup)
+        self.runtime._started_modules.append(_FailingCloseModule())
+
+        with self.assertRaises(ExceptionGroup) as ctx:
+            self._drive(self.runtime._finish())
+        kinds = {type(e) for e in ctx.exception.exceptions}
+        self.assertEqual(kinds, {ValueError, KeyError})
+        self.assertIs(self.runtime.state, _RuntimeState.STOPPED)
+        self.assertEqual(self.runtime.live_resources(), [])
+
+    def test_shutdown_kills_child_when_waitforexit_raises(self):
+        # A waitForExit() that RAISES (not just times out) must NOT leave the
+        # child alive: the fix drives kill() off recomputed live state (return
+        # code still None), not off a timeout flag. Assert the child was actually
+        # killed -- asserting only loseConnection() ran would mask the leak.
+        class _FakeTransport(object):
+            def __init__(self):
+                self.rc = None
+                self.killed = False
+                self.closed = False
+
+            def get_returncode(self):
+                return self.rc
+
+            def terminate(self):
+                pass                       # stays live -> awaited for exit
+
+            async def waitForExit(self):
+                # Raises while alive; once kill() records an exit, reports it so
+                # the second reap does not re-raise.
+                if self.rc is None:
+                    raise RuntimeError('waitForExit blew up')
+                return self.rc
+
+            def kill(self):
+                self.rc = -9
+                self.killed = True
+
+            def loseConnection(self):
+                self.closed = True
+
+        transport = _FakeTransport()
+        task = self.loop.create_task(asyncio.sleep(30))
+        self.runtime._process_transports.append(transport)
+        self.runtime._tasks.add(task)
+
+        with self.assertRaises(RuntimeError) as ctx:
+            self._drive(self.runtime._finish())
+        self.assertIn('waitForExit blew up', str(ctx.exception))
+
+        self.assertTrue(transport.killed)      # child was actually killed
+        self.assertEqual(transport.rc, -9)     # return code became non-None
+        self.assertTrue(transport.closed)      # loseConnection still ran
+        self.assertTrue(task.cancelled())      # task phase still ran
+        self.assertIs(self.runtime.state, _RuntimeState.STOPPED)
+        self.assertEqual(self.runtime.live_resources(), [])
+
+    def test_shutdown_kills_child_when_terminate_raises(self):
+        # A terminate() that RAISES must not remove the child from the live set:
+        # the child keeps running, so the recomputed-live kill phase must still
+        # reach it. Assert the child was killed, not just closed.
+        class _FakeTransport(object):
+            def __init__(self):
+                self.rc = None
+                self.killed = False
+                self.closed = False
+
+            def get_returncode(self):
+                return self.rc
+
+            def terminate(self):
+                raise RuntimeError('terminate blew up')
+
+            async def waitForExit(self):
+                # Models a child that ignored the (failed) terminate: the reap
+                # completes without an exit until kill() records one.
+                return self.rc
+
+            def kill(self):
+                self.rc = -9
+                self.killed = True
+
+            def loseConnection(self):
+                self.closed = True
+
+        transport = _FakeTransport()
+        task = self.loop.create_task(asyncio.sleep(30))
+        self.runtime._process_transports.append(transport)
+        self.runtime._tasks.add(task)
+
+        with self.assertRaises(RuntimeError) as ctx:
+            self._drive(self.runtime._finish())
+        self.assertIn('terminate blew up', str(ctx.exception))
+
+        self.assertTrue(transport.killed)      # child killed despite terminate error
+        self.assertEqual(transport.rc, -9)
+        self.assertTrue(transport.closed)      # loseConnection still ran
+        self.assertTrue(task.cancelled())      # task phase still ran
+        self.assertIs(self.runtime.state, _RuntimeState.STOPPED)
+        self.assertEqual(self.runtime.live_resources(), [])
+
+    def test_connector_disconnect_closes_transport_even_if_stoptrying_raises(self):
+        # _Connector.disconnect(): a raising factory.stopTrying() must not leave
+        # the transport open -- it is closed in finally, and the stopTrying error
+        # still propagates (so the shutdown path can collect it).
+        class _RaisingFactory(object):
+            def stopTrying(self):
+                raise RuntimeError('stopTrying blew up')
+
+        class _RecordingTransport(object):
+            def __init__(self):
+                self.closed = False
+
+            def close(self):
+                self.closed = True
+
+        transport = _RecordingTransport()
+        connector = _Connector(self.runtime, '127.0.0.1', 9,
+                               _RaisingFactory(), None, None)
+        connector._transport = transport
+
+        with self.assertRaises(RuntimeError) as ctx:
+            connector.disconnect()
+        self.assertIn('stopTrying blew up', str(ctx.exception))
+        self.assertTrue(transport.closed)         # closed despite the raise
+        self.assertIsNone(connector._transport)   # cleared
+
+    def test_track_task_rejects_pending_task_on_closed_loop(self):
+        # Finding 3: adopting a still-pending task whose loop is already closed
+        # cannot be drained (touching a closed loop raises), so it must be
+        # rejected loudly rather than silently left alive past the run. Modelled
+        # with a stand-in exposing exactly the two attributes the reject branch
+        # reads -- a real pending Task on a closed loop would otherwise leak and
+        # emit a spurious "Task was destroyed but it is pending" warning.
+        closed = asyncio.new_event_loop()
+        closed.close()
+
+        class _PendingOnClosedLoop(object):
+            def done(self):
+                return False
+
+            def get_loop(self):
+                return closed
+
+        # Force the teardown gate so track_task takes the STOPPING branch.
+        self.runtime._state = _RuntimeState.STOPPING
+        with self.assertRaises(RuntimeError) as ctx:
+            self.runtime.track_task(_PendingOnClosedLoop(), fatal=False)
+        self.assertIn('closed loop', str(ctx.exception))
+
+    def test_legacy_run_teardown_failure_does_not_mask_fatal_task(self):
+        # Finding 2 (legacy path): the blocking run() must snapshot the fatal
+        # _failure and, if teardown ALSO fails, suppress the teardown error and
+        # re-raise the original fatal -- and still land STOPPED (via _finish()).
+        async def boom():
+            raise RuntimeError('original fatal legacy failure')
+
+        async def exploding_shutdown():
+            raise ValueError('legacy teardown exploded')
+
+        def on_running():
+            self.runtime.create_task(boom(), fatal=True)
+
+        self.runtime._shutdown = exploding_shutdown
+        reactor.callWhenRunning(on_running)
+
+        # The suppressed teardown error is LOGGER.exception'd; silence it so the
+        # expected-and-swallowed traceback does not clutter the test output.
+        rt_logger = logging.getLogger('asterisk.aio.runtime')
+        prev_level = rt_logger.level
+        rt_logger.setLevel(logging.CRITICAL)
+        try:
+            with self.assertRaises(RuntimeError) as ctx:
+                self.runtime.run()
+        finally:
+            rt_logger.setLevel(prev_level)
+        self.assertIn('original fatal legacy failure', str(ctx.exception))
+        self.assertIs(self.runtime.state, _RuntimeState.STOPPED)
 
 
 if __name__ == '__main__':

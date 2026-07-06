@@ -327,7 +327,15 @@ async def _main(test_directory, test_config, result):
         #   - clean run: a teardown failure is itself a real failure and must
         #     propagate, so a test with broken teardown cannot report success.
         # Detachment is guaranteed in either case via the inner finally.
-        setup_failed = sys.exc_info()[0] is not None
+        # A fatal mid-run task stores runtime._failure and stops the run
+        # *normally* (stop() resolves completion), so no exception is unwinding
+        # through this finally. sys.exc_info() alone would therefore miss that
+        # case and let a teardown error escape and mask the real fatal error
+        # (which is only re-raised below). Fold _failure into the snapshot so a
+        # teardown failure is logged-and-suppressed whenever setup/run already
+        # failed, and the original fatal error is the one that propagates.
+        setup_failed = (sys.exc_info()[0] is not None
+                        or runtime._failure is not None)
         try:
             await runtime._finish()
         except Exception:

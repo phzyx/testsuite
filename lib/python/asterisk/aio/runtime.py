@@ -36,10 +36,14 @@ the single source of truth rather than a separately-maintained flag.
 
 import asyncio
 import enum
+import logging
+import sys
 import time
 
 from .defer import Deferred
 from .failure import Failure
+
+LOGGER = logging.getLogger(__name__)
 
 
 class ReactorNotRunning(Exception):
@@ -318,11 +322,18 @@ class _Connector(object):
         # reconnect (e.g. during runtime shutdown).
         self._stopped = True
         factory = self._factory
-        if hasattr(factory, 'stopTrying'):
-            factory.stopTrying()
-        if self._transport is not None:
-            self._transport.close()
-            self._transport = None
+        # Close the transport in ``finally`` so a raising ``stopTrying()`` can
+        # never leave the socket open: the shutdown path clears the connector
+        # registry right after this call, so a leaked transport here would be
+        # unreachable and outlive the run. The stopTrying() error still
+        # propagates (the caller collects it into the teardown error set).
+        try:
+            if hasattr(factory, 'stopTrying'):
+                factory.stopTrying()
+        finally:
+            if self._transport is not None:
+                self._transport.close()
+                self._transport = None
 
 
 # ---------------------------------------------------------------------------- #
@@ -605,11 +616,26 @@ class AsyncTestRuntime(object):
             loop.run_until_complete(self.start_all())
             loop.run_until_complete(self.run_async())
         finally:
-            self._state = _RuntimeState.STOPPING
-            loop.run_until_complete(self._shutdown())
-            self._state = _RuntimeState.STOPPED
-            self._completion = None
+            # Single ordered teardown via _finish() (guarantees STOPPED even if
+            # _shutdown raises), mirroring the native _main path. A fatal
+            # mid-run task stores _failure and stops *normally* -- no exception
+            # is unwinding through this finally -- so sys.exc_info() alone would
+            # miss it and let a teardown error mask the real failure. Fold
+            # _failure into the snapshot so a teardown error is logged-and-
+            # suppressed (never masks) whenever setup/run already failed; on a
+            # genuinely clean run a teardown failure is itself real and
+            # propagates.
+            setup_failed = (sys.exc_info()[0] is not None
+                            or self._failure is not None)
+            try:
+                loop.run_until_complete(self._finish())
+            except Exception:
+                if setup_failed:
+                    LOGGER.exception("error during runtime shutdown")
+                else:
+                    raise
 
+        # Re-raise the fatal mid-run/startup error after teardown above.
         if self._failure is not None:
             failure = self._failure
             self._failure = None
@@ -927,7 +953,19 @@ class AsyncTestRuntime(object):
         self._loop.call_soon_threadsafe(_resolve)
 
     async def _shutdown(self):
-        """Ordered teardown of all runtime-owned resources."""
+        """Ordered teardown of all runtime-owned resources.
+
+        Teardown is *best-effort*: a failure closing one resource must not skip
+        the resources after it, or a leaked port/connector/task would outlive
+        the run. Every phase therefore runs to completion, each phase's
+        exception is collected rather than propagated on the spot, and the
+        collected errors are raised only at the very end -- as a single
+        exception if there was one, or an ``ExceptionGroup`` if several. So the
+        caller still learns teardown failed (findings 1 & 4: "isolated" must not
+        mean invisible) without any resource being abandoned unclosed.
+        """
+        errors = []
+
         # Un-driven startup queues first. If a run is torn down before (or
         # during) the awaited startup drain -- e.g. a constructor registered an
         # addStartupBind/listenTCP/connectTCP bind and then a later constructor
@@ -951,8 +989,8 @@ class AsyncTestRuntime(object):
         for cleanup in list(self._async_cleanups):
             try:
                 await cleanup()
-            except Exception:
-                pass
+            except Exception as exc:
+                errors.append(exc)
         self._async_cleanups.clear()
 
         # Module close() hooks (design point 3): every module whose start() was
@@ -968,17 +1006,26 @@ class AsyncTestRuntime(object):
                 continue
             try:
                 await close()
-            except Exception:
-                pass
+            except Exception as exc:
+                errors.append(exc)
         self._started_modules.clear()
         self._modules = []
 
-        # Listening ports and outgoing connectors.
+        # Listening ports and outgoing connectors. Guarded so a broken
+        # stopListening()/disconnect() cannot abort the phases that follow
+        # (child-process teardown, task cancellation); the error is collected
+        # and re-raised at the end.
         for port in list(self._ports):
-            port.stopListening()
+            try:
+                port.stopListening()
+            except Exception as exc:
+                errors.append(exc)
         self._ports.clear()
         for connector in list(self._connectors):
-            connector.disconnect()
+            try:
+                connector.disconnect()
+            except Exception as exc:
+                errors.append(exc)
         self._connectors.clear()
 
         # Child processes: terminate and let asyncio's watcher reap them before
@@ -986,42 +1033,76 @@ class AsyncTestRuntime(object):
         # child is live invokes Popen.poll()/kill(), which can steal waitpid()
         # from PidfdChildWatcher and manufacture return code 255.
         process_transports = list(self._process_transports)
-        running_processes = []
-        for transport in process_transports:
+
+        def _live(transports):
+            # A transport is "live" iff its child has not exited -- decided by
+            # return code ALONE, never by whether terminate()/kill() succeeded.
+            # A terminate() that raised must still leave its child in the live
+            # set so the kill phase below reaches it; otherwise a broken
+            # terminate() (signal never delivered) leaks a running child. A
+            # get_returncode() that itself raises is treated as "still live" and
+            # its error collected, so the child is still driven to exit.
+            live = []
+            for transport in transports:
+                try:
+                    still_running = transport.get_returncode() is None
+                except Exception as exc:
+                    errors.append(exc)
+                    still_running = True
+                if still_running:
+                    live.append(transport)
+            return live
+
+        async def _await_exit(transports):
+            # gather(return_exceptions=True) reports a raising waitForExit() as a
+            # result rather than propagating it, so ONE failing child can neither
+            # abort the reap of its siblings nor skip the phases that follow. The
+            # wait_for bound turns a child that ignores the signal into a timeout
+            # (NOT an error) -- the caller re-checks live state and escalates to
+            # kill(). A cancellation from that timeout is not itself an error.
+            if not transports:
+                return
             try:
-                if transport.get_returncode() is None:
-                    transport.terminate()
-                    running_processes.append(transport)
-            except Exception:
-                pass
+                results = await asyncio.wait_for(asyncio.gather(*(
+                    transport.waitForExit() for transport in transports),
+                    return_exceptions=True), 1.0)
+            except asyncio.TimeoutError:
+                return
+            for res in results:
+                if (isinstance(res, BaseException)
+                        and not isinstance(res, asyncio.CancelledError)):
+                    errors.append(res)
+
+        # Every not-yet-exited child is driven to termination. terminate() errors
+        # are collected but do NOT remove the transport from the live set.
+        running_processes = _live(process_transports)
+        for transport in running_processes:
+            try:
+                transport.terminate()
+            except Exception as exc:
+                errors.append(exc)
 
         if running_processes:
-            try:
-                await asyncio.wait_for(asyncio.gather(*(
-                    transport.waitForExit()
-                    for transport in running_processes)), 1.0)
-            except asyncio.TimeoutError:
-                # Match the old close()-on-live-child behavior, but signal via
-                # pidfd and give the watcher a chance to perform the one reap.
-                for transport in running_processes:
-                    try:
-                        if transport.get_returncode() is None:
-                            transport.kill()
-                    except Exception:
-                        pass
+            # First reap after terminate(). Whether it times out OR a
+            # waitForExit() raised OR it returned without the child actually
+            # exiting, the kill decision below is driven by RECOMPUTED live state
+            # (return code still None), never by the wait outcome or a timeout
+            # flag -- so a raising waitForExit() can no longer leave a child
+            # alive. Escalate any remaining live child to kill(), then reap again.
+            await _await_exit(running_processes)
+            still_live = _live(running_processes)
+            for transport in still_live:
                 try:
-                    await asyncio.wait_for(asyncio.gather(*(
-                        transport.waitForExit()
-                        for transport in running_processes
-                        if transport.get_returncode() is None)), 1.0)
-                except asyncio.TimeoutError:
-                    pass
+                    transport.kill()
+                except Exception as exc:
+                    errors.append(exc)
+            await _await_exit(still_live)
 
         for transport in process_transports:
             try:
                 transport.loseConnection()
-            except Exception:
-                pass
+            except Exception as exc:
+                errors.append(exc)
         self._process_transports.clear()
 
         # Outstanding endpoint/executor tasks.
@@ -1049,6 +1130,15 @@ class AsyncTestRuntime(object):
 
         # Let close callbacks run.
         await asyncio.sleep(0)
+
+        # Every resource was attempted; now surface any failures collected
+        # along the way. One error re-raises as itself (preserving type/context
+        # for callers that special-case it); several aggregate into an
+        # ExceptionGroup so none is lost.
+        if errors:
+            if len(errors) == 1:
+                raise errors[0]
+            raise ExceptionGroup("errors during runtime shutdown", errors)
 
     # -- scheduling ------------------------------------------------------- #
     def callWhenRunning(self, fn, *args, **kw):
@@ -1144,15 +1234,21 @@ class AsyncTestRuntime(object):
                 self._retrieve_task_exception(task, fatal)
                 return task
             # Still pending: cancel it (it must not survive the snapshot) and
-            # drain the cancellation through a done-callback -- but only if its
-            # loop is still open. On a closed loop a pending task can neither
-            # advance nor be scheduled, so there is nothing left to drain and
-            # touching the loop would raise.
+            # drain the cancellation through a done-callback.
             if not task.get_loop().is_closed():
                 task.add_done_callback(
                     lambda t: self._retrieve_task_exception(t, fatal))
                 task.cancel()
-            return task
+                return task
+            # Pending on an ALREADY-CLOSED loop: the task can neither advance
+            # nor be cancelled/drained (touching a closed loop raises), so it
+            # would be silently left alive past the run. That is a runtime-
+            # ownership violation -- the ordered _shutdown must cancel/drain all
+            # owned tasks *before* the loop closes -- so reject it loudly rather
+            # than leak it.
+            raise RuntimeError(
+                "track_task: cannot adopt a still-pending task on a closed "
+                "loop; owned tasks must be drained before loop closure")
         self._tasks.add(task)
 
         def _done(t):
