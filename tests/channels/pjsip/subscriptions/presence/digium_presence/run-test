@@ -11,7 +11,7 @@ import sys
 
 sys.path.append("lib/python")
 
-from asterisk.aio import reactor
+from asterisk.test_runner import run_test_object
 from asterisk.sipp import SIPpScenario
 from asterisk.test_case import TestCase
 
@@ -54,8 +54,7 @@ class DigiumPresence(TestCase):
 
 def main():
     """Main entry point for test."""
-    test = DigiumPresence()
-    reactor.run()
+    test = run_test_object(DigiumPresence)
     return not test.passed
 
 if __name__ == "__main__":

@@ -13,7 +13,7 @@
     "maybeDeferred": 8,
     "succeed": 1
   },
-  "files_with_reactor_or_defer": 198,
+  "files_with_reactor_or_defer": 185,
   "lifecycle_owners": {
     "doc/untwist/test_ari_parity.py": {
       "counts": {
@@ -407,19 +407,7 @@
       },
       "is_run_test": true
     },
-    "tests/channels/pjsip/call_pickup/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
     "tests/channels/pjsip/hold/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
-    "tests/channels/pjsip/hold_ice/run-test": {
       "counts": {
         "run": 1
       },
@@ -438,36 +426,6 @@
       "is_run_test": true
     },
     "tests/channels/pjsip/rtp_ptime/transcode/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
-    "tests/channels/pjsip/sdp_offer_answer/attribute_passthrough/speex_h263_h264/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
-    "tests/channels/pjsip/subscriptions/mwi/missing_aor/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
-    "tests/channels/pjsip/subscriptions/mwi/no_accept_header/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
-    "tests/channels/pjsip/subscriptions/presence/digium_presence/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
-    "tests/channels/pjsip/subscriptions/presence/no_accept_header/run-test": {
       "counts": {
         "run": 1
       },
@@ -548,36 +506,6 @@
       },
       "is_run_test": true
     },
-    "tests/fax/pjsip/gateway_g711_t38/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
-    "tests/fax/pjsip/gateway_native_t38/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
-    "tests/fax/pjsip/gateway_t38_g711_rx/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
-    "tests/fax/pjsip/gateway_t38_g711_tx/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
-    "tests/fax/pjsip/t38/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
     "tests/fax/pjsip/t38_enabled_two_reinvite_on_a_leg/run-test": {
       "counts": {
         "run": 1
@@ -591,12 +519,6 @@
       "is_run_test": true
     },
     "tests/fax/pjsip/t38_fast_reject/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
-    "tests/fax/pjsip/t38_with_auth/run-test": {
       "counts": {
         "run": 1
       },
@@ -1528,19 +1450,7 @@
         "run": 1
       }
     },
-    "tests/channels/pjsip/call_pickup/run-test": {
-      "defer": {},
-      "reactor": {
-        "run": 1
-      }
-    },
     "tests/channels/pjsip/hold/run-test": {
-      "defer": {},
-      "reactor": {
-        "run": 1
-      }
-    },
-    "tests/channels/pjsip/hold_ice/run-test": {
       "defer": {},
       "reactor": {
         "run": 1
@@ -1583,36 +1493,6 @@
       }
     },
     "tests/channels/pjsip/rtp_ptime/transcode/run-test": {
-      "defer": {},
-      "reactor": {
-        "run": 1
-      }
-    },
-    "tests/channels/pjsip/sdp_offer_answer/attribute_passthrough/speex_h263_h264/run-test": {
-      "defer": {},
-      "reactor": {
-        "run": 1
-      }
-    },
-    "tests/channels/pjsip/subscriptions/mwi/missing_aor/run-test": {
-      "defer": {},
-      "reactor": {
-        "run": 1
-      }
-    },
-    "tests/channels/pjsip/subscriptions/mwi/no_accept_header/run-test": {
-      "defer": {},
-      "reactor": {
-        "run": 1
-      }
-    },
-    "tests/channels/pjsip/subscriptions/presence/digium_presence/run-test": {
-      "defer": {},
-      "reactor": {
-        "run": 1
-      }
-    },
-    "tests/channels/pjsip/subscriptions/presence/no_accept_header/run-test": {
       "defer": {},
       "reactor": {
         "run": 1
@@ -1758,36 +1638,6 @@
         "stop": 1
       }
     },
-    "tests/fax/pjsip/gateway_g711_t38/run-test": {
-      "defer": {},
-      "reactor": {
-        "run": 1
-      }
-    },
-    "tests/fax/pjsip/gateway_native_t38/run-test": {
-      "defer": {},
-      "reactor": {
-        "run": 1
-      }
-    },
-    "tests/fax/pjsip/gateway_t38_g711_rx/run-test": {
-      "defer": {},
-      "reactor": {
-        "run": 1
-      }
-    },
-    "tests/fax/pjsip/gateway_t38_g711_tx/run-test": {
-      "defer": {},
-      "reactor": {
-        "run": 1
-      }
-    },
-    "tests/fax/pjsip/t38/run-test": {
-      "defer": {},
-      "reactor": {
-        "run": 1
-      }
-    },
     "tests/fax/pjsip/t38_enabled_two_reinvite_on_a_leg/run-test": {
       "defer": {},
       "reactor": {
@@ -1801,12 +1651,6 @@
       }
     },
     "tests/fax/pjsip/t38_fast_reject/run-test": {
-      "defer": {},
-      "reactor": {
-        "run": 1
-      }
-    },
-    "tests/fax/pjsip/t38_with_auth/run-test": {
       "defer": {},
       "reactor": {
         "run": 1
@@ -2188,7 +2032,7 @@
       }
     }
   },
-  "reactor_grand_total": 573,
+  "reactor_grand_total": 560,
   "reactor_totals": {
     "_ensure_loop": 6,
     "addAsyncCleanup": 2,
@@ -2199,7 +2043,7 @@
     "connectTCP": 5,
     "listenTCP": 29,
     "listenUDP": 14,
-    "run": 172,
+    "run": 159,
     "running": 14,
     "spawnProcess": 11,
     "stop": 89

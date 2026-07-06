@@ -13,7 +13,7 @@ import logging
 import os
 import shutil
 
-from asterisk.aio import reactor
+from asterisk.test_runner import run_test_object
 
 sys.path.append("lib/python")
 from asterisk.test_case import TestCase
@@ -101,8 +101,7 @@ class GatewayTest(TestCase):
 
 
 def main():
-    test = GatewayTest()
-    reactor.run()
+    test = run_test_object(GatewayTest)
 
     if not test.passed:
         return 1

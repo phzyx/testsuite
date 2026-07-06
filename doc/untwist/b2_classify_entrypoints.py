@@ -109,12 +109,16 @@ def _is_reactor_run_call(node):
             and _reactor_attr(node.func) == 'run')
 
 
-def _calls_run_test_object(tree):
-    """True if ``run_test_object(...)`` is called anywhere in ``tree``. This is
-    the structural signature of a script already migrated onto the async helper
-    (the loop is owned by ``run_test_object``, not a raw ``reactor.run()``).
-    Matches only the bare-name call, never the ``from ... import`` alias."""
-    for node in ast.walk(tree):
+def _calls_run_test_object(scope):
+    """True if ``run_test_object(...)`` is called anywhere in ``scope`` (a
+    ``main`` FunctionDef, or None). This is the structural signature of a script
+    already migrated onto the async helper: the loop is owned by
+    ``run_test_object`` inside ``main``, not a raw ``reactor.run()``. Scoped to
+    ``main`` (not the whole module) so an unrelated helper reference cannot
+    mislabel a script. Matches only the bare-name call, never an import alias."""
+    if scope is None:
+        return False
+    for node in ast.walk(scope):
         if (isinstance(node, ast.Call) and isinstance(node.func, ast.Name)
                 and node.func.id == 'run_test_object'):
             return True
@@ -431,7 +435,12 @@ def collect(root):
         lifecycle = scan_file_reactor_lifecycle(tree)
 
         has_run = main_info.get('has_reactor_run', False)
-        migrated = _calls_run_test_object(tree)
+        migrated = _calls_run_test_object(main_fn)
+        # Invariant: a migrated main drives the loop via run_test_object and must
+        # NOT also carry a raw reactor.run(). The two are mutually exclusive; a
+        # file exhibiting both signals a half-finished edit worth surfacing loudly.
+        assert not (migrated and has_run), (
+            "%s: main() calls run_test_object AND reactor.run()" % rel)
         rec = {
             'file': rel,
             'language': 'python',

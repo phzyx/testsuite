@@ -1,7 +1,7 @@
 # reactor/defer manifest  (root=.)
-scanned=396 parsed=396 skipped_non_python=0 files_with_usage=198
+scanned=396 parsed=396 skipped_non_python=0 files_with_usage=185
 
-## reactor.* totals  (grand=573)
+## reactor.* totals  (grand=560)
   reactor._ensure_loop         6
   reactor.addAsyncCleanup      2
   reactor.addStartupBind       4
@@ -11,7 +11,7 @@ scanned=396 parsed=396 skipped_non_python=0 files_with_usage=198
   reactor.connectTCP           5
   reactor.listenTCP            29
   reactor.listenUDP            14
-  reactor.run                  172
+  reactor.run                  159
   reactor.running              14
   reactor.spawnProcess         11
   reactor.stop                 89
@@ -29,7 +29,7 @@ scanned=396 parsed=396 skipped_non_python=0 files_with_usage=198
   maybeDeferred              8
   succeed                    1
 
-## lifecycle owners (140)  [run/stop/running/callWhenRunning]
+## lifecycle owners (127)  [run/stop/running/callWhenRunning]
   [module  ] doc/untwist/test_ari_parity.py   callWhenRunning=1 run=1 stop=2
   [module  ] doc/untwist/test_core_runtime.py   callWhenRunning=1 run=1 stop=2
   [module  ] doc/untwist/test_dns_parity.py   callWhenRunning=1 run=1 stop=2
@@ -92,17 +92,10 @@ scanned=396 parsed=396 skipped_non_python=0 files_with_usage=198
   [run-test] tests/channels/iax2/acl_call/run-test   run=1
   [run-test] tests/channels/iax2/hangupcause/run-test   run=1
   [run-test] tests/channels/pjsip/acl_call/run-test   run=1
-  [run-test] tests/channels/pjsip/call_pickup/run-test   run=1
   [run-test] tests/channels/pjsip/hold/run-test   run=1
-  [run-test] tests/channels/pjsip/hold_ice/run-test   run=1
   [run-test] tests/channels/pjsip/hold_inactive/run-test   run=1
   [run-test] tests/channels/pjsip/rtp_ptime/non-transcode/run-test   run=1
   [run-test] tests/channels/pjsip/rtp_ptime/transcode/run-test   run=1
-  [run-test] tests/channels/pjsip/sdp_offer_answer/attribute_passthrough/speex_h263_h264/run-test   run=1
-  [run-test] tests/channels/pjsip/subscriptions/mwi/missing_aor/run-test   run=1
-  [run-test] tests/channels/pjsip/subscriptions/mwi/no_accept_header/run-test   run=1
-  [run-test] tests/channels/pjsip/subscriptions/presence/digium_presence/run-test   run=1
-  [run-test] tests/channels/pjsip/subscriptions/presence/no_accept_header/run-test   run=1
   [run-test] tests/connected_line/subroutine/run-test   run=1
   [run-test] tests/fastagi/channel-status/run-test   run=1
   [run-test] tests/fastagi/database/run-test   run=1
@@ -115,15 +108,9 @@ scanned=396 parsed=396 skipped_non_python=0 files_with_usage=198
   [run-test] tests/fastagi/say-phonetic/run-test   run=1
   [run-test] tests/fastagi/say-time/run-test   run=1
   [run-test] tests/fastagi/wait-for-digit/run-test   callWhenRunning=1 run=1 running=1 stop=1
-  [run-test] tests/fax/pjsip/gateway_g711_t38/run-test   run=1
-  [run-test] tests/fax/pjsip/gateway_native_t38/run-test   run=1
-  [run-test] tests/fax/pjsip/gateway_t38_g711_rx/run-test   run=1
-  [run-test] tests/fax/pjsip/gateway_t38_g711_tx/run-test   run=1
-  [run-test] tests/fax/pjsip/t38/run-test   run=1
   [run-test] tests/fax/pjsip/t38_enabled_two_reinvite_on_a_leg/run-test   run=1
   [run-test] tests/fax/pjsip/t38_enabled_two_reinvite_on_b_leg/run-test   run=1
   [run-test] tests/fax/pjsip/t38_fast_reject/run-test   run=1
-  [run-test] tests/fax/pjsip/t38_with_auth/run-test   run=1
   [run-test] tests/feature_attended_transfer/run-test   run=1
   [run-test] tests/feature_blonde_transfer/run-test   run=1
   [run-test] tests/feature_call_pickup/run-test   run=1
