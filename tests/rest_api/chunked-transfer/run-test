@@ -14,9 +14,8 @@ import requests
 import json
 import sys
 
-from asterisk.aio import reactor
-
 sys.path.append("lib/python")
+from asterisk.test_runner import run_test_object
 from asterisk.test_case import TestCase
 
 LOGGER = logging.getLogger(__name__)
@@ -109,8 +108,7 @@ class ARIChunkedTransferTest(TestCase):
 
 
 def main():
-    test = ARIChunkedTransferTest()
-    reactor.run()
+    test = run_test_object(ARIChunkedTransferTest)
     if test.passed:
         return 0
     return 1

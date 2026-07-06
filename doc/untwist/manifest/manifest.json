@@ -13,7 +13,7 @@
     "maybeDeferred": 8,
     "succeed": 1
   },
-  "files_with_reactor_or_defer": 185,
+  "files_with_reactor_or_defer": 175,
   "lifecycle_owners": {
     "doc/untwist/test_ari_parity.py": {
       "counts": {
@@ -688,101 +688,11 @@
       },
       "is_run_test": true
     },
-    "tests/rest_api/CORS/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
-    "tests/rest_api/applications/channel-subscriptions/originate_to_other_stasis_app/local_channels/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
-    "tests/rest_api/applications/channel-subscriptions/originate_to_other_stasis_app/non_local_channels/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
     "tests/rest_api/applications/stasisstatus/test_case.py": {
       "counts": {
         "run": 1
       },
       "is_run_test": false
-    },
-    "tests/rest_api/authentication/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
-    "tests/rest_api/authentication_user_acl/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
-    "tests/rest_api/channels/redirect/nominal/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
-    "tests/rest_api/chunked-transfer/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
-    "tests/rest_api/content-type/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
-    "tests/rest_api/request-bodies/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
-    "tests/rest_api/websocket/outbound_websocket/local_ari_user_read_only/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
-    "tests/rest_api/websocket/outbound_websocket/per_call/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
-    "tests/rest_api/websocket/outbound_websocket/persistent/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
-    "tests/rest_api/websocket/rest_over_websocket/bad_requests/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
-    "tests/rest_api/websocket/rest_over_websocket/parallel_requests/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
-    "tests/rest_api/websocket/rest_over_websocket/single_requests/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
     },
     "tests/skeleton_test/run-test": {
       "counts": {
@@ -1859,24 +1769,16 @@
         "run": 1
       }
     },
-    "tests/rest_api/CORS/run-test": {
-      "defer": {},
-      "reactor": {
-        "run": 1
-      }
-    },
     "tests/rest_api/applications/channel-subscriptions/originate_to_other_stasis_app/local_channels/run-test": {
       "defer": {},
       "reactor": {
-        "callLater": 1,
-        "run": 1
+        "callLater": 1
       }
     },
     "tests/rest_api/applications/channel-subscriptions/originate_to_other_stasis_app/non_local_channels/run-test": {
       "defer": {},
       "reactor": {
-        "callLater": 2,
-        "run": 1
+        "callLater": 2
       }
     },
     "tests/rest_api/applications/stasisstatus/ari_client.py": {
@@ -1891,36 +1793,6 @@
       "defer": {
         "defer.Deferred": 1
       },
-      "reactor": {
-        "run": 1
-      }
-    },
-    "tests/rest_api/authentication/run-test": {
-      "defer": {},
-      "reactor": {
-        "run": 1
-      }
-    },
-    "tests/rest_api/authentication_user_acl/run-test": {
-      "defer": {},
-      "reactor": {
-        "run": 1
-      }
-    },
-    "tests/rest_api/channels/redirect/nominal/run-test": {
-      "defer": {},
-      "reactor": {
-        "run": 1
-      }
-    },
-    "tests/rest_api/chunked-transfer/run-test": {
-      "defer": {},
-      "reactor": {
-        "run": 1
-      }
-    },
-    "tests/rest_api/content-type/run-test": {
-      "defer": {},
       "reactor": {
         "run": 1
       }
@@ -1955,50 +1827,23 @@
         "callLater": 1
       }
     },
-    "tests/rest_api/request-bodies/run-test": {
-      "defer": {},
-      "reactor": {
-        "run": 1
-      }
-    },
     "tests/rest_api/websocket/outbound_websocket/local_ari_user_read_only/run-test": {
       "defer": {},
       "reactor": {
-        "listenTCP": 1,
-        "run": 1
+        "listenTCP": 1
       }
     },
     "tests/rest_api/websocket/outbound_websocket/per_call/run-test": {
       "defer": {},
       "reactor": {
         "callLater": 1,
-        "listenTCP": 1,
-        "run": 1
+        "listenTCP": 1
       }
     },
     "tests/rest_api/websocket/outbound_websocket/persistent/run-test": {
       "defer": {},
       "reactor": {
-        "listenTCP": 1,
-        "run": 1
-      }
-    },
-    "tests/rest_api/websocket/rest_over_websocket/bad_requests/run-test": {
-      "defer": {},
-      "reactor": {
-        "run": 1
-      }
-    },
-    "tests/rest_api/websocket/rest_over_websocket/parallel_requests/run-test": {
-      "defer": {},
-      "reactor": {
-        "run": 1
-      }
-    },
-    "tests/rest_api/websocket/rest_over_websocket/single_requests/run-test": {
-      "defer": {},
-      "reactor": {
-        "run": 1
+        "listenTCP": 1
       }
     },
     "tests/rtp/strict_rtp/strict_rtp_seqno/strict_rtp.py": {
@@ -2032,7 +1877,7 @@
       }
     }
   },
-  "reactor_grand_total": 560,
+  "reactor_grand_total": 545,
   "reactor_totals": {
     "_ensure_loop": 6,
     "addAsyncCleanup": 2,
@@ -2043,7 +1888,7 @@
     "connectTCP": 5,
     "listenTCP": 29,
     "listenUDP": 14,
-    "run": 159,
+    "run": 144,
     "running": 14,
     "spawnProcess": 11,
     "stop": 89

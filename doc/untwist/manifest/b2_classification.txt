@@ -1,19 +1,19 @@
 # B2.0 entrypoint classification
-run-test files: 159   (python: 147, shell: 12, with reactor.run: 117)
+run-test files: 159   (python: 147, shell: 12, with reactor.run: 102)
 
 ## migration strategies
-  constructor-only   38
+  constructor-only   23
   hand-convert       59
   helper-owned       1
   hook-convert       20
-  migrated           29
+  migrated           44
   shell              12
 
 ## dimension totals (independent; a file may set several)
   custom_assertions  55
   direct_lifecycle   4
   helper_owned       1
-  migrated           29
+  migrated           44
   multiple_objects   23
   post_run_cleanup   51
   pre_run            57
@@ -21,7 +21,7 @@ run-test files: 159   (python: 147, shell: 12, with reactor.run: 117)
 ## non-run-test loop owners (reactor.run inside a def/ctor)
   tests/rest_api/applications/stasisstatus/test_case.py  [StasisStatusTestCase.__init__]
 
-## migrated (29)
+## migrated (44)
   tests/apps/voicemail/authenticate_extensions/run-test
   tests/apps/voicemail/authenticate_invalid_mailbox/run-test
   tests/apps/voicemail/authenticate_invalid_password/run-test
@@ -51,6 +51,21 @@ run-test files: 159   (python: 147, shell: 12, with reactor.run: 117)
   tests/fax/pjsip/gateway_t38_g711_tx/run-test
   tests/fax/pjsip/t38/run-test
   tests/fax/pjsip/t38_with_auth/run-test
+  tests/rest_api/CORS/run-test
+  tests/rest_api/applications/channel-subscriptions/originate_to_other_stasis_app/local_channels/run-test
+  tests/rest_api/applications/channel-subscriptions/originate_to_other_stasis_app/non_local_channels/run-test
+  tests/rest_api/authentication/run-test
+  tests/rest_api/authentication_user_acl/run-test
+  tests/rest_api/channels/redirect/nominal/run-test
+  tests/rest_api/chunked-transfer/run-test
+  tests/rest_api/content-type/run-test
+  tests/rest_api/request-bodies/run-test
+  tests/rest_api/websocket/outbound_websocket/local_ari_user_read_only/run-test
+  tests/rest_api/websocket/outbound_websocket/per_call/run-test
+  tests/rest_api/websocket/outbound_websocket/persistent/run-test
+  tests/rest_api/websocket/rest_over_websocket/bad_requests/run-test
+  tests/rest_api/websocket/rest_over_websocket/parallel_requests/run-test
+  tests/rest_api/websocket/rest_over_websocket/single_requests/run-test
 
 ## hand-convert (59)
   tests/agi/exit_status/run-test   custom-assert
@@ -138,7 +153,7 @@ run-test files: 159   (python: 147, shell: 12, with reactor.run: 117)
   tests/udptl/run-test   pre-run post-cleanup
   tests/udptl_v6/run-test   pre-run post-cleanup
 
-## constructor-only (38)
+## constructor-only (23)
   tests/apps/bridge/bridge_transfer_callee/run-test
   tests/apps/chanspy/chanspy_w_mixmonitor/run-test
   tests/apps/confbridge/confbridge_recording/run-test
@@ -161,21 +176,6 @@ run-test files: 159   (python: 147, shell: 12, with reactor.run: 117)
   tests/pbx/call-files/run-test
   tests/pbx/callerid_match/run-test
   tests/phoneprov/res_phoneprov_pjsip/run-test
-  tests/rest_api/CORS/run-test
-  tests/rest_api/applications/channel-subscriptions/originate_to_other_stasis_app/local_channels/run-test
-  tests/rest_api/applications/channel-subscriptions/originate_to_other_stasis_app/non_local_channels/run-test
-  tests/rest_api/authentication/run-test
-  tests/rest_api/authentication_user_acl/run-test
-  tests/rest_api/channels/redirect/nominal/run-test
-  tests/rest_api/chunked-transfer/run-test
-  tests/rest_api/content-type/run-test
-  tests/rest_api/request-bodies/run-test
-  tests/rest_api/websocket/outbound_websocket/local_ari_user_read_only/run-test
-  tests/rest_api/websocket/outbound_websocket/per_call/run-test
-  tests/rest_api/websocket/outbound_websocket/persistent/run-test
-  tests/rest_api/websocket/rest_over_websocket/bad_requests/run-test
-  tests/rest_api/websocket/rest_over_websocket/parallel_requests/run-test
-  tests/rest_api/websocket/rest_over_websocket/single_requests/run-test
   tests/skeleton_test/run-test
 
 ## shell (12)

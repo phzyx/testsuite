@@ -14,9 +14,8 @@ import logging
 import json
 import os
 
-from asterisk.aio import reactor
-
 sys.path.append("lib/python")
+from asterisk.test_runner import run_test_object
 
 from asterisk.test_case import TestCase
 from asterisk.ari import AriClientFactory
@@ -224,8 +223,7 @@ def main():
     1 on test failure
     """
 
-    test = RESToverWebsocketTest()
-    reactor.run()
+    test = run_test_object(RESToverWebsocketTest)
 
     if not test.passed:
         return 1

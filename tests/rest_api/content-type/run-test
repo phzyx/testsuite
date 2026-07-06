@@ -11,9 +11,8 @@ import logging
 import requests
 import sys
 
-from asterisk.aio import reactor
-
 sys.path.append("lib/python")
+from asterisk.test_runner import run_test_object
 from asterisk.test_case import TestCase
 
 LOGGER = logging.getLogger(__name__)
@@ -50,8 +49,7 @@ class ARIContentTypeTest(TestCase):
             self.stop_reactor()
 
 def main():
-    test = ARIContentTypeTest()
-    reactor.run()
+    test = run_test_object(ARIContentTypeTest)
     if test.passed:
         return 0
     return 1

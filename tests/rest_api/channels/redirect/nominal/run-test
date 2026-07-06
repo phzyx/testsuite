@@ -14,9 +14,8 @@ import sys
 import uuid
 import logging
 
-from asterisk.aio import reactor
-
 sys.path.append("lib/python")
+from asterisk.test_runner import run_test_object
 
 from asterisk.test_case import TestCase
 from asterisk.ari import ARI, AriClientFactory
@@ -326,8 +325,7 @@ def main():
     1 on test failure
     """
 
-    test = RedirectTest()
-    reactor.run()
+    test = run_test_object(RedirectTest)
 
     if not test.passed:
         return 1

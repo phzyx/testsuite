@@ -12,9 +12,8 @@ import requests
 import sys
 
 from requests import codes
-from asterisk.aio import reactor
-
 sys.path.append("lib/python")
+from asterisk.test_runner import run_test_object
 from asterisk.test_case import TestCase
 
 LOGGER = logging.getLogger(__name__)
@@ -84,8 +83,7 @@ class ARIAuthenticationTest(TestCase):
             self.stop_reactor()
 
 def main():
-    test = ARIAuthenticationTest()
-    reactor.run()
+    test = run_test_object(ARIAuthenticationTest)
     if test.passed:
         return 0
     return 1

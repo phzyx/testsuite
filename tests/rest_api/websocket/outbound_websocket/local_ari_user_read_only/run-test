@@ -17,6 +17,7 @@ import time
 from asterisk.aio import reactor
 
 sys.path.append("lib/python")
+from asterisk.test_runner import run_test_object
 
 from asterisk.test_case import TestCase
 from asterisk.ari import AriServerFactory
@@ -110,8 +111,7 @@ class PerCallWebsocketTest(TestCase):
             self.ast[0].cli_exec("channel request hangup all")
 
 def main():
-    test = PerCallWebsocketTest()
-    reactor.run()
+    test = run_test_object(PerCallWebsocketTest)
 
     if not test.passed:
         return 1

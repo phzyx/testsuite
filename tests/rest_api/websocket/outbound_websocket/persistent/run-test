@@ -17,6 +17,7 @@ import time
 from asterisk.aio import reactor
 
 sys.path.append("lib/python")
+from asterisk.test_runner import run_test_object
 
 from asterisk.test_case import TestCase
 from asterisk.ari import AriServerFactory
@@ -100,8 +101,7 @@ class PersistentWebsocketTest(TestCase):
             self.passed = True
 
 def main():
-    test = PersistentWebsocketTest()
-    reactor.run()
+    test = run_test_object(PersistentWebsocketTest)
 
     if not test.passed:
         return 1

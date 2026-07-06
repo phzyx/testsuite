@@ -12,9 +12,8 @@ import requests
 import sys
 
 from requests import codes
-from asterisk.aio import reactor
-
 sys.path.append("lib/python")
+from asterisk.test_runner import run_test_object
 from asterisk.test_case import TestCase
 
 LOGGER = logging.getLogger(__name__)
@@ -87,8 +86,7 @@ class ARICORSTest(TestCase):
             scenario.run(self, ast_instance, expect_headers)
 
 def main():
-    test = ARICORSTest()
-    reactor.run()
+    test = run_test_object(ARICORSTest)
 
     if test.passed:
         return 0
