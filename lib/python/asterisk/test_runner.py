@@ -280,7 +280,7 @@ async def _main(test_directory, test_config, result):
     runtime is installed *first* so ``reactor.*`` registrations issued from test
     object / module constructors land in it; the test object and its modules are
     then built (state COLLECTING -> constructor binds enter the awaited startup
-    queue); ``_run_startup`` drives the awaited startup phase (STARTING -> drain
+    queue); ``start_all`` drives the awaited startup phase (STARTING -> drain
     -> RUNNING -> flush kickoff); ``run_async`` awaits the completion signal.
 
     Cleanup has one owner and always runs: ``finally`` invokes the runtime's
@@ -308,8 +308,8 @@ async def _main(test_directory, test_config, result):
         if test_object.global_config.config:
             load_test_modules(test_object.global_config.config, test_object)
 
-        # Drive the awaited startup phase, then await completion (bridge).
-        await runtime._run_startup()
+        # Drive the shared startup state machine, then await completion (bridge).
+        await runtime.start_all()
         await runtime.run_async()
     finally:
         # Single ordered teardown, run on every exit path, then detach. Whether

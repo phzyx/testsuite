@@ -1463,7 +1463,7 @@ class SequentialRunOwnershipTests(unittest.TestCase):
 # ordered teardown -- with responsibilities decoupled (design doc points 2/2b/4)
 # --------------------------------------------------------------------------- #
 class NativeEntrypointTests(_LoopTestCase):
-    """_run_startup() drives startup, run_async() only awaits completion, and
+    """start_all() drives startup, run_async() only awaits completion, and
     _finish() owns the single ordered teardown -- driven under a live loop the
     caller is turning (asyncio.run / loop.run_until_complete)."""
 
@@ -1474,7 +1474,7 @@ class NativeEntrypointTests(_LoopTestCase):
     def test_startup_then_bridge_then_finish(self):
         async def go():
             reactor.callWhenRunning(lambda: reactor.callLater(0.01, reactor.stop))
-            await self.runtime._run_startup()
+            await self.runtime.start_all()
             # After startup: RUNNING with a live completion future.
             self.assertIs(self.runtime.state, _RuntimeState.RUNNING)
             self.assertIsNotNone(self.runtime._completion)
@@ -1488,7 +1488,7 @@ class NativeEntrypointTests(_LoopTestCase):
         # run_async() must NOT tear down: a timer registered before it is still
         # live after it returns (teardown is _finish's job, not the bridge's).
         async def go():
-            await self.runtime._run_startup()
+            await self.runtime.start_all()
             dc = reactor.callLater(30.0, lambda: None)
             reactor.stop()
             await self.runtime.run_async()
@@ -1506,10 +1506,10 @@ class NativeEntrypointTests(_LoopTestCase):
             raise RuntimeError('bind failed')
 
         async def go():
-            self.runtime.addStartupBind(boom())
+            self.runtime.addStartupBind(boom)
             raised = None
             try:
-                await self.runtime._run_startup()   # fatal bind re-raises
+                await self.runtime.start_all()   # fatal bind re-raises
             except RuntimeError as exc:
                 raised = exc
             finally:
@@ -1520,22 +1520,22 @@ class NativeEntrypointTests(_LoopTestCase):
         self.assertIs(self.runtime.state, _RuntimeState.STOPPED)
         self.assertEqual(self.runtime.live_resources(), [])
 
-    def test_run_startup_rejects_reentrant_completion(self):
+    def test_start_all_rejects_reentrant_completion(self):
         # An unresolved completion future means a run is already in flight.
         async def go():
             self.runtime._completion = self.loop.create_future()
             with self.assertRaises(ReactorAlreadyRunning):
-                await self.runtime._run_startup()
+                await self.runtime.start_all()
             self.runtime._completion.cancel()
             self.runtime._completion = None
         self._drive(go())
 
-    def test_first_bind_fatal_closes_later_queued_binds(self):
-        # First queued bind fails fatally; the later binds -- already pulled
-        # into the drain batch and cleared from _pending_binds -- must be
-        # handed back so _finish's ordered _shutdown closes them. Otherwise
-        # the later coroutines leak "coroutine was never awaited".
-        import inspect
+    def test_first_bind_fatal_leaves_later_queued_binds_inert(self):
+        # First queued bind fails fatally; the later binds are coroutine
+        # FACTORIES that were never invoked (no coroutine object was ever
+        # created), so the drain hands the unrun remainder back for _shutdown
+        # to discard. The later factory must never run and there must be no
+        # "coroutine was never awaited" warning.
         ran = {'later': False}
 
         async def boom():
@@ -1544,14 +1544,12 @@ class NativeEntrypointTests(_LoopTestCase):
         async def later():
             ran['later'] = True
 
-        later_coro = later()
-
         async def go():
-            self.runtime.addStartupBind(boom())
-            self.runtime.addStartupBind(later_coro)
+            self.runtime.addStartupBind(boom)
+            self.runtime.addStartupBind(later)
             raised = None
             try:
-                await self.runtime._run_startup()
+                await self.runtime.start_all()
             except RuntimeError as exc:
                 raised = exc
             finally:
@@ -1562,15 +1560,255 @@ class NativeEntrypointTests(_LoopTestCase):
             warnings.simplefilter('always')
             self._drive(go())
 
-        # The un-awaited remainder was closed (never ran) by the teardown.
-        self.assertEqual(inspect.getcoroutinestate(later_coro),
-                         inspect.CORO_CLOSED)
+        # The unrun factory was discarded (never invoked) by the teardown.
         self.assertFalse(ran['later'])
         self.assertIs(self.runtime.state, _RuntimeState.STOPPED)
         self.assertEqual(self.runtime.live_resources(), [])
         never_awaited = [w for w in caught
                          if 'never awaited' in str(w.message)]
         self.assertEqual(never_awaited, [])
+
+
+# --------------------------------------------------------------------------- #
+# B1.2: single start_all() startup driver -- cooperative stop-during-STARTING,
+# binds registered mid-startup drained before kickoff, cross-thread stop, and
+# the legacy blocking run() driving the SAME start_all/run_async/shutdown path.
+# --------------------------------------------------------------------------- #
+class StartupDriverTests(_LoopTestCase):
+    """One start_all() drives startup for both native and legacy paths; a stop
+    during STARTING aborts before RUNNING/kickoff, so the test never launches."""
+
+    def _drive(self, coro):
+        return self.loop.run_until_complete(coro)
+
+    def test_stop_during_starting_aborts_before_kickoff(self):
+        # A stop requested from a bind's apply (still STARTING) must abort the
+        # drain: no later bind runs, RUNNING is never entered, and the kickoff
+        # queue is never flushed -- the test the stop meant to prevent never
+        # launches.
+        events = {'second': False, 'launched': False}
+
+        async def first():
+            return 'ok'
+
+        def stop_now(_result):
+            reactor.stop()
+
+        async def second():
+            events['second'] = True
+
+        async def go():
+            reactor.callWhenRunning(
+                lambda: events.__setitem__('launched', True))
+            self.runtime.addStartupBind(first, stop_now)
+            self.runtime.addStartupBind(second)
+            await self.runtime.start_all()
+            # Stopped during STARTING -> STOPPING, never RUNNING.
+            self.assertIs(self.runtime.state, _RuntimeState.STOPPING)
+            await self.runtime.run_async()   # completion already resolved
+            await self.runtime._finish()
+
+        self._drive(go())
+        self.assertFalse(events['second'])    # later bind never ran
+        self.assertFalse(events['launched'])  # kickoff never fired
+        self.assertIs(self.runtime.state, _RuntimeState.STOPPED)
+        self.assertEqual(self.runtime.live_resources(), [])
+
+    def test_bind_registered_during_startup_is_drained_before_kickoff(self):
+        # A bind's apply registers ANOTHER startup bind while still STARTING.
+        # Because state is not yet RUNNING, it enqueues and the drain picks it
+        # up in the same startup phase -- it must run BEFORE the kickoff flush,
+        # never fire-and-forget after RUNNING.
+        order = []
+
+        async def first():
+            order.append('first')
+
+        def apply_first(_result):
+            async def second():
+                order.append('second')
+            self.runtime.addStartupBind(second)
+
+        def on_running():
+            order.append('kickoff')
+            reactor.stop()
+
+        async def go():
+            reactor.callWhenRunning(on_running)
+            self.runtime.addStartupBind(first, apply_first)
+            await self.runtime.start_all()
+            # Startup reached RUNNING; both binds ran during the drain, and the
+            # follow-on bind ('second') ran before the kickoff flush.
+            self.assertIs(self.runtime.state, _RuntimeState.RUNNING)
+            self.assertEqual(order[:2], ['first', 'second'])
+            await self.runtime.run_async()   # completes on the kickoff's stop()
+            await self.runtime._finish()
+
+        self._drive(go())
+        # The mid-startup-registered bind drained before kickoff, never after.
+        self.assertEqual(order, ['first', 'second', 'kickoff'])
+        self.assertLess(order.index('second'), order.index('kickoff'))
+        self.assertIs(self.runtime.state, _RuntimeState.STOPPED)
+        self.assertEqual(self.runtime.live_resources(), [])
+
+    def test_concurrent_start_all_awaits_in_flight_startup(self):
+        # A second start_all() issued while startup is still draining must AWAIT
+        # the in-flight startup, not return early -- otherwise the caller would
+        # proceed as if startup finished while a bind is still running. The
+        # second caller must observe RUNNING (startup complete) on return.
+        gate = None            # created on the loop; released to finish bind 1
+        order = []
+
+        async def slow_bind():
+            order.append('bind-start')
+            await gate.wait()   # hold startup open until the test releases it
+            order.append('bind-done')
+
+        async def second_caller():
+            # Runs concurrently while start_all #1 is parked in slow_bind.
+            await self.runtime.start_all()
+            order.append('second-returned')
+            # On return, startup is genuinely complete.
+            self.assertIs(self.runtime.state, _RuntimeState.RUNNING)
+
+        async def go():
+            nonlocal gate
+            gate = asyncio.Event()
+            reactor.callWhenRunning(reactor.stop)
+            self.runtime.addStartupBind(slow_bind)
+
+            first = asyncio.ensure_future(self.runtime.start_all())
+            # Let start_all #1 advance into STARTING and park on the bind.
+            while self.runtime.state is not _RuntimeState.STARTING:
+                await asyncio.sleep(0)
+            await asyncio.sleep(0)
+
+            second = asyncio.ensure_future(second_caller())
+            # Give the second caller a chance to run; it must still be pending,
+            # blocked on the same in-flight startup (not returned early).
+            await asyncio.sleep(0)
+            self.assertFalse(second.done())
+            self.assertNotIn('second-returned', order)
+
+            gate.set()                 # release the bind -> startup completes
+            await first
+            await second
+            await self.runtime.run_async()
+            await self.runtime._finish()
+
+        self._drive(go())
+        # The bind fully finished before the second caller returned.
+        self.assertLess(order.index('bind-done'),
+                        order.index('second-returned'))
+        self.assertIs(self.runtime.state, _RuntimeState.STOPPED)
+        self.assertEqual(self.runtime.live_resources(), [])
+
+    def test_cancelling_secondary_waiter_does_not_cancel_startup(self):
+        # A secondary start_all() waiter shields the shared startup task, so
+        # cancelling that waiter must NOT cancel the in-flight startup: the
+        # primary driver continues to RUNNING and the bind finishes.
+        gate = None
+        events = {'bind_done': False}
+
+        async def slow_bind():
+            await gate.wait()
+            events['bind_done'] = True
+
+        async def go():
+            nonlocal gate
+            gate = asyncio.Event()
+            reactor.callWhenRunning(reactor.stop)
+            self.runtime.addStartupBind(slow_bind)
+
+            first = asyncio.ensure_future(self.runtime.start_all())
+            while self.runtime.state is not _RuntimeState.STARTING:
+                await asyncio.sleep(0)
+            await asyncio.sleep(0)
+
+            # A secondary waiter, then cancel it while startup is still parked.
+            second = asyncio.ensure_future(self.runtime.start_all())
+            await asyncio.sleep(0)
+            self.assertFalse(second.done())
+            second.cancel()
+            with self.assertRaises(asyncio.CancelledError):
+                await second
+
+            # The primary startup is unaffected: still STARTING, not cancelled.
+            self.assertIs(self.runtime.state, _RuntimeState.STARTING)
+            self.assertFalse(first.done())
+
+            gate.set()                 # release the bind -> startup completes
+            await first                # primary driver finishes cleanly
+            self.assertIs(self.runtime.state, _RuntimeState.RUNNING)
+            self.assertTrue(events['bind_done'])
+            await self.runtime.run_async()
+            await self.runtime._finish()
+
+        self._drive(go())
+        self.assertIs(self.runtime.state, _RuntimeState.STOPPED)
+        self.assertEqual(self.runtime.live_resources(), [])
+
+    def test_sequential_reuse_same_runtime(self):
+        # After a clean start_all/run_async/_finish the runtime is STOPPED with
+        # a cleared completion and empty queues, so it can be driven again.
+        counts = {'runs': 0}
+
+        def kickoff():
+            counts['runs'] += 1
+            reactor.stop()
+
+        async def go():
+            for _ in range(2):
+                reactor.callWhenRunning(kickoff)
+                await self.runtime.start_all()
+                await self.runtime.run_async()
+                await self.runtime._finish()
+                self.assertIs(self.runtime.state, _RuntimeState.STOPPED)
+                self.assertIsNone(self.runtime._completion)
+
+        self._drive(go())
+        self.assertEqual(counts['runs'], 2)
+
+    def test_legacy_run_drives_start_all(self):
+        # The blocking legacy run() drives the SAME start_all path: the startup
+        # bind runs, kickoff flushes, and teardown clears all resources.
+        events = {'bind': False, 'kickoff': False}
+
+        async def bind():
+            events['bind'] = True
+
+        def on_running():
+            events['kickoff'] = True
+            reactor.callLater(0.01, reactor.stop)
+
+        reactor.addStartupBind(bind)
+        reactor.callWhenRunning(on_running)
+        self.runtime.run()
+        self.assertTrue(events['bind'])
+        self.assertTrue(events['kickoff'])
+        self.assertIs(self.runtime.state, _RuntimeState.STOPPED)
+        self.assertEqual(self.runtime.live_resources(), [])
+
+    def test_legacy_run_stopped_cross_thread(self):
+        # stop() from another thread (via call_soon_threadsafe) unblocks the
+        # blocking run() -- the cross-thread stop path the migrated scripts rely
+        # on.
+        import threading
+        launched = threading.Event()
+
+        def stopper():
+            launched.wait(2.0)
+            self.runtime.stop()     # cross-thread
+
+        t = threading.Thread(target=stopper)
+        reactor.callWhenRunning(launched.set)
+        reactor.callWhenRunning(t.start)
+        self.runtime.run()          # blocks until the other thread stops it
+        t.join(2.0)
+        self.assertFalse(t.is_alive())
+        self.assertTrue(launched.is_set())
+        self.assertIs(self.runtime.state, _RuntimeState.STOPPED)
+        self.assertEqual(self.runtime.live_resources(), [])
 
 
 # --------------------------------------------------------------------------- #
@@ -1680,9 +1918,9 @@ class MainEntrypointTests(unittest.TestCase):
 
     def test_main_constructor_failure_after_startup_bind_no_leak(self):
         # Constructor queues an addStartupBind (state COLLECTING -> lands in
-        # _pending_binds) THEN raises. _main's teardown must close that queued
-        # coroutine and clear the queues -- no leaked pending_binds/when_running
-        # and no "coroutine was never awaited" warning.
+        # _pending_binds as an un-run factory) THEN raises. _main's teardown
+        # must clear the queues -- no leaked pending_binds/when_running and no
+        # "coroutine was never awaited" warning (the factory never ran).
         captured = {}
         tc = self
 
@@ -1693,7 +1931,7 @@ class MainEntrypointTests(unittest.TestCase):
 
                 async def never_awaited():
                     return 'unused'
-                reactor.addStartupBind(never_awaited())
+                reactor.addStartupBind(never_awaited)
                 reactor.callWhenRunning(lambda: None)   # queues _when_running
                 raise RuntimeError('constructor blew up after bind')
 

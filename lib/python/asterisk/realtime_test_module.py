@@ -469,7 +469,7 @@ class RealtimeTestModule(object):
         a bind failure surfaces out of run(), and the AppRunner is registered for
         async cleanup at shutdown.
         """
-        reactor.addStartupBind(self._start(), label='realtime-http:46821')
+        reactor.addStartupBind(self._start, label='realtime-http:46821')
 
     async def _start(self):
         app = web.Application()

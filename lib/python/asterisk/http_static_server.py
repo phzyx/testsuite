@@ -39,7 +39,7 @@ class HTTPStaticServer(object):
         # Bind through the reactor's awaited startup path so a failure to claim
         # the port surfaces out of run() (matching twisted's synchronous
         # listenTCP), and register async cleanup of the AppRunner at shutdown.
-        reactor.addStartupBind(self._start(),
+        reactor.addStartupBind(self._start,
                                label='http-static:%d' % self._port)
 
     async def _start(self):

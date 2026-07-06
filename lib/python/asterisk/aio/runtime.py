@@ -263,11 +263,14 @@ class _Connector(object):
             factory.startedConnecting(self)
         loop = self._runtime._ensure_loop()
         local_addr = self._bindAddress if self._bindAddress else None
-        coro = loop.create_connection(
-            lambda: _TwistedProtocolAdapter(factory, self),
-            self.host, self.port, local_addr=local_addr)
-        if self._timeout:
-            coro = asyncio.wait_for(coro, self._timeout)
+
+        def _bind():
+            coro = loop.create_connection(
+                lambda: _TwistedProtocolAdapter(factory, self),
+                self.host, self.port, local_addr=local_addr)
+            if self._timeout:
+                coro = asyncio.wait_for(coro, self._timeout)
+            return coro
 
         def apply(result):
             transport, _proto = result
@@ -283,7 +286,7 @@ class _Connector(object):
                 factory.clientConnectionFailed(self, Failure(exc))
 
         self._runtime._register_bind(
-            coro, apply, on_error,
+            _bind, apply, on_error,
             'connectTCP:%s:%d' % (self.host, self.port))
 
     def stopConnecting(self):
@@ -394,6 +397,8 @@ class AsyncTestRuntime(object):
         self._pending_binds = []      # pre-run binds: (coro, apply, on_error, label)
         self._completion = None       # resolved by stop(); awaited by run()
         self._failure = None          # first fatal mid-run error, re-raised by run()
+        self._startup_task = None     # in-flight start_all() drain; awaited by
+                                      # concurrent start_all() callers
         # Resource registries for ordered shutdown.
         self._delayed_calls = set()
         self._tasks = set()
@@ -498,10 +503,15 @@ class AsyncTestRuntime(object):
     def run(self, installSignalHandlers=True):
         """Run the event loop until stop() is called (blocks).
 
-        Drives the state machine COLLECTING -> STARTING (drain the pre-run bind
-        queue to quiescence, surfacing a fatal bind failure) -> RUNNING (flush
-        callWhenRunning, await the completion signal) -> STOPPING (ordered
-        shutdown) -> STOPPED, then re-raises any fatal mid-run error.
+        Legacy driver for the still-unmigrated ``run-test`` scripts. It owns its
+        loop (``run_until_complete``) but drives the **same** ``start_all`` /
+        ``run_async`` / ``_shutdown`` sequence the native ``_main`` path uses, so
+        module ``start()`` and the startup state machine have a single
+        implementation across both paths (design doc points 2b/5): COLLECTING ->
+        STARTING (``start_all`` drains the pre-run queue, surfacing a fatal bind)
+        -> RUNNING (kickoff flushed) -> await completion (``run_async``) ->
+        STOPPING (ordered ``_shutdown`` in this method's ``finally``) -> STOPPED,
+        then re-raise any fatal mid-run error.
         """
         # Guard on the *state*, not the ``running`` property: stop() flips
         # running to False (via _stop_requested) while this run() is still
@@ -518,42 +528,9 @@ class AsyncTestRuntime(object):
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
             self._loop = loop
-        self._failure = None
-        self._stop_requested = False
-        self._completion = loop.create_future()
 
-        # 1. Awaited startup: drain the bind queue to quiescence, surfacing
-        #    failures. A bind registered by an apply() during this phase (state
-        #    STARTING, so _register_bind enqueues rather than tasks it) is picked
-        #    up by the next iteration of the drain loop.
-        self._state = _RuntimeState.STARTING
-        while self._pending_binds:
-            batch = self._pending_binds
-            self._pending_binds = []
-            for coro, apply, on_error, label in batch:
-                try:
-                    result = loop.run_until_complete(coro)
-                except Exception as exc:
-                    if on_error is not None:
-                        on_error(exc)
-                        continue
-                    # Fatal: no handler for this bind. Record, tear down, raise.
-                    self._failure = exc
-                    self._state = _RuntimeState.STOPPING
-                    loop.run_until_complete(self._shutdown())
-                    self._state = _RuntimeState.STOPPED
-                    self._completion = None
-                    raise
-                apply(result)
-
-        # 2. Loop is about to turn: flush callWhenRunning.
-        self._state = _RuntimeState.RUNNING
-        queued = self._when_running
-        self._when_running = []
-        for fn, args, kw in queued:
-            loop.call_soon(fn, *args, **kw)
-
-        # 3. Run until stop(), then tear down owned resources.
+        # Drive the shared startup state machine, then await completion. A fatal
+        # startup bind raises out of start_all; the finally still tears down.
         #
         # NOTE (per-run ownership): the ordered shutdown clears every registry,
         # but this blocking run() does *not* detach the runtime from the holder
@@ -562,7 +539,8 @@ class AsyncTestRuntime(object):
         # entrypoint / legacy-run wiring (later B1 steps); callers that want a
         # fresh owner per run install one via new_runtime() and detach it after.
         try:
-            loop.run_until_complete(self._completion)
+            loop.run_until_complete(self.start_all())
+            loop.run_until_complete(self.run_async())
         finally:
             self._state = _RuntimeState.STOPPING
             loop.run_until_complete(self._shutdown())
@@ -574,57 +552,120 @@ class AsyncTestRuntime(object):
             self._failure = None
             raise failure
 
-    async def _run_startup(self):
-        """Drive the awaited startup phase for the native ``_main`` entrypoint.
+    async def start_all(self):
+        """Single guarded startup driver for the native AND legacy paths.
 
-        Native-entrypoint startup has exactly one driver -- ``_main`` -- and this
-        method is the runtime-side primitive it calls (Phase B step B1.1; B1.2
-        promotes it into the module-constructing ``start_all()``). It creates the
-        per-run completion signal on the running loop, advances COLLECTING ->
-        STARTING (``running`` becomes true here, so a stop requested during
-        awaited startup is meaningful), drains ``_pending_binds`` to quiescence
+        The one place the startup state machine runs (design doc point 2b).
+        ``_main`` (native) awaits it under ``asyncio.run``; blocking ``run()``
+        (legacy) drives the *same* coroutine via ``run_until_complete`` -- module
+        ``start()`` is therefore invoked from exactly one sequence, never twice.
+        It creates the per-run completion signal on the running loop, advances
+        COLLECTING -> STARTING (``running`` becomes true here, so a stop during
+        awaited startup is meaningful), drains the startup queue to quiescence
         surfacing a fatal bind, then RUNNING and flushes the ``callWhenRunning``
         kickoff queue.
 
-        Deliberately narrow responsibility (design doc Section, points 2/2b):
-        it does NOT await completion (that is ``run_async``) and does NOT tear
-        down (that is the ordered ``_shutdown`` run from ``_main``'s ``finally``).
-        A fatal bind stores ``_failure`` and re-raises so ``_main``'s ``finally``
-        runs the single ordered teardown and ``_main`` re-raises afterward.
+        Deliberately narrow (points 2/2b): it does NOT await completion (that is
+        ``run_async``) and does NOT tear down (that is ``_shutdown``, run from the
+        driver's ``finally``). A fatal bind stores ``_failure`` and re-raises so
+        the driver's ``finally`` runs the ordered teardown and re-raises after.
+
+        Cooperative stop: a stop requested during STARTING (cross-thread via
+        ``call_soon_threadsafe``, or from a bind's ``apply``) must actually abort
+        startup, not merely resolve completion -- otherwise this coroutine would
+        keep invoking binds, reach RUNNING, and flush kickoff, launching the very
+        test the stop was meant to prevent. So the flag is checked between binds,
+        each bind is raced against the completion signal, and on stop we skip all
+        remaining startup + kickoff and fall through to STOPPING (never RUNNING),
+        leaving the ordered teardown to the driver's ``finally``.
+
+        Once-per-run under overlap: the drain runs as one tracked task
+        (``_startup_task``). A caller that arrives while startup is still in
+        flight awaits that same task rather than returning early, so it never
+        proceeds believing startup finished while binds are still running.
         """
-        # State-based re-entrancy guard (as blocking run()): reject while a run
-        # is active or an unresolved completion future already exists.
-        if (self._state in (_RuntimeState.STARTING, _RuntimeState.RUNNING,
-                            _RuntimeState.STOPPING)
-                or self._completion is not None):
+        # Coordinate concurrent callers around a single in-flight startup so the
+        # once-per-run guarantee holds even under overlap (design point 2b):
+        #
+        #   - A startup is already in flight (STARTING): a second caller must
+        #     AWAIT that same task, not return early -- returning would let it
+        #     proceed as if startup finished while binds are still running.
+        #   - Startup already finished (RUNNING) or torn down (STOPPING) with no
+        #     task in flight: stray post-startup call, a harmless no-op.
+        #   - An unresolved completion with no startup task means a run is
+        #     already in flight by some other path: reject.
+        #
+        # Secondary callers shield the shared task: awaiting it directly would
+        # propagate *their* cancellation into the shared drain, cancelling the
+        # primary driver's startup too. shield() lets a cancelled secondary
+        # waiter unwind without owning cancellation of the in-flight startup.
+        if self._startup_task is not None:
+            await asyncio.shield(self._startup_task)
+            return
+        if self._state in (_RuntimeState.STARTING, _RuntimeState.RUNNING,
+                           _RuntimeState.STOPPING):
+            return
+        if self._completion is not None:
             raise ReactorAlreadyRunning()
+
         loop = asyncio.get_running_loop()
         self._loop = loop
         self._failure = None
         self._stop_requested = False
         self._completion = loop.create_future()
-
-        # STARTING: drain the bind queue to quiescence, surfacing failures.
         self._state = _RuntimeState.STARTING
-        while self._pending_binds:
+
+        # Drive the drain as a tracked task so overlapping callers await the SAME
+        # startup. No await separates the state flip above from scheduling the
+        # task, so a concurrent caller never observes STARTING without a task.
+        self._startup_task = asyncio.ensure_future(self._drain_startup(loop))
+        try:
+            await self._startup_task
+        finally:
+            self._startup_task = None
+
+    async def _drain_startup(self, loop):
+        """Drive the startup drain to quiescence: the body of ``start_all``.
+
+        Split out so it can run as a single tracked task per run (see
+        ``start_all``), letting concurrent ``start_all`` callers await the one
+        in-flight startup rather than each re-driving the drain. Drains the bind
+        queue, surfacing failures and honoring a stop between/within binds; on
+        stop goes straight to STOPPING (never RUNNING/kickoff); otherwise enters
+        RUNNING and flushes the ``callWhenRunning`` kickoff queue.
+        """
+        while self._pending_binds and not self._stop_requested:
             batch = self._pending_binds
             self._pending_binds = []
-            for index, (coro, apply, on_error, label) in enumerate(batch):
+            for index, (make_coro, apply, on_error, label) in enumerate(batch):
+                if self._stop_requested:
+                    # Return the still-unrun remainder (inert factories, discarded
+                    # at shutdown) and abort the drain.
+                    self._pending_binds = batch[index:] + self._pending_binds
+                    break
                 try:
-                    result = await coro
-                except Exception as exc:
-                    if on_error is not None:
-                        on_error(exc)
-                        continue
-                    # Fatal: hand the still-unawaited remainder of this batch
-                    # back to _pending_binds so the ordered _shutdown closes
-                    # them -- otherwise those later coroutines leak "coroutine
-                    # was never awaited". Then record and re-raise; _main's
-                    # finally tears down.
+                    resolved = await self._drive_bind(make_coro(), apply,
+                                                      on_error)
+                except Exception:
+                    # Fatal bind (no handler). Hand back the unrun remainder so
+                    # shutdown discards the inert factories, then re-raise; the
+                    # driver's finally tears down and re-raises _failure.
                     self._pending_binds = batch[index + 1:] + self._pending_binds
-                    self._failure = exc
                     raise
-                apply(result)
+                if not resolved:
+                    # Stop won the race against this bind; the in-flight task was
+                    # cancelled and drained. Return the unrun remainder and abort.
+                    self._pending_binds = batch[index + 1:] + self._pending_binds
+                    break
+
+        if self._stop_requested:
+            # Abort startup: never flush kickoff, never enter RUNNING. Go
+            # straight to STOPPING; the driver's finally runs the ordered
+            # teardown. Ensure completion is resolved so the bridge returns.
+            self._state = _RuntimeState.STOPPING
+            if not self._completion.done():
+                self._completion.set_result(None)
+            return
 
         # RUNNING: flush callWhenRunning kickoffs (after all binds, never before).
         self._state = _RuntimeState.RUNNING
@@ -633,11 +674,45 @@ class AsyncTestRuntime(object):
         for fn, args, kw in queued:
             loop.call_soon(fn, *args, **kw)
 
+    async def _drive_bind(self, coro, apply, on_error):
+        """Await one startup bind, racing it against a stop.
+
+        Returns True if the bind resolved (success -> ``apply`` invoked, or a
+        non-fatal failure handled by ``on_error``); returns False if a stop won
+        the race, in which case the in-flight bind task is cancelled and drained
+        (so nothing is left unawaited). A fatal failure (``on_error is None``)
+        records ``_failure`` and propagates, aborting the drain.
+        """
+        bind_task = asyncio.ensure_future(coro)
+        done, _pending = await asyncio.wait(
+            {bind_task, self._completion},
+            return_when=asyncio.FIRST_COMPLETED)
+        if bind_task not in done:
+            # Stop resolved completion first: cancel and drain the in-flight bind
+            # so it cannot emit "task/coroutine was never awaited".
+            bind_task.cancel()
+            try:
+                await bind_task
+            except BaseException:
+                pass
+            return False
+        try:
+            result = bind_task.result()
+        except Exception as exc:
+            if on_error is not None:
+                on_error(exc)
+                return True
+            # Fatal: record and propagate to abort startup.
+            self._failure = exc
+            raise
+        apply(result)
+        return True
+
     async def run_async(self):
         """Transitional bridge: adopt the running loop and await completion.
 
         The linchpin of incrementality (design doc Section, point 2). By the time
-        ``_main`` awaits this, ``_run_startup`` has already advanced the runtime
+        ``_main`` awaits this, ``start_all`` has already advanced the runtime
         to RUNNING with a live completion future, so this bridge does the one
         thing it owns: **await the runtime's completion signal**. ``stop()``
         resolves that future (via ``call_soon_threadsafe``), so the relay is
@@ -651,7 +726,7 @@ class AsyncTestRuntime(object):
         ``_failure``, which ``_main`` re-raises. Deleted in B4 with reactor.py.
         """
         if self._completion is None:
-            # Misuse: run_async() awaits a completion _run_startup() must have
+            # Misuse: run_async() awaits a completion start_all() must have
             # created. Never reached on the _main path.
             raise ReactorNotRunning()
         await self._completion
@@ -703,16 +778,11 @@ class AsyncTestRuntime(object):
         # Un-driven startup queues first. If a run is torn down before (or
         # during) the awaited startup drain -- e.g. a constructor registered an
         # addStartupBind/listenTCP/connectTCP bind and then a later constructor
-        # raised -- the queued bind coroutines were never awaited. Close them so
-        # they cannot emit "coroutine was never awaited", and drop any queued
-        # callWhenRunning kickoffs that will now never fire.
-        for coro, apply, on_error, label in self._pending_binds:
-            close = getattr(coro, 'close', None)
-            if close is not None:
-                try:
-                    close()
-                except Exception:
-                    pass
+        # raised, or a stop aborted startup with binds still queued -- the
+        # remaining entries are coroutine *factories* that were never invoked.
+        # They hold no live coroutine, so simply discarding them cannot emit
+        # "coroutine was never awaited". Also drop any queued callWhenRunning
+        # kickoffs that will now never fire.
         self._pending_binds = []
         self._when_running = []
 
@@ -846,18 +916,23 @@ class AsyncTestRuntime(object):
         return deferred
 
     # -- async server helpers --------------------------------------------- #
-    def addStartupBind(self, coro, apply=None, label='startup'):
-        """Bind ``coro`` during the awaited pre-run startup phase.
+    def addStartupBind(self, make_coro, apply=None, label='startup'):
+        """Bind during the awaited pre-run startup phase.
 
-        If the runtime is already running the coroutine is scheduled and its
-        result applied when it completes; otherwise it is awaited during run()'s
-        startup, so a failure (e.g. an aiohttp bind that cannot claim its port)
-        is fatal and surfaces out of run(). ``apply(result)`` receives the
+        ``make_coro`` is a **coroutine factory** (a zero-arg callable returning a
+        fresh coroutine, e.g. an ``async def start`` method passed unbound-called
+        as ``self._start``). If the runtime is already running the factory is
+        invoked and scheduled immediately; otherwise it is enqueued and awaited
+        by start_all's startup drain, so a failure (e.g. an aiohttp bind that
+        cannot claim its port) is fatal and surfaces out of the run. Queuing a
+        factory (not a live coroutine) keeps an un-run entry inert -- discarded,
+        not leaked, if startup never reaches it. ``apply(result)`` receives the
         coroutine's result. This lets transport-agnostic servers (aiohttp, etc.)
         reuse the same awaited-startup + failure-surfacing path as listenTCP.
         """
         self._ensure_loop()
-        self._register_bind(coro, apply or (lambda result: None), None, label)
+        self._register_bind(make_coro, apply or (lambda result: None), None,
+                            label)
 
     def addAsyncCleanup(self, cleanup):
         """Register a zero-arg callable returning an awaitable, run at shutdown.
@@ -915,7 +990,7 @@ class AsyncTestRuntime(object):
             transport, _proto = result
             handle._set_transport(transport)
 
-        self._register_bind(_bind(), apply, None, 'listenUDP:%d' % port)
+        self._register_bind(_bind, apply, None, 'listenUDP:%d' % port)
         return handle
 
     def listenTCP(self, port, factory, backlog=50, interface=''):
@@ -923,14 +998,16 @@ class AsyncTestRuntime(object):
         loop = self._ensure_loop()
         handle = _Port()
         self._ports.append(handle)
-        coro = loop.create_server(lambda: _TwistedProtocolAdapter(factory),
-                                  interface or '0.0.0.0', port,
-                                  backlog=backlog)
+
+        def _bind():
+            return loop.create_server(lambda: _TwistedProtocolAdapter(factory),
+                                      interface or '0.0.0.0', port,
+                                      backlog=backlog)
 
         def apply(server):
             handle._set_server(server)
 
-        self._register_bind(coro, apply, None, 'listenTCP:%d' % port)
+        self._register_bind(_bind, apply, None, 'listenTCP:%d' % port)
         return handle
 
     def connectTCP(self, host, port, factory, timeout=30, bindAddress=None):
@@ -968,9 +1045,10 @@ class AsyncTestRuntime(object):
         if getattr(processProtocol, 'transport', None) is None:
             processProtocol.transport = _PendingProcessTransport()
 
-        coro = loop.subprocess_exec(lambda: processProtocol,
-                                    executable, *rest,
-                                    env=env, cwd=path)
+        def _bind():
+            return loop.subprocess_exec(lambda: processProtocol,
+                                        executable, *rest,
+                                        env=env, cwd=path)
 
         def apply(result):
             transport, _proto = result
@@ -978,22 +1056,29 @@ class AsyncTestRuntime(object):
             # protocol now owns the non-reaping process transport adapter.
             self._process_transports.append(processProtocol.transport)
 
-        self._register_bind(coro, apply, None, 'spawnProcess:%s' % executable)
+        self._register_bind(_bind, apply, None, 'spawnProcess:%s' % executable)
         return _ProcessConnector(processProtocol)
 
     # -- internal bind scheduling ----------------------------------------- #
-    def _register_bind(self, coro, apply, on_error, label):
-        """Bind an endpoint now (if RUNNING) or during run()'s startup phase.
+    def _register_bind(self, make_coro, apply, on_error, label):
+        """Bind an endpoint now (if RUNNING) or during startup (via start_all).
+
+        ``make_coro`` is a **coroutine factory** -- a zero-arg callable that
+        returns a fresh coroutine when the bind is actually driven. Queuing
+        factories (never bare coroutine *objects*) keeps an un-run startup entry
+        inert: if construction fails, or a bind aborts, the factories left on
+        the queue are simply discarded at shutdown -- nothing was created, so
+        nothing can emit "coroutine was never awaited" (design doc point 2b).
 
         Classification is state-based: only while RUNNING is a bind turned into
-        a tracked mid-run task; during COLLECTING or STARTING it is enqueued and
-        awaited by run()'s startup drain. ``apply(result)`` installs the bound
-        transport/server/connection. ``on_error(exc)`` handles a bind failure;
-        when None, the failure is fatal and stops the runtime (and aborts the
-        pre-run startup drain).
+        a tracked mid-run task (the factory is invoked now); during COLLECTING or
+        STARTING the factory is enqueued and driven by start_all's startup drain.
+        ``apply(result)`` installs the bound transport/server/connection.
+        ``on_error(exc)`` handles a bind failure; when None, the failure is fatal
+        and stops the runtime (and aborts the pre-run startup drain).
         """
         if self._state == _RuntimeState.RUNNING:
-            task = asyncio.ensure_future(coro)
+            task = asyncio.ensure_future(make_coro())
             self._tasks.add(task)
 
             def _done(t):
@@ -1011,7 +1096,7 @@ class AsyncTestRuntime(object):
 
             task.add_done_callback(_done)
         else:
-            self._pending_binds.append((coro, apply, on_error, label))
+            self._pending_binds.append((make_coro, apply, on_error, label))
 
     def _fatal(self, exc):
         """Record a fatal mid-run error and stop the runtime."""
