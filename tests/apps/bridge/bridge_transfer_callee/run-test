@@ -11,7 +11,7 @@ import sys
 import logging
 import re
 
-from asterisk.aio import reactor
+from asterisk.test_runner import run_test_object
 
 sys.path.append("lib/python")
 
@@ -110,8 +110,7 @@ class BridgeTransferTest(TestCase):
 
 
 def main():
-    test = BridgeTransferTest()
-    reactor.run()
+    test = run_test_object(BridgeTransferTest)
 
     if (test.passed):
         return 0

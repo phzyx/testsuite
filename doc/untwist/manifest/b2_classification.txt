@@ -1,19 +1,19 @@
 # B2.0 entrypoint classification
-run-test files: 159   (python: 147, shell: 12, with reactor.run: 102)
+run-test files: 159   (python: 147, shell: 12, with reactor.run: 93)
 
 ## migration strategies
-  constructor-only   23
+  constructor-only   14
   hand-convert       59
   helper-owned       1
   hook-convert       20
-  migrated           44
+  migrated           53
   shell              12
 
 ## dimension totals (independent; a file may set several)
   custom_assertions  55
   direct_lifecycle   4
   helper_owned       1
-  migrated           44
+  migrated           53
   multiple_objects   23
   post_run_cleanup   51
   pre_run            57
@@ -21,7 +21,16 @@ run-test files: 159   (python: 147, shell: 12, with reactor.run: 102)
 ## non-run-test loop owners (reactor.run inside a def/ctor)
   tests/rest_api/applications/stasisstatus/test_case.py  [StasisStatusTestCase.__init__]
 
-## migrated (44)
+## migrated (53)
+  tests/apps/bridge/bridge_transfer_callee/run-test
+  tests/apps/chanspy/chanspy_w_mixmonitor/run-test
+  tests/apps/confbridge/confbridge_recording/run-test
+  tests/apps/mixmonitor/run-test
+  tests/apps/mixmonitor_audiohook_inherit/run-test
+  tests/apps/mixmonitor_duplex/run-test
+  tests/apps/mixmonitor_rxtx/run-test
+  tests/apps/queues/position_priority_maxlen/run-test
+  tests/apps/queues/reload_queue_members/run-test
   tests/apps/voicemail/authenticate_extensions/run-test
   tests/apps/voicemail/authenticate_invalid_mailbox/run-test
   tests/apps/voicemail/authenticate_invalid_password/run-test
@@ -153,16 +162,7 @@ run-test files: 159   (python: 147, shell: 12, with reactor.run: 102)
   tests/udptl/run-test   pre-run post-cleanup
   tests/udptl_v6/run-test   pre-run post-cleanup
 
-## constructor-only (23)
-  tests/apps/bridge/bridge_transfer_callee/run-test
-  tests/apps/chanspy/chanspy_w_mixmonitor/run-test
-  tests/apps/confbridge/confbridge_recording/run-test
-  tests/apps/mixmonitor/run-test
-  tests/apps/mixmonitor_audiohook_inherit/run-test
-  tests/apps/mixmonitor_duplex/run-test
-  tests/apps/mixmonitor_rxtx/run-test
-  tests/apps/queues/position_priority_maxlen/run-test
-  tests/apps/queues/reload_queue_members/run-test
+## constructor-only (14)
   tests/cause_answered_elsewhere/run-test
   tests/channels/iax2/hangupcause/run-test
   tests/feature_attended_transfer/run-test

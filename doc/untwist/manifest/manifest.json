@@ -13,7 +13,7 @@
     "maybeDeferred": 8,
     "succeed": 1
   },
-  "files_with_reactor_or_defer": 175,
+  "files_with_reactor_or_defer": 168,
   "lifecycle_owners": {
     "doc/untwist/test_ari_parity.py": {
       "counts": {
@@ -98,25 +98,7 @@
       },
       "is_run_test": true
     },
-    "tests/apps/bridge/bridge_transfer_callee/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
-    "tests/apps/chanspy/chanspy_w_mixmonitor/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
     "tests/apps/confbridge/confbridge_nominal/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
-    "tests/apps/confbridge/confbridge_recording/run-test": {
       "counts": {
         "run": 1
       },
@@ -146,37 +128,7 @@
       },
       "is_run_test": true
     },
-    "tests/apps/mixmonitor/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
-    "tests/apps/mixmonitor_audiohook_inherit/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
-    "tests/apps/mixmonitor_duplex/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
-    "tests/apps/mixmonitor_rxtx/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
     "tests/apps/page/page_baseline/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
-    "tests/apps/queues/position_priority_maxlen/run-test": {
       "counts": {
         "run": 1
       },
@@ -195,12 +147,6 @@
       "is_run_test": true
     },
     "tests/apps/queues/reason_pause_ami/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
-    "tests/apps/queues/reload_queue_members/run-test": {
       "counts": {
         "run": 1
       },
@@ -1029,17 +975,10 @@
         "run": 1
       }
     },
-    "tests/apps/bridge/bridge_transfer_callee/run-test": {
-      "defer": {},
-      "reactor": {
-        "run": 1
-      }
-    },
     "tests/apps/chanspy/chanspy_w_mixmonitor/run-test": {
       "defer": {},
       "reactor": {
-        "callLater": 10,
-        "run": 1
+        "callLater": 10
       }
     },
     "tests/apps/confbridge/confbridge_nominal/run-test": {
@@ -1051,8 +990,7 @@
     "tests/apps/confbridge/confbridge_recording/run-test": {
       "defer": {},
       "reactor": {
-        "callLater": 1,
-        "run": 1
+        "callLater": 1
       }
     },
     "tests/apps/dial/dial_dtmf_hangup_cancel/send_dtmf.py": {
@@ -1097,37 +1035,7 @@
         "run": 1
       }
     },
-    "tests/apps/mixmonitor/run-test": {
-      "defer": {},
-      "reactor": {
-        "run": 1
-      }
-    },
-    "tests/apps/mixmonitor_audiohook_inherit/run-test": {
-      "defer": {},
-      "reactor": {
-        "run": 1
-      }
-    },
-    "tests/apps/mixmonitor_duplex/run-test": {
-      "defer": {},
-      "reactor": {
-        "run": 1
-      }
-    },
-    "tests/apps/mixmonitor_rxtx/run-test": {
-      "defer": {},
-      "reactor": {
-        "run": 1
-      }
-    },
     "tests/apps/page/page_baseline/run-test": {
-      "defer": {},
-      "reactor": {
-        "run": 1
-      }
-    },
-    "tests/apps/queues/position_priority_maxlen/run-test": {
       "defer": {},
       "reactor": {
         "run": 1
@@ -1146,12 +1054,6 @@
       }
     },
     "tests/apps/queues/reason_pause_ami/run-test": {
-      "defer": {},
-      "reactor": {
-        "run": 1
-      }
-    },
-    "tests/apps/queues/reload_queue_members/run-test": {
       "defer": {},
       "reactor": {
         "run": 1
@@ -1877,7 +1779,7 @@
       }
     }
   },
-  "reactor_grand_total": 545,
+  "reactor_grand_total": 536,
   "reactor_totals": {
     "_ensure_loop": 6,
     "addAsyncCleanup": 2,
@@ -1888,7 +1790,7 @@
     "connectTCP": 5,
     "listenTCP": 29,
     "listenUDP": 14,
-    "run": 144,
+    "run": 135,
     "running": 14,
     "spawnProcess": 11,
     "stop": 89

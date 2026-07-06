@@ -14,7 +14,7 @@ import os
 import math
 import logging
 
-from asterisk.aio import reactor
+from asterisk.test_runner import run_test_object
 
 from asterisk.test_case import TestCase
 
@@ -147,8 +147,7 @@ class MixMonitorTest(TestCase):
 
 
 def main():
-    test = MixMonitorTest()
-    reactor.run()
+    test = run_test_object(MixMonitorTest)
     if test.passed:
         return 0
     return 1

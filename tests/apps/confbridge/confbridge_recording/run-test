@@ -13,6 +13,7 @@ import os
 import logging
 
 from asterisk.aio import reactor
+from asterisk.test_runner import run_test_object
 
 sys.path.append("lib/python")
 
@@ -352,8 +353,7 @@ class ConfBridgeRecording(TestCase):
 
 def main():
 
-    test = ConfBridgeRecording()
-    reactor.run()
+    test = run_test_object(ConfBridgeRecording)
 
     if not test.passed:
         return 1

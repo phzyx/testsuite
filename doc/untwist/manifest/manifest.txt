@@ -1,7 +1,7 @@
 # reactor/defer manifest  (root=.)
-scanned=396 parsed=396 skipped_non_python=0 files_with_usage=175
+scanned=396 parsed=396 skipped_non_python=0 files_with_usage=168
 
-## reactor.* totals  (grand=545)
+## reactor.* totals  (grand=536)
   reactor._ensure_loop         6
   reactor.addAsyncCleanup      2
   reactor.addStartupBind       4
@@ -11,7 +11,7 @@ scanned=396 parsed=396 skipped_non_python=0 files_with_usage=175
   reactor.connectTCP           5
   reactor.listenTCP            29
   reactor.listenUDP            14
-  reactor.run                  144
+  reactor.run                  135
   reactor.running              14
   reactor.spawnProcess         11
   reactor.stop                 89
@@ -29,7 +29,7 @@ scanned=396 parsed=396 skipped_non_python=0 files_with_usage=175
   maybeDeferred              8
   succeed                    1
 
-## lifecycle owners (112)  [run/stop/running/callWhenRunning]
+## lifecycle owners (103)  [run/stop/running/callWhenRunning]
   [module  ] doc/untwist/test_ari_parity.py   callWhenRunning=1 run=1 stop=2
   [module  ] doc/untwist/test_core_runtime.py   callWhenRunning=1 run=1 stop=2
   [module  ] doc/untwist/test_dns_parity.py   callWhenRunning=1 run=1 stop=2
@@ -41,24 +41,15 @@ scanned=396 parsed=396 skipped_non_python=0 files_with_usage=175
   [module  ] lib/python/asterisk/test_case.py   callWhenRunning=1 running=1 stop=1
   [run-test] tests/agi/exit_status/run-test   run=1
   [run-test] tests/agi/nominal/run-test   run=1
-  [run-test] tests/apps/bridge/bridge_transfer_callee/run-test   run=1
-  [run-test] tests/apps/chanspy/chanspy_w_mixmonitor/run-test   run=1
   [run-test] tests/apps/confbridge/confbridge_nominal/run-test   run=1
-  [run-test] tests/apps/confbridge/confbridge_recording/run-test   run=1
   [run-test] tests/apps/directed_pickup/pickup_chan/run-test   run=1
   [run-test] tests/apps/directory/directory_attendant_exit/run-test   run=1
   [run-test] tests/apps/directory/directory_context_operator_exit/run-test   run=1
   [run-test] tests/apps/directory/directory_operator_exit/run-test   run=1
-  [run-test] tests/apps/mixmonitor/run-test   run=1
-  [run-test] tests/apps/mixmonitor_audiohook_inherit/run-test   run=1
-  [run-test] tests/apps/mixmonitor_duplex/run-test   run=1
-  [run-test] tests/apps/mixmonitor_rxtx/run-test   run=1
   [run-test] tests/apps/page/page_baseline/run-test   run=1
-  [run-test] tests/apps/queues/position_priority_maxlen/run-test   run=1
   [run-test] tests/apps/queues/queue_baseline/run-test   run=1
   [run-test] tests/apps/queues/queue_transfer_callee/run-test   run=1
   [run-test] tests/apps/queues/reason_pause_ami/run-test   run=1
-  [run-test] tests/apps/queues/reload_queue_members/run-test   run=1
   [run-test] tests/apps/queues/set_penalty/run-test   run=1
   [run-test] tests/apps/voicemail/authenticate_nominal/run-test   run=1
   [run-test] tests/apps/voicemail/check_voicemail_callback/run-test   run=1
