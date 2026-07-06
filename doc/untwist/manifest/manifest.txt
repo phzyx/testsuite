@@ -1,20 +1,20 @@
 # reactor/defer manifest  (root=.)
 scanned=394 parsed=394 skipped_non_python=0 files_with_usage=213
 
-## reactor.* totals  (grand=561)
+## reactor.* totals  (grand=573)
   reactor._ensure_loop         6
   reactor.addAsyncCleanup      2
   reactor.addStartupBind       4
   reactor.callInThread         5
   reactor.callLater            152
-  reactor.callWhenRunning      54
+  reactor.callWhenRunning      60
   reactor.connectTCP           5
   reactor.listenTCP            29
   reactor.listenUDP            14
   reactor.run                  189
   reactor.running              14
   reactor.spawnProcess         11
-  reactor.stop                 76
+  reactor.stop                 82
 
 ## defer totals  (grand=106)
   AlreadyCalledError         2
@@ -36,7 +36,7 @@ scanned=394 parsed=394 skipped_non_python=0 files_with_usage=213
   [module  ] doc/untwist/test_http_parity.py   callWhenRunning=1 run=1 stop=2
   [module  ] doc/untwist/test_ssh_parity.py   callWhenRunning=1 run=1 stop=2
   [module  ] doc/untwist/test_ws_parity.py   callWhenRunning=1 run=1 stop=2
-  [module  ] lib/python/asterisk/aio/test_aio.py   callWhenRunning=44 run=35 running=11 stop=58
+  [module  ] lib/python/asterisk/aio/test_aio.py   callWhenRunning=50 run=35 running=11 stop=64
   [module  ] lib/python/asterisk/asterisk.py   callWhenRunning=1
   [module  ] lib/python/asterisk/pcap.py   run=1 stop=1
   [module  ] lib/python/asterisk/test_case.py   callWhenRunning=1 running=1 stop=1

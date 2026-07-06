@@ -399,6 +399,12 @@ class AsyncTestRuntime(object):
         self._failure = None          # first fatal mid-run error, re-raised by run()
         self._startup_task = None     # in-flight start_all() drain; awaited by
                                       # concurrent start_all() callers
+        # Pluggable-module lifecycle (design point 3).
+        self._modules = []            # retained module instances (strong refs),
+                                      # in registration order
+        self._started_modules = []    # modules whose start() was invoked (incl.
+                                      # failed) or that have no start() -- each is
+                                      # close()d once, in forward order
         # Resource registries for ordered shutdown.
         self._delayed_calls = set()
         self._tasks = set()
@@ -440,7 +446,16 @@ class AsyncTestRuntime(object):
         Empty list means the runtime owns nothing (safe to discard/replace).
         Used by ``reset()`` and by ``install_runtime()`` to refuse silently
         orphaning a runtime that still owns timers, tasks, ports, connectors,
-        process transports, cleanups, or queued binds/callbacks.
+        process transports, cleanups, queued binds/callbacks, or retained
+        modules awaiting close().
+
+        Retained modules count as live: a registered module holds a strong
+        reference and an unclosed ``close()`` hook, so a runtime carrying one
+        must run the ordered shutdown before it can be replaced or reset --
+        otherwise the module is orphaned and never closed. ``_started_modules``
+        is a subset of ``_modules`` but is reported independently so a partial
+        state (all closed but registration not yet cleared, or vice versa) still
+        surfaces.
         """
         live = {
             'delayed_calls': self._delayed_calls,
@@ -451,6 +466,8 @@ class AsyncTestRuntime(object):
             'async_cleanups': self._async_cleanups,
             'pending_binds': self._pending_binds,
             'when_running': self._when_running,
+            'modules': self._modules,
+            'started_modules': self._started_modules,
         }
         return sorted(name for name, reg in live.items() if reg)
 
@@ -492,6 +509,9 @@ class AsyncTestRuntime(object):
         self._connectors = []
         self._process_transports = []
         self._async_cleanups = []
+        self._startup_task = None
+        self._modules = []
+        self._started_modules = []
 
     # -- loop access ------------------------------------------------------ #
     def _ensure_loop(self):
@@ -551,6 +571,79 @@ class AsyncTestRuntime(object):
             failure = self._failure
             self._failure = None
             raise failure
+
+    # -- pluggable-module lifecycle (design point 3) ---------------------- #
+    def register_module(self, module):
+        """Retain a constructed pluggable module for the run's lifetime.
+
+        The loader hands every constructed local/global module here so it is
+        (a) kept alive by a strong reference rather than garbage-collected after
+        construction, and (b) enrolled in the async ``start()``/``close()``
+        lifecycle driven by ``start_all`` and ``_shutdown``. Registration order
+        is preserved: ``start()`` runs in this order, ``close()`` in the same
+        (forward) order.
+        """
+        self._modules.append(module)
+
+    async def _start_modules(self):
+        """Invoke each retained module's optional ``start()`` (design point 3).
+
+        Runs during STARTING, before the bind-queue drain, so binds a module
+        issues from ``start()`` land in the awaited startup queue. Semantics:
+
+          - a module *without* ``start()`` is treated as already-started;
+          - a module is enrolled for ``close()`` *before* its ``start()`` is
+            awaited, so a start that fails or partially initializes is still
+            closed (``close()`` must tolerate partial init and be idempotent);
+          - modules whose ``start()`` is never reached -- because an earlier
+            module failed or a stop aborted startup -- are NOT enrolled and so
+            are not closed;
+          - each ``start()`` is raced against the completion signal so a
+            cooperative stop aborts a long start without launching the test;
+          - a ``start()`` failure is fatal: it records ``_failure`` and
+            propagates, aborting startup (the driver's teardown then closes the
+            enrolled modules, including this one).
+
+        Returns False if a stop won a race (abort the rest of startup), else
+        True.
+        """
+        for module in self._modules:
+            if self._stop_requested:
+                return False
+            start = getattr(module, 'start', None)
+            # Enroll BEFORE awaiting: a failed/partial start must still close.
+            self._started_modules.append(module)
+            if start is None:
+                continue
+            if not await self._drive_start(start()):
+                return False
+        return True
+
+    async def _drive_start(self, coro):
+        """Await one module ``start()``, racing it against a stop.
+
+        Mirrors ``_drive_bind`` without apply/on_error: a module ``start()`` has
+        no non-fatal handler. Returns True if it completed; False if a stop won
+        the race (the in-flight start task is cancelled and drained so nothing is
+        left unawaited). A failure records ``_failure`` and propagates.
+        """
+        start_task = asyncio.ensure_future(coro)
+        done, _pending = await asyncio.wait(
+            {start_task, self._completion},
+            return_when=asyncio.FIRST_COMPLETED)
+        if start_task not in done:
+            start_task.cancel()
+            try:
+                await start_task
+            except BaseException:
+                pass
+            return False
+        try:
+            start_task.result()
+        except Exception as exc:
+            self._failure = exc
+            raise
+        return True
 
     async def start_all(self):
         """Single guarded startup driver for the native AND legacy paths.
@@ -629,11 +722,22 @@ class AsyncTestRuntime(object):
 
         Split out so it can run as a single tracked task per run (see
         ``start_all``), letting concurrent ``start_all`` callers await the one
-        in-flight startup rather than each re-driving the drain. Drains the bind
-        queue, surfacing failures and honoring a stop between/within binds; on
-        stop goes straight to STOPPING (never RUNNING/kickoff); otherwise enters
-        RUNNING and flushes the ``callWhenRunning`` kickoff queue.
+        in-flight startup rather than each re-driving the drain. Runs the point-2b
+        startup sequence: invoke each retained module's ``start()`` (step 2),
+        drain the bind queue to quiescence (step 3) -- both surfacing failures and
+        honoring a stop -- then, absent a stop, enter RUNNING and flush the
+        ``callWhenRunning`` kickoff queue. On stop it goes straight to STOPPING
+        (never RUNNING/kickoff).
         """
+        # Step 2: module start() hooks (may enqueue binds drained just below).
+        if not await self._start_modules():
+            # A stop won a start() race: abort startup without launching.
+            self._state = _RuntimeState.STOPPING
+            if not self._completion.done():
+                self._completion.set_result(None)
+            return
+
+        # Step 3: drain the bind queue (constructor + start()-issued binds).
         while self._pending_binds and not self._stop_requested:
             batch = self._pending_binds
             self._pending_binds = []
@@ -801,6 +905,24 @@ class AsyncTestRuntime(object):
             except Exception:
                 pass
         self._async_cleanups.clear()
+
+        # Module close() hooks (design point 3): every module whose start() was
+        # invoked -- or that had no start() and so is treated as started -- is
+        # closed exactly once, in forward registration order (behavior-preserving:
+        # the async-cleanup registry also runs forward). close() must tolerate
+        # partial initialization and be idempotent; failures are isolated so one
+        # module's broken close cannot skip the rest. Modules whose start() was
+        # never reached were never enrolled and are not closed here.
+        for module in list(self._started_modules):
+            close = getattr(module, 'close', None)
+            if close is None:
+                continue
+            try:
+                await close()
+            except Exception:
+                pass
+        self._started_modules.clear()
+        self._modules = []
 
         # Listening ports and outgoing connectors.
         for port in list(self._ports):

@@ -1812,6 +1812,266 @@ class StartupDriverTests(_LoopTestCase):
 
 
 # --------------------------------------------------------------------------- #
+# B1.3: async pluggable-module lifecycle -- retained instances, awaited start()
+# in registration order during STARTING, close() on every started module in the
+# same forward order at shutdown (design doc point 3).
+# --------------------------------------------------------------------------- #
+class _RecordingModule(object):
+    """Test double for a pluggable module with async start()/close() hooks.
+
+    Records the shared event log so tests can assert ordering across modules.
+    ``has_start=False`` models a module that defines no start() (treated as
+    already-started); ``fail_start`` makes start() raise (fatal); ``fail_close``
+    makes close() raise (must be isolated).
+    """
+
+    def __init__(self, name, log, has_start=True, fail_start=False,
+                 fail_close=False):
+        self.name = name
+        self.log = log
+        self.fail_start = fail_start
+        self.fail_close = fail_close
+        self.started = False
+        self.closed = 0
+        if not has_start:
+            # Remove the bound method so getattr(module, 'start', None) is None.
+            self.start = None
+
+    async def start(self):
+        self.log.append(('start', self.name))
+        if self.fail_start:
+            raise RuntimeError("start failed: %s" % self.name)
+        self.started = True
+
+    async def close(self):
+        self.closed += 1
+        self.log.append(('close', self.name))
+        if self.fail_close:
+            raise RuntimeError("close failed: %s" % self.name)
+
+
+class ModuleLifecycleTests(_LoopTestCase):
+    """Retained modules get start() awaited in registration order during
+    STARTING and close() in the same forward order at shutdown; a module without
+    start() is treated as started; a never-reached module is never closed."""
+
+    def _drive(self, coro):
+        return self.loop.run_until_complete(coro)
+
+    def test_start_runs_in_registration_order_then_close_forward(self):
+        log = []
+        a = _RecordingModule('a', log)
+        b = _RecordingModule('b', log)
+        c = _RecordingModule('c', log)
+        for m in (a, b, c):
+            self.runtime.register_module(m)
+
+        async def go():
+            reactor.callWhenRunning(reactor.stop)
+            await self.runtime.start_all()
+            self.assertIs(self.runtime.state, _RuntimeState.RUNNING)
+            await self.runtime.run_async()
+            await self.runtime._finish()
+
+        self._drive(go())
+        self.assertEqual(
+            log,
+            [('start', 'a'), ('start', 'b'), ('start', 'c'),
+             ('close', 'a'), ('close', 'b'), ('close', 'c')])
+        self.assertEqual((a.closed, b.closed, c.closed), (1, 1, 1))
+        self.assertEqual(self.runtime.live_resources(), [])
+
+    def test_module_without_start_is_treated_as_started_and_closed(self):
+        # A module that defines no start() is still enrolled and close()d.
+        log = []
+        a = _RecordingModule('a', log, has_start=False)
+        b = _RecordingModule('b', log)
+        self.runtime.register_module(a)
+        self.runtime.register_module(b)
+
+        async def go():
+            reactor.callWhenRunning(reactor.stop)
+            await self.runtime.start_all()
+            await self.runtime.run_async()
+            await self.runtime._finish()
+
+        self._drive(go())
+        # 'a' has no start() (no start log line) but is closed.
+        self.assertEqual(
+            log, [('start', 'b'), ('close', 'a'), ('close', 'b')])
+        self.assertEqual(a.closed, 1)
+
+    def test_failed_start_is_fatal_and_still_closes_enrolled_modules(self):
+        # b.start() fails: it is fatal (recorded as _failure, re-raised), and
+        # every module enrolled *up to and including* b is closed. c.start()
+        # is never reached, so c is never closed.
+        log = []
+        a = _RecordingModule('a', log)
+        b = _RecordingModule('b', log, fail_start=True)
+        c = _RecordingModule('c', log)
+        for m in (a, b, c):
+            self.runtime.register_module(m)
+
+        async def go():
+            with self.assertRaises(RuntimeError):
+                await self.runtime.start_all()
+            await self.runtime._finish()
+
+        self._drive(go())
+        # a + b started (b failed); c never started. Close a, b -- not c.
+        self.assertEqual(
+            log,
+            [('start', 'a'), ('start', 'b'),
+             ('close', 'a'), ('close', 'b')])
+        self.assertEqual(c.closed, 0)
+        self.assertEqual(self.runtime.live_resources(), [])
+
+    def test_stop_during_module_start_leaves_later_modules_unstarted(self):
+        # A stop requested from a module's start() aborts the module phase before
+        # the next module: 'a' starts (and is closed), 'b' never starts (and is
+        # never closed), and the runtime goes to STOPPING not RUNNING -- the test
+        # the stop meant to prevent never launches.
+        log = []
+        b = _RecordingModule('b', log)
+
+        class StoppingModule(object):
+            async def start(self):
+                log.append(('start', 'a'))
+                reactor.stop()
+
+            async def close(self):
+                log.append(('close', 'a'))
+
+        self.runtime.register_module(StoppingModule())
+        self.runtime.register_module(b)
+
+        async def go():
+            reactor.callWhenRunning(
+                lambda: log.append(('kickoff', None)))
+            await self.runtime.start_all()
+            self.assertIs(self.runtime.state, _RuntimeState.STOPPING)
+            await self.runtime.run_async()   # completion already resolved
+            await self.runtime._finish()
+
+        self._drive(go())
+        # 'a' started + closed; 'b' never started; kickoff never fired.
+        self.assertEqual(log, [('start', 'a'), ('close', 'a')])
+        self.assertEqual(b.started, False)
+        self.assertEqual(b.closed, 0)
+        self.assertEqual(self.runtime.live_resources(), [])
+
+    def test_broken_close_is_isolated(self):
+        # One module's close() raising must not skip the others' close().
+        log = []
+        a = _RecordingModule('a', log)
+        b = _RecordingModule('b', log, fail_close=True)
+        c = _RecordingModule('c', log)
+        for m in (a, b, c):
+            self.runtime.register_module(m)
+
+        async def go():
+            reactor.callWhenRunning(reactor.stop)
+            await self.runtime.start_all()
+            await self.runtime.run_async()
+            await self.runtime._finish()
+
+        self._drive(go())
+        # b's broken close is swallowed; a and c still close.
+        self.assertEqual(
+            [e for e in log if e[0] == 'close'],
+            [('close', 'a'), ('close', 'b'), ('close', 'c')])
+        self.assertEqual((a.closed, c.closed), (1, 1))
+
+    def test_start_issued_bind_is_drained_before_running(self):
+        # A module's start() may enqueue a startup bind; because binds drain
+        # AFTER the module phase but still during STARTING, it runs before the
+        # kickoff flush -- never fire-and-forget after RUNNING.
+        order = []
+
+        class BindingModule(object):
+            def __init__(self, runtime):
+                self._runtime = runtime
+
+            async def start(self):
+                order.append('start')
+
+                async def late_bind():
+                    order.append('bind')
+                self._runtime.addStartupBind(late_bind)
+
+            async def close(self):
+                order.append('close')
+
+        self.runtime.register_module(BindingModule(self.runtime))
+
+        def on_running():
+            order.append('kickoff')
+            reactor.stop()
+
+        async def go():
+            reactor.callWhenRunning(on_running)
+            await self.runtime.start_all()
+            await self.runtime.run_async()
+            await self.runtime._finish()
+
+        self._drive(go())
+        self.assertLess(order.index('bind'), order.index('kickoff'))
+        self.assertEqual(order[0], 'start')
+        self.assertIn('close', order)
+
+    def test_retained_module_counts_as_live_resource(self):
+        # A registered-but-unclosed module makes the runtime non-empty: it holds
+        # a strong ref and an unrun close() hook, so live_resources() must name
+        # it. Otherwise install_runtime()/reset() would orphan it silently.
+        a = _RecordingModule('a', [])
+        self.assertEqual(self.runtime.live_resources(), [])
+        self.runtime.register_module(a)
+        self.assertIn('modules', self.runtime.live_resources())
+
+    def test_reset_rejects_runtime_with_retained_module(self):
+        # reset() must refuse while a module is still retained -- discarding it
+        # would drop the close() hook. The guard names the live registry.
+        self.runtime.register_module(_RecordingModule('a', []))
+        with self.assertRaises(RuntimeError) as ctx:
+            self.runtime.reset(self.loop)
+        self.assertIn('modules', str(ctx.exception))
+
+    def test_install_rejects_replacing_runtime_with_retained_module(self):
+        # install_runtime() must refuse to supersede an idle runtime that still
+        # retains a module, rather than silently orphaning it unclosed.
+        self.runtime.register_module(_RecordingModule('a', []))
+        replacement = AsyncTestRuntime()
+        with self.assertRaises(RuntimeError) as ctx:
+            install_runtime(replacement)
+        self.assertIn('modules', str(ctx.exception))
+        # The incumbent is untouched; the replacement was not installed.
+        self.assertIs(get_current_runtime(), self.runtime)
+
+    def test_shutdown_then_reset_clears_module_registries(self):
+        # After the ordered shutdown closes the modules, the registries are
+        # empty and reset() (in lockstep with __init__) keeps them empty so a
+        # reused runtime does not re-close the previous run's modules.
+        log = []
+        a = _RecordingModule('a', log)
+        self.runtime.register_module(a)
+
+        async def go():
+            reactor.callWhenRunning(reactor.stop)
+            await self.runtime.start_all()
+            await self.runtime.run_async()
+            await self.runtime._finish()
+
+        self._drive(go())
+        self.assertEqual(a.closed, 1)
+        self.assertEqual(self.runtime.live_resources(), [])
+        # Shutdown already emptied the registries; reset() must keep them empty.
+        self.runtime.reset(self.loop)
+        self.assertEqual(self.runtime._modules, [])
+        self.assertEqual(self.runtime._started_modules, [])
+        self.assertIsNone(self.runtime._startup_task)
+
+
+# --------------------------------------------------------------------------- #
 # B1.1: test_runner._main -- construction under a running loop, guaranteed
 # teardown + detach on every exit path (including constructor/module failures)
 # --------------------------------------------------------------------------- #

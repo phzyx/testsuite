@@ -65,10 +65,10 @@
     },
     "lib/python/asterisk/aio/test_aio.py": {
       "counts": {
-        "callWhenRunning": 44,
+        "callWhenRunning": 50,
         "run": 35,
         "running": 11,
-        "stop": 58
+        "stop": 64
       },
       "is_run_test": false
     },
@@ -1075,14 +1075,14 @@
         "addStartupBind": 2,
         "callInThread": 1,
         "callLater": 42,
-        "callWhenRunning": 44,
+        "callWhenRunning": 50,
         "connectTCP": 4,
         "listenTCP": 3,
         "listenUDP": 3,
         "run": 35,
         "running": 11,
         "spawnProcess": 8,
-        "stop": 58
+        "stop": 64
       }
     },
     "lib/python/asterisk/aio/utils.py": {
@@ -2384,21 +2384,21 @@
       }
     }
   },
-  "reactor_grand_total": 561,
+  "reactor_grand_total": 573,
   "reactor_totals": {
     "_ensure_loop": 6,
     "addAsyncCleanup": 2,
     "addStartupBind": 4,
     "callInThread": 5,
     "callLater": 152,
-    "callWhenRunning": 54,
+    "callWhenRunning": 60,
     "connectTCP": 5,
     "listenTCP": 29,
     "listenUDP": 14,
     "run": 189,
     "running": 14,
     "spawnProcess": 11,
-    "stop": 76
+    "stop": 82
   },
   "root": "/usr/src/phzyx/testsuite",
   "scanned": 394,

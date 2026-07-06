@@ -23,7 +23,7 @@ try:
 except ImportError:
     from yaml import SafeLoader as MyLoader
 
-from asterisk.aio.runtime import new_runtime, detach_runtime
+from asterisk.aio.runtime import new_runtime, detach_runtime, get_current_runtime
 
 LOGGER = logging.getLogger('test_runner')
 logging.basicConfig()
@@ -112,6 +112,11 @@ def load_test_modules(test_config, test_object):
         # Not an error - just no pluggable modules specified
         return
 
+    # Retain constructed modules on the runtime so they (a) survive past
+    # construction rather than being GC'd, and (b) are enrolled in the async
+    # start()/close() lifecycle driven by start_all/_shutdown (design point 3).
+    runtime = get_current_runtime()
+
     for module_spec in test_config['test-modules']['modules']:
         # If there's a specific portion of the config for this module,
         # use it
@@ -124,7 +129,9 @@ def load_test_modules(test_config, test_object):
         module_type = load_and_parse_module(module_spec['typename'])
         # Modules take in two parameters: the module configuration object,
         # and the test object that they attach to
-        module_type(module_config, test_object)
+        module = module_type(module_config, test_object)
+        if runtime is not None and module is not None:
+            runtime.register_module(module)
 
 
 def load_and_parse_module(type_name):
