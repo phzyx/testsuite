@@ -12,9 +12,10 @@ the GNU General Public License Version 2.
 import sys
 import logging
 
-# The tests generally use the twisted reactor (an asynchronous event driven
-# engine) to orchestrate actions to take during test execution.
-from asterisk.aio import reactor
+# The tests run on the asyncio event loop (an asynchronous event driven
+# engine) to orchestrate actions to take during test execution. The
+# run_test_object helper owns the loop for the lifetime of the test.
+from asterisk.test_runner import run_test_object
 
 # Include the location of our python libraries, relative to the execution
 # directory (always assumed to be where the top-most runtests.py resides)
@@ -153,16 +154,16 @@ class YourTestName(TestCase):
 def main():
     """Main entry point for the test. All run-test scripts execute with a main,
     and should consist of the following steps:
-    1. Instantiate the test object
-    2. Run the twisted reactor.  This will automatically do the following:
+    1. Pass the test class to run_test_object, which instantiates it and runs
+       the asyncio event loop.  This will automatically do the following:
        - Start the Asterisk instances
-       - Call the test's run method when twisted is up
-    3. When the twisted reactor exits, check results.  If the test passed,
-       return 0; otherwise, return any other value (usually 1)
+       - Call the test's run method when the loop is up
+    2. run_test_object returns the finished test object once the loop exits.
+       Check results: if the test passed, return 0; otherwise, return any
+       other value (usually 1)
     """
 
-    test = YourTestName()
-    reactor.run()
+    test = run_test_object(YourTestName)
 
     if not test.passed:
         return 1

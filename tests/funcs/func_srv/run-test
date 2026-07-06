@@ -10,7 +10,7 @@ the GNU General Public License Version 2.
 import sys
 sys.path.append("lib/python")
 
-from asterisk.aio import reactor
+from asterisk.test_runner import run_test_object
 
 from asterisk.test_case import TestCase
 
@@ -78,8 +78,7 @@ class func_srv_test(TestCase):
         self.create_ami_factory()
 
 def main():
-    test = func_srv_test()
-    reactor.run()
+    test = run_test_object(func_srv_test)
 
     if not test.passed:
         return 1

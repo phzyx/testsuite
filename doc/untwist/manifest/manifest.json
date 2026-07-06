@@ -13,7 +13,7 @@
     "maybeDeferred": 8,
     "succeed": 1
   },
-  "files_with_reactor_or_defer": 168,
+  "files_with_reactor_or_defer": 155,
   "lifecycle_owners": {
     "doc/untwist/test_ari_parity.py": {
       "counts": {
@@ -329,19 +329,7 @@
       },
       "is_run_test": true
     },
-    "tests/cause_answered_elsewhere/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
     "tests/channels/iax2/acl_call/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
-    "tests/channels/iax2/hangupcause/run-test": {
       "counts": {
         "run": 1
       },
@@ -470,40 +458,10 @@
       },
       "is_run_test": true
     },
-    "tests/feature_attended_transfer/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
-    "tests/feature_blonde_transfer/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
-    "tests/feature_call_pickup/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
-    "tests/funcs/func_jitterbuffer/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
     "tests/funcs/func_presencestate/run-test": {
       "counts": {
         "run": 1,
         "stop": 1
-      },
-      "is_run_test": true
-    },
-    "tests/funcs/func_srv/run-test": {
-      "counts": {
-        "run": 1
       },
       "is_run_test": true
     },
@@ -514,24 +472,6 @@
       "is_run_test": true
     },
     "tests/hangup/handlers_endbeforehexten/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
-    "tests/http_server/acl/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
-    "tests/http_server/servername/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
-    "tests/manager/acl-login/run-test": {
       "counts": {
         "run": 1
       },
@@ -568,18 +508,6 @@
       },
       "is_run_test": true
     },
-    "tests/pbx/call-files/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
-    "tests/pbx/callerid_match/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
     "tests/pbx/dialplan_reload/run-test": {
       "counts": {
         "run": 1
@@ -610,12 +538,6 @@
       },
       "is_run_test": true
     },
-    "tests/phoneprov/res_phoneprov_pjsip/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
     "tests/predial/run-test": {
       "counts": {
         "run": 1
@@ -639,12 +561,6 @@
         "run": 1
       },
       "is_run_test": false
-    },
-    "tests/skeleton_test/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
     },
     "tests/udptl/run-test": {
       "counts": {
@@ -1238,19 +1154,7 @@
         "run": 1
       }
     },
-    "tests/cause_answered_elsewhere/run-test": {
-      "defer": {},
-      "reactor": {
-        "run": 1
-      }
-    },
     "tests/channels/iax2/acl_call/run-test": {
-      "defer": {},
-      "reactor": {
-        "run": 1
-      }
-    },
-    "tests/channels/iax2/hangupcause/run-test": {
       "defer": {},
       "reactor": {
         "run": 1
@@ -1468,41 +1372,11 @@
         "run": 1
       }
     },
-    "tests/feature_attended_transfer/run-test": {
-      "defer": {},
-      "reactor": {
-        "run": 1
-      }
-    },
-    "tests/feature_blonde_transfer/run-test": {
-      "defer": {},
-      "reactor": {
-        "run": 1
-      }
-    },
-    "tests/feature_call_pickup/run-test": {
-      "defer": {},
-      "reactor": {
-        "run": 1
-      }
-    },
-    "tests/funcs/func_jitterbuffer/run-test": {
-      "defer": {},
-      "reactor": {
-        "run": 1
-      }
-    },
     "tests/funcs/func_presencestate/run-test": {
       "defer": {},
       "reactor": {
         "run": 1,
         "stop": 1
-      }
-    },
-    "tests/funcs/func_srv/run-test": {
-      "defer": {},
-      "reactor": {
-        "run": 1
       }
     },
     "tests/hangup/handlers/run-test": {
@@ -1521,24 +1395,6 @@
       "defer": {},
       "reactor": {
         "listenUDP": 1
-      }
-    },
-    "tests/http_server/acl/run-test": {
-      "defer": {},
-      "reactor": {
-        "run": 1
-      }
-    },
-    "tests/http_server/servername/run-test": {
-      "defer": {},
-      "reactor": {
-        "run": 1
-      }
-    },
-    "tests/manager/acl-login/run-test": {
-      "defer": {},
-      "reactor": {
-        "run": 1
       }
     },
     "tests/manager/danger/dangerous/run-test": {
@@ -1590,12 +1446,6 @@
         "run": 1
       }
     },
-    "tests/pbx/call-files/run-test": {
-      "defer": {},
-      "reactor": {
-        "run": 1
-      }
-    },
     "tests/pbx/call_file_retries_archive/retries_archive.py": {
       "defer": {},
       "reactor": {
@@ -1605,8 +1455,7 @@
     "tests/pbx/callerid_match/run-test": {
       "defer": {},
       "reactor": {
-        "callLater": 2,
-        "run": 1
+        "callLater": 2
       }
     },
     "tests/pbx/dialplan_reload/run-test": {
@@ -1642,12 +1491,6 @@
       }
     },
     "tests/pbx/pbx_lua_goto/run-test": {
-      "defer": {},
-      "reactor": {
-        "run": 1
-      }
-    },
-    "tests/phoneprov/res_phoneprov_pjsip/run-test": {
       "defer": {},
       "reactor": {
         "run": 1
@@ -1760,12 +1603,6 @@
         "listenUDP": 1
       }
     },
-    "tests/skeleton_test/run-test": {
-      "defer": {},
-      "reactor": {
-        "run": 1
-      }
-    },
     "tests/udptl/run-test": {
       "defer": {},
       "reactor": {
@@ -1779,7 +1616,7 @@
       }
     }
   },
-  "reactor_grand_total": 536,
+  "reactor_grand_total": 522,
   "reactor_totals": {
     "_ensure_loop": 6,
     "addAsyncCleanup": 2,
@@ -1790,7 +1627,7 @@
     "connectTCP": 5,
     "listenTCP": 29,
     "listenUDP": 14,
-    "run": 135,
+    "run": 121,
     "running": 14,
     "spawnProcess": 11,
     "stop": 89

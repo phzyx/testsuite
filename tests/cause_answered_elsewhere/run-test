@@ -12,7 +12,7 @@ import logging
 
 sys.path.append("lib/python")
 from asterisk.test_case import TestCase
-from asterisk.aio import reactor
+from asterisk.test_runner import run_test_object
 
 logger = logging.getLogger(__name__)
 
@@ -51,8 +51,7 @@ class AnsweredElsewhereTest(TestCase):
         self.create_ami_factory()
 
 def main():
-    test = AnsweredElsewhereTest()
-    reactor.run()
+    test = run_test_object(AnsweredElsewhereTest)
 
     if not test.passed:
         return 1

@@ -1,7 +1,7 @@
 # reactor/defer manifest  (root=.)
-scanned=396 parsed=396 skipped_non_python=0 files_with_usage=168
+scanned=396 parsed=396 skipped_non_python=0 files_with_usage=155
 
-## reactor.* totals  (grand=536)
+## reactor.* totals  (grand=522)
   reactor._ensure_loop         6
   reactor.addAsyncCleanup      2
   reactor.addStartupBind       4
@@ -11,7 +11,7 @@ scanned=396 parsed=396 skipped_non_python=0 files_with_usage=168
   reactor.connectTCP           5
   reactor.listenTCP            29
   reactor.listenUDP            14
-  reactor.run                  135
+  reactor.run                  121
   reactor.running              14
   reactor.spawnProcess         11
   reactor.stop                 89
@@ -29,7 +29,7 @@ scanned=396 parsed=396 skipped_non_python=0 files_with_usage=168
   maybeDeferred              8
   succeed                    1
 
-## lifecycle owners (103)  [run/stop/running/callWhenRunning]
+## lifecycle owners (89)  [run/stop/running/callWhenRunning]
   [module  ] doc/untwist/test_ari_parity.py   callWhenRunning=1 run=1 stop=2
   [module  ] doc/untwist/test_core_runtime.py   callWhenRunning=1 run=1 stop=2
   [module  ] doc/untwist/test_dns_parity.py   callWhenRunning=1 run=1 stop=2
@@ -79,9 +79,7 @@ scanned=396 parsed=396 skipped_non_python=0 files_with_usage=168
   [run-test] tests/blind-transfer-parkingtimeout/run-test   callWhenRunning=1 run=1 running=1 stop=1
   [run-test] tests/callparking/run-test   run=1
   [run-test] tests/callparking_retrieval/run-test   run=1
-  [run-test] tests/cause_answered_elsewhere/run-test   run=1
   [run-test] tests/channels/iax2/acl_call/run-test   run=1
-  [run-test] tests/channels/iax2/hangupcause/run-test   run=1
   [run-test] tests/channels/pjsip/acl_call/run-test   run=1
   [run-test] tests/channels/pjsip/hold/run-test   run=1
   [run-test] tests/channels/pjsip/hold_inactive/run-test   run=1
@@ -102,34 +100,22 @@ scanned=396 parsed=396 skipped_non_python=0 files_with_usage=168
   [run-test] tests/fax/pjsip/t38_enabled_two_reinvite_on_a_leg/run-test   run=1
   [run-test] tests/fax/pjsip/t38_enabled_two_reinvite_on_b_leg/run-test   run=1
   [run-test] tests/fax/pjsip/t38_fast_reject/run-test   run=1
-  [run-test] tests/feature_attended_transfer/run-test   run=1
-  [run-test] tests/feature_blonde_transfer/run-test   run=1
-  [run-test] tests/feature_call_pickup/run-test   run=1
-  [run-test] tests/funcs/func_jitterbuffer/run-test   run=1
   [run-test] tests/funcs/func_presencestate/run-test   run=1 stop=1
-  [run-test] tests/funcs/func_srv/run-test   run=1
   [run-test] tests/hangup/handlers/run-test   run=1
   [run-test] tests/hangup/handlers_endbeforehexten/run-test   run=1
-  [run-test] tests/http_server/acl/run-test   run=1
-  [run-test] tests/http_server/servername/run-test   run=1
-  [run-test] tests/manager/acl-login/run-test   run=1
   [run-test] tests/manager/danger/dangerous/run-test   run=1
   [run-test] tests/manager/danger/safe/run-test   run=1
   [run-test] tests/manager/login/run-test   run=1
   [run-test] tests/manager/mixmonitor/mixmonitor_id/run-test   run=1 stop=1
   [run-test] tests/masquerade/run-test   run=1
-  [run-test] tests/pbx/call-files/run-test   run=1
-  [run-test] tests/pbx/callerid_match/run-test   run=1
   [run-test] tests/pbx/dialplan_reload/run-test   run=1
   [run-test] tests/pbx/dialplan_save/run-test   run=1
   [run-test] tests/pbx/merge_contexts/run-test   run=1
   [run-test] tests/pbx/pbx_lua_background/run-test   run=1
   [run-test] tests/pbx/pbx_lua_goto/run-test   run=1
-  [run-test] tests/phoneprov/res_phoneprov_pjsip/run-test   run=1
   [run-test] tests/predial/run-test   run=1
   [run-test] tests/redirecting/subroutine/run-test   run=1
   [run-test] tests/regressions/M18882/run-test   run=1
   [module  ] tests/rest_api/applications/stasisstatus/test_case.py   run=1
-  [run-test] tests/skeleton_test/run-test   run=1
   [run-test] tests/udptl/run-test   run=1
   [run-test] tests/udptl_v6/run-test   run=1

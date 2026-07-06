@@ -11,7 +11,7 @@ the GNU General Public License Version 2.
 import sys
 import logging
 
-from asterisk.aio import reactor
+from asterisk.test_runner import run_test_object
 
 sys.path.append("lib/python")
 from asterisk.test_case import TestCase
@@ -132,8 +132,7 @@ class AttendedTransferTest(TestCase):
 
 def main():
 
-    test = AttendedTransferTest()
-    reactor.run()
+    test = run_test_object(AttendedTransferTest)
     if test.passed != True:
         return 1
     return 0
