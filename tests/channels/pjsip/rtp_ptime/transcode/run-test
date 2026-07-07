@@ -54,13 +54,22 @@ def main():
     # Run the RTPDUMP tool to capture the logs on B side
     rtpdump = subprocess.Popen(["rtpdump", "-t","5", "-F","ascii","-o",dump_B, "127.0.0.1/8000"])
 
-    test = run_test_object(
-        lambda: SIPpTest(WORKING_DIR, TEST_DIR, SIPP_SCENARIOS,test_config={'memcheck-delay-stop':7}),
-        before_start=lambda t: setattr(t, 'reactor_timeout', 55))
+    try:
+        test = run_test_object(
+            lambda: SIPpTest(WORKING_DIR, TEST_DIR, SIPP_SCENARIOS,test_config={'memcheck-delay-stop':7}),
+            before_start=lambda t: setattr(t, 'reactor_timeout', 55))
 
-    # Kill the RTPDUMP, pass it the signal"
-    rtpdump.send_signal(signal.SIGINT)
-    rtpdump.wait()
+        # Kill the RTPDUMP, pass it the signal"
+        rtpdump.send_signal(signal.SIGINT)
+        rtpdump.wait()
+    finally:
+        if rtpdump.poll() is None:
+            rtpdump.terminate()
+            try:
+                rtpdump.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                rtpdump.kill()
+                rtpdump.wait()
     
     ret_B = subprocess.call(["perl","contrib/scripts/verify_codecs.pl",dump_B ,"0"])
     if (ret_B != 99):

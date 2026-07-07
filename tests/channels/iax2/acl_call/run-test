@@ -165,8 +165,11 @@ def main():
     DB_PATH = TEST_DIR + "/realtime.sqlite3"
     TMP_DB_PATH = "/tmp/realtime.sqlite3"
     shutil.copyfile(DB_PATH, TMP_DB_PATH)
-    test = run_test_object(IAX2ACLTest)
-    os.remove(TMP_DB_PATH)
+    try:
+        test = run_test_object(IAX2ACLTest)
+    finally:
+        if os.path.exists(TMP_DB_PATH):
+            os.remove(TMP_DB_PATH)
 
     if not test.phase_evaluation_reached:
         test.report_timeout()

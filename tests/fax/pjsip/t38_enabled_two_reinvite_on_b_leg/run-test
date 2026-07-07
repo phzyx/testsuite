@@ -64,15 +64,25 @@ def main():
     rtpdump_A = subprocess.Popen(["rtpdump", "-t","5", "-F","ascii","-d","101","-o",dump_A, "127.0.0.1/9000"])
     rtpdump_B = subprocess.Popen(["rtpdump", "-t","5", "-F","ascii","-d","101","-o",dump_B, "127.0.0.1/8000"])
 
-    test = run_test_object(
-        lambda: SIPpTest(WORKING_DIR, TEST_DIR, SIPP_SCENARIOS),
-        before_start=lambda t: setattr(t, 'reactor_timeout', 100))
+    try:
+        test = run_test_object(
+            lambda: SIPpTest(WORKING_DIR, TEST_DIR, SIPP_SCENARIOS),
+            before_start=lambda t: setattr(t, 'reactor_timeout', 100))
 
-    # Kill the RTPDUMP, pass it the signal"
-    rtpdump_A.send_signal(signal.SIGINT)	
-    rtpdump_A.wait()
-    rtpdump_B.send_signal(signal.SIGINT)	
-    rtpdump_B.wait()
+        # Kill the RTPDUMP, pass it the signal"
+        rtpdump_A.send_signal(signal.SIGINT)
+        rtpdump_A.wait()
+        rtpdump_B.send_signal(signal.SIGINT)
+        rtpdump_B.wait()
+    finally:
+        for _proc in (rtpdump_A, rtpdump_B):
+            if _proc.poll() is None:
+                _proc.terminate()
+                try:
+                    _proc.wait(timeout=5)
+                except subprocess.TimeoutExpired:
+                    _proc.kill()
+                    _proc.wait()
 
     #Verify that audio packets were routed in both directions after G711 fallback
     if (os.path.getsize(dump_B) == 0):
