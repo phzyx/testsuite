@@ -8,7 +8,7 @@ the GNU General Public License Version 2.
 import logging
 
 from asterisk.aio import DatagramProtocol
-from asterisk.aio import reactor
+from asterisk.aio.runtime import current_runtime
 
 LOGGER = logging.getLogger(__name__)
 
@@ -27,4 +27,4 @@ class RTP(DatagramProtocol):
 
 class PacketSourceCheck(object):
     def __init__(self, module_config, test_object):
-        reactor.listenUDP(55225, RTP(test_object))
+        current_runtime().listenUDP(55225, RTP(test_object))

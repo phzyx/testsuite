@@ -11,7 +11,7 @@ import sys
 import time
 
 from asterisk.aio import DatagramProtocol
-from asterisk.aio import reactor
+from asterisk.aio.runtime import current_runtime
 from asterisk.pcap import RTPPacket
 
 sys.path.append('lib/python')
@@ -51,4 +51,4 @@ class RTP(DatagramProtocol):
 
 class KeepaliveCheck(object):
     def __init__(self, module_config, test_object):
-        reactor.listenUDP(33623, RTP(test_object))
+        current_runtime().listenUDP(33623, RTP(test_object))

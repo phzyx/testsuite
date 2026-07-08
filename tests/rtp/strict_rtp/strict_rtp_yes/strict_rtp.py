@@ -14,7 +14,7 @@ import logging
 from datetime import datetime
 
 from asterisk.aio import DatagramProtocol
-from asterisk.aio import reactor
+from asterisk.aio.runtime import current_runtime
 
 LOGGER = logging.getLogger(__name__)
 
@@ -85,7 +85,7 @@ class StrictRtpTester(object):
 
         self.test_object.set_passed(True)
         protocol = StrictRtpTester.NoAnswerProtocol(self.test_object)
-        reactor.listenUDP(0, protocol)
+        current_runtime().listenUDP(0, protocol)
 
         # Determine the target of the packets from the RTCPReceived event
         (host, port) = event["to"].split(":")

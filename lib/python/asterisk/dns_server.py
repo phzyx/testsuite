@@ -25,7 +25,7 @@ import logging
 import dnslib
 from dnslib import DNSRecord, DNSHeader, RR, QTYPE, RCODE
 
-from asterisk.aio import reactor, DatagramProtocol
+from asterisk.aio import DatagramProtocol
 from asterisk.aio.runtime import current_runtime
 
 LOGGER = logging.getLogger(__name__)
@@ -399,7 +399,7 @@ class DNSServer(object):
 
         # Bind through the reactor so startup is awaited: the server is listening
         # (UDP and TCP) before Asterisk begins resolving.
-        reactor.listenUDP(port, _DNSDatagramProtocol(resolver))
+        current_runtime().listenUDP(port, _DNSDatagramProtocol(resolver))
         current_runtime().listenTCP(port, _DNSTCPFactory(resolver))
 
         LOGGER.info("Started DNS server (UDP and TCP) on port %d", port)

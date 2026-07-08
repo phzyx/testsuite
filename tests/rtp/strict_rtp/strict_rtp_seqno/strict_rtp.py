@@ -15,7 +15,7 @@ import logging
 #from datetime import datetime
 
 from asterisk.aio import DatagramProtocol
-from asterisk.aio import reactor
+from asterisk.aio.runtime import current_runtime
 from asterisk.aio import LoopingCall
 
 LOGGER = logging.getLogger(__name__)
@@ -96,7 +96,7 @@ class StrictRtpTester(object):
                 return
             self.send_task.stop()
             protocol = StrictRtpTester.PacketSendProtocol(self.test_object)
-            reactor.listenUDP(6001, protocol)
+            current_runtime().listenUDP(6001, protocol)
             self.send_packets(protocol, 1)
         elif event['state'] == 'STRICT_RTP_CLOSED':
             if event['source'] != '127.0.0.1:6001':
@@ -120,7 +120,7 @@ class StrictRtpTester(object):
             return
         self.channel = event['channel']
         protocol = StrictRtpTester.PacketSendProtocol(self.test_object)
-        reactor.listenUDP(6000, protocol)
+        current_runtime().listenUDP(6000, protocol)
         self.send_task = LoopingCall(self.send_packets, protocol, 20)
         deferred = self.send_task.start(1.0)
         deferred.addErrback(errback)

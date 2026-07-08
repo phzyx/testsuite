@@ -18,7 +18,7 @@ import re
 import json
 
 from asterisk.aio import DatagramProtocol
-from asterisk.aio import reactor
+from asterisk.aio.runtime import current_runtime
 
 from construct import *
 from construct.core import *
@@ -222,7 +222,7 @@ class HEPCaptureNode(object):
 
         protocol = HEPPacketHandler(self)
         LOGGER.info('HEP Capture Agent: binding to %d' % (int(bind_port)))
-        reactor.listenUDP(int(bind_port), protocol)
+        current_runtime().listenUDP(int(bind_port), protocol)
 
         self.current_packet = 0
 

@@ -11,7 +11,7 @@ import logging
 import re
 
 from asterisk.aio import DatagramProtocol
-from asterisk.aio import reactor
+from asterisk.aio.runtime import current_runtime
 
 from .matcher import PluggableConditions
 
@@ -62,7 +62,7 @@ class Udp(PluggableConditions):
         if not isinstance(self.filter_msgs, list):
             self.filter_msgs = [self.filter_msgs]
 
-        reactor.listenUDP(config.get('port', 8125), UdpProtocol(self))
+        current_runtime().listenUDP(config.get('port', 8125), UdpProtocol(self))
 
     def handle_message(self, msg):
         """Handle messages received over udp and check the message against the

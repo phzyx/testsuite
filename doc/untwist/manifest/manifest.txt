@@ -1,7 +1,7 @@
 # reactor/defer manifest  (root=.)
-scanned=396 parsed=396 skipped_non_python=0 files_with_usage=47
+scanned=396 parsed=396 skipped_non_python=0 files_with_usage=38
 
-## reactor.* totals  (grand=299)
+## reactor.* totals  (grand=288)
   reactor._ensure_loop         6
   reactor.addAsyncCleanup      2
   reactor.addStartupBind       4
@@ -10,7 +10,7 @@ scanned=396 parsed=396 skipped_non_python=0 files_with_usage=47
   reactor.callWhenRunning      65
   reactor.connectTCP           4
   reactor.listenTCP            5
-  reactor.listenUDP            14
+  reactor.listenUDP            3
   reactor.run                  41
   reactor.running              11
   reactor.spawnProcess         9

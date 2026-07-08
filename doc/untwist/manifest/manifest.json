@@ -13,7 +13,7 @@
     "maybeDeferred": 8,
     "succeed": 1
   },
-  "files_with_reactor_or_defer": 47,
+  "files_with_reactor_or_defer": 38,
   "lifecycle_owners": {
     "doc/untwist/test_ari_parity.py": {
       "counts": {
@@ -206,12 +206,6 @@
       },
       "reactor": {}
     },
-    "lib/python/asterisk/dns_server.py": {
-      "defer": {},
-      "reactor": {
-        "listenUDP": 1
-      }
-    },
     "lib/python/asterisk/fd_test_condition.py": {
       "defer": {
         "defer.Deferred": 2,
@@ -233,22 +227,10 @@
       },
       "reactor": {}
     },
-    "lib/python/asterisk/matcher_listener.py": {
-      "defer": {},
-      "reactor": {
-        "listenUDP": 1
-      }
-    },
     "lib/python/asterisk/media_websocket.py": {
       "defer": {},
       "reactor": {
         "_ensure_loop": 3
-      }
-    },
-    "lib/python/asterisk/pcap_proxy.py": {
-      "defer": {},
-      "reactor": {
-        "listenUDP": 1
       }
     },
     "lib/python/asterisk/pjsip_channel_test_condition.py": {
@@ -320,24 +302,6 @@
       },
       "reactor": {}
     },
-    "tests/channels/pjsip/rtp/bind_rtp_to_media_address/rtp.py": {
-      "defer": {},
-      "reactor": {
-        "listenUDP": 1
-      }
-    },
-    "tests/channels/pjsip/rtp/rtp_keepalive/base/rtp.py": {
-      "defer": {},
-      "reactor": {
-        "listenUDP": 1
-      }
-    },
-    "tests/channels/pjsip/rtp/rtp_keepalive/direct_media/rtp.py": {
-      "defer": {},
-      "reactor": {
-        "listenUDP": 2
-      }
-    },
     "tests/channels/websocket/inbound/basic-call/media_client.py": {
       "defer": {},
       "reactor": {
@@ -354,12 +318,6 @@
       "defer": {},
       "reactor": {
         "callInThread": 1
-      }
-    },
-    "tests/hep/hep_capture_node.py": {
-      "defer": {},
-      "reactor": {
-        "listenUDP": 1
       }
     },
     "tests/manager/device_state_list/ami_device_state_list.py": {
@@ -403,21 +361,9 @@
         "defer.DeferredList": 1
       },
       "reactor": {}
-    },
-    "tests/rtp/strict_rtp/strict_rtp_seqno/strict_rtp.py": {
-      "defer": {},
-      "reactor": {
-        "listenUDP": 2
-      }
-    },
-    "tests/rtp/strict_rtp/strict_rtp_yes/strict_rtp.py": {
-      "defer": {},
-      "reactor": {
-        "listenUDP": 1
-      }
     }
   },
-  "reactor_grand_total": 299,
+  "reactor_grand_total": 288,
   "reactor_totals": {
     "_ensure_loop": 6,
     "addAsyncCleanup": 2,
@@ -427,7 +373,7 @@
     "callWhenRunning": 65,
     "connectTCP": 4,
     "listenTCP": 5,
-    "listenUDP": 14,
+    "listenUDP": 3,
     "run": 41,
     "running": 11,
     "spawnProcess": 9,

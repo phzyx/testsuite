@@ -21,7 +21,7 @@ import binascii
 sys.path.append('lib/python')
 
 from asterisk.aio import DatagramProtocol
-from asterisk.aio import reactor
+from asterisk.aio.runtime import current_runtime
 from construct import *
 from construct.core import *
 
@@ -800,5 +800,5 @@ class VOIPProxy(VOIPSniffer):
         self.rules = module_config.get('rules', VOIPProxy.DEFAULT_RULES)
 
         protocol = VOIPProxy.ProxyProtocol(self.rules, self.process_packet)
-        reactor.listenUDP(self.port, protocol)
+        current_runtime().listenUDP(self.port, protocol)
 
