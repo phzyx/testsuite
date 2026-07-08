@@ -12,7 +12,7 @@ import sys
 import os
 import logging
 
-from asterisk.aio import reactor
+from asterisk.test_runner import run_test_object
 
 sys.path.append("lib/python")
 
@@ -247,14 +247,11 @@ class CheckVoicemailRecordBusy(VoiceMailTest):
 
 def main():
 
-    test = CheckVoicemailRecordBusy()
+    test = run_test_object(
+        CheckVoicemailRecordBusy,
+        before_start=lambda t: t.start_asterisk(),
+        after_run=lambda t: t.stop_asterisk())
     voicemailManager = VoiceMailMailboxManagement(test.ast[0])
-
-    test.start_asterisk()
-
-    reactor.run()
-
-    test.stop_asterisk()
 
     """
     Post-test processing - verify that we listened to all the messages we wanted to listen to, that

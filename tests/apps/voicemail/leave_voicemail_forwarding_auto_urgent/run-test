@@ -12,7 +12,7 @@ import sys
 import os
 import logging
 
-from asterisk.aio import reactor
+from asterisk.test_runner import run_test_object
 
 sys.path.append("lib/python")
 sys.path.append("tests/apps/voicemail")
@@ -155,12 +155,11 @@ class LeaveVoicemailForwardingAutoUrgent(VoiceMailTest):
 
 def main():
 
-    test = LeaveVoicemailForwardingAutoUrgent()
+    test = run_test_object(
+        LeaveVoicemailForwardingAutoUrgent,
+        before_start=lambda t: t.start_asterisk(),
+        after_run=lambda t: t.stop_asterisk())
     voicemailManager = VoiceMailMailboxManagement(test.ast[0])
-
-    test.start_asterisk()
-    reactor.run()
-    test.stop_asterisk()
 
     logger.info("Verifying voicemails (test result: [" + str(test.passed) + "])")
 

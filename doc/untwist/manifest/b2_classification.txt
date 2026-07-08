@@ -1,25 +1,25 @@
 # B2.0 entrypoint classification
-run-test files: 159   (python: 147, shell: 12, with reactor.run: 27)
+run-test files: 159   (python: 147, shell: 12, with reactor.run: 4)
 
 ## migration strategies
-  hand-convert       27
+  hand-convert       4
   helper-owned       1
-  migrated           119
+  migrated           142
   shell              12
 
 ## dimension totals (independent; a file may set several)
-  custom_assertions  23
+  custom_assertions  0
   direct_lifecycle   4
   helper_owned       1
-  migrated           119
-  multiple_objects   23
-  post_run_cleanup   23
-  pre_run            22
+  migrated           142
+  multiple_objects   0
+  post_run_cleanup   1
+  pre_run            0
 
 ## non-run-test loop owners (reactor.run inside a def/ctor)
   tests/rest_api/applications/stasisstatus/test_case.py  [StasisStatusTestCase.__init__]
 
-## migrated (119)
+## migrated (142)
   tests/agi/exit_status/run-test
   tests/agi/nominal/run-test
   tests/apps/bridge/bridge_transfer_callee/run-test
@@ -45,8 +45,31 @@ run-test files: 159   (python: 147, shell: 12, with reactor.run: 27)
   tests/apps/voicemail/authenticate_invalid_mailbox/run-test
   tests/apps/voicemail/authenticate_invalid_password/run-test
   tests/apps/voicemail/authenticate_nominal/run-test
+  tests/apps/voicemail/check_voicemail_callback/run-test
+  tests/apps/voicemail/check_voicemail_delete/run-test
+  tests/apps/voicemail/check_voicemail_dialout/run-test
+  tests/apps/voicemail/check_voicemail_envelope/run-test
+  tests/apps/voicemail/check_voicemail_forward/run-test
+  tests/apps/voicemail/check_voicemail_forward_hangup/run-test
+  tests/apps/voicemail/check_voicemail_forward_with_prepend/run-test
+  tests/apps/voicemail/check_voicemail_new_user/run-test
+  tests/apps/voicemail/check_voicemail_new_user_hangup/run-test
+  tests/apps/voicemail/check_voicemail_nominal/run-test
+  tests/apps/voicemail/check_voicemail_options_change_password/run-test
   tests/apps/voicemail/check_voicemail_options_change_password_spooldir/run-test
+  tests/apps/voicemail/check_voicemail_options_record_busy/run-test
+  tests/apps/voicemail/check_voicemail_options_record_name/run-test
+  tests/apps/voicemail/check_voicemail_options_record_temp/run-test
+  tests/apps/voicemail/check_voicemail_options_record_unavail/run-test
+  tests/apps/voicemail/check_voicemail_reply/run-test
+  tests/apps/voicemail/check_voicemail_while_leaving_msg/run-test
   tests/apps/voicemail/func_vmcount/run-test
+  tests/apps/voicemail/leave_voicemail_contexts/run-test
+  tests/apps/voicemail/leave_voicemail_external_notification/run-test
+  tests/apps/voicemail/leave_voicemail_forwarding/run-test
+  tests/apps/voicemail/leave_voicemail_forwarding_auto_urgent/run-test
+  tests/apps/voicemail/leave_voicemail_nominal/run-test
+  tests/apps/voicemail/leave_voicemail_priority/run-test
   tests/apps/voicemail/play_message/run-test
   tests/apps/voicemail/polling/poll_multiple_mailboxes/run-test
   tests/apps/voicemail/polling/poll_no_subs/run-test
@@ -140,30 +163,7 @@ run-test files: 159   (python: 147, shell: 12, with reactor.run: 27)
   tests/udptl/run-test
   tests/udptl_v6/run-test
 
-## hand-convert (27)
-  tests/apps/voicemail/check_voicemail_callback/run-test   pre-run post-cleanup custom-assert multi-object
-  tests/apps/voicemail/check_voicemail_delete/run-test   pre-run post-cleanup custom-assert multi-object
-  tests/apps/voicemail/check_voicemail_dialout/run-test   pre-run post-cleanup custom-assert multi-object
-  tests/apps/voicemail/check_voicemail_envelope/run-test   pre-run post-cleanup custom-assert multi-object
-  tests/apps/voicemail/check_voicemail_forward/run-test   pre-run post-cleanup custom-assert multi-object
-  tests/apps/voicemail/check_voicemail_forward_hangup/run-test   pre-run post-cleanup custom-assert multi-object
-  tests/apps/voicemail/check_voicemail_forward_with_prepend/run-test   pre-run post-cleanup custom-assert multi-object
-  tests/apps/voicemail/check_voicemail_new_user/run-test   pre-run post-cleanup custom-assert multi-object
-  tests/apps/voicemail/check_voicemail_new_user_hangup/run-test   pre-run post-cleanup custom-assert multi-object
-  tests/apps/voicemail/check_voicemail_nominal/run-test   pre-run post-cleanup custom-assert multi-object
-  tests/apps/voicemail/check_voicemail_options_change_password/run-test   pre-run post-cleanup custom-assert multi-object
-  tests/apps/voicemail/check_voicemail_options_record_busy/run-test   pre-run post-cleanup custom-assert multi-object
-  tests/apps/voicemail/check_voicemail_options_record_name/run-test   pre-run post-cleanup custom-assert multi-object
-  tests/apps/voicemail/check_voicemail_options_record_temp/run-test   pre-run post-cleanup custom-assert multi-object
-  tests/apps/voicemail/check_voicemail_options_record_unavail/run-test   pre-run post-cleanup custom-assert multi-object
-  tests/apps/voicemail/check_voicemail_reply/run-test   pre-run post-cleanup custom-assert multi-object
-  tests/apps/voicemail/check_voicemail_while_leaving_msg/run-test   pre-run post-cleanup custom-assert multi-object
-  tests/apps/voicemail/leave_voicemail_contexts/run-test   custom-assert multi-object
-  tests/apps/voicemail/leave_voicemail_external_notification/run-test   pre-run post-cleanup custom-assert multi-object
-  tests/apps/voicemail/leave_voicemail_forwarding/run-test   pre-run post-cleanup custom-assert multi-object
-  tests/apps/voicemail/leave_voicemail_forwarding_auto_urgent/run-test   pre-run post-cleanup custom-assert multi-object
-  tests/apps/voicemail/leave_voicemail_nominal/run-test   pre-run post-cleanup custom-assert multi-object
-  tests/apps/voicemail/leave_voicemail_priority/run-test   pre-run post-cleanup custom-assert multi-object
+## hand-convert (4)
   tests/blind-transfer-parkingtimeout/run-test   post-cleanup direct-lifecycle=callWhenRunning,running,stop
   tests/fastagi/wait-for-digit/run-test   direct-lifecycle=callWhenRunning,running,stop
   tests/funcs/func_presencestate/run-test   direct-lifecycle=stop

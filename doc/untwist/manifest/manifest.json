@@ -13,7 +13,7 @@
     "maybeDeferred": 8,
     "succeed": 1
   },
-  "files_with_reactor_or_defer": 114,
+  "files_with_reactor_or_defer": 91,
   "lifecycle_owners": {
     "doc/untwist/test_ari_parity.py": {
       "counts": {
@@ -85,144 +85,6 @@
         "stop": 1
       },
       "is_run_test": false
-    },
-    "tests/apps/voicemail/check_voicemail_callback/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
-    "tests/apps/voicemail/check_voicemail_delete/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
-    "tests/apps/voicemail/check_voicemail_dialout/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
-    "tests/apps/voicemail/check_voicemail_envelope/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
-    "tests/apps/voicemail/check_voicemail_forward/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
-    "tests/apps/voicemail/check_voicemail_forward_hangup/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
-    "tests/apps/voicemail/check_voicemail_forward_with_prepend/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
-    "tests/apps/voicemail/check_voicemail_new_user/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
-    "tests/apps/voicemail/check_voicemail_new_user_hangup/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
-    "tests/apps/voicemail/check_voicemail_nominal/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
-    "tests/apps/voicemail/check_voicemail_options_change_password/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
-    "tests/apps/voicemail/check_voicemail_options_record_busy/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
-    "tests/apps/voicemail/check_voicemail_options_record_name/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
-    "tests/apps/voicemail/check_voicemail_options_record_temp/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
-    "tests/apps/voicemail/check_voicemail_options_record_unavail/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
-    "tests/apps/voicemail/check_voicemail_reply/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
-    "tests/apps/voicemail/check_voicemail_while_leaving_msg/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
-    "tests/apps/voicemail/leave_voicemail_contexts/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
-    "tests/apps/voicemail/leave_voicemail_external_notification/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
-    "tests/apps/voicemail/leave_voicemail_forwarding/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
-    "tests/apps/voicemail/leave_voicemail_forwarding_auto_urgent/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
-    "tests/apps/voicemail/leave_voicemail_nominal/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
-    },
-    "tests/apps/voicemail/leave_voicemail_priority/run-test": {
-      "counts": {
-        "run": 1
-      },
-      "is_run_test": true
     },
     "tests/blind-transfer-parkingtimeout/run-test": {
       "counts": {
@@ -607,144 +469,6 @@
         "callLater": 1
       }
     },
-    "tests/apps/voicemail/check_voicemail_callback/run-test": {
-      "defer": {},
-      "reactor": {
-        "run": 1
-      }
-    },
-    "tests/apps/voicemail/check_voicemail_delete/run-test": {
-      "defer": {},
-      "reactor": {
-        "run": 1
-      }
-    },
-    "tests/apps/voicemail/check_voicemail_dialout/run-test": {
-      "defer": {},
-      "reactor": {
-        "run": 1
-      }
-    },
-    "tests/apps/voicemail/check_voicemail_envelope/run-test": {
-      "defer": {},
-      "reactor": {
-        "run": 1
-      }
-    },
-    "tests/apps/voicemail/check_voicemail_forward/run-test": {
-      "defer": {},
-      "reactor": {
-        "run": 1
-      }
-    },
-    "tests/apps/voicemail/check_voicemail_forward_hangup/run-test": {
-      "defer": {},
-      "reactor": {
-        "run": 1
-      }
-    },
-    "tests/apps/voicemail/check_voicemail_forward_with_prepend/run-test": {
-      "defer": {},
-      "reactor": {
-        "run": 1
-      }
-    },
-    "tests/apps/voicemail/check_voicemail_new_user/run-test": {
-      "defer": {},
-      "reactor": {
-        "run": 1
-      }
-    },
-    "tests/apps/voicemail/check_voicemail_new_user_hangup/run-test": {
-      "defer": {},
-      "reactor": {
-        "run": 1
-      }
-    },
-    "tests/apps/voicemail/check_voicemail_nominal/run-test": {
-      "defer": {},
-      "reactor": {
-        "run": 1
-      }
-    },
-    "tests/apps/voicemail/check_voicemail_options_change_password/run-test": {
-      "defer": {},
-      "reactor": {
-        "run": 1
-      }
-    },
-    "tests/apps/voicemail/check_voicemail_options_record_busy/run-test": {
-      "defer": {},
-      "reactor": {
-        "run": 1
-      }
-    },
-    "tests/apps/voicemail/check_voicemail_options_record_name/run-test": {
-      "defer": {},
-      "reactor": {
-        "run": 1
-      }
-    },
-    "tests/apps/voicemail/check_voicemail_options_record_temp/run-test": {
-      "defer": {},
-      "reactor": {
-        "run": 1
-      }
-    },
-    "tests/apps/voicemail/check_voicemail_options_record_unavail/run-test": {
-      "defer": {},
-      "reactor": {
-        "run": 1
-      }
-    },
-    "tests/apps/voicemail/check_voicemail_reply/run-test": {
-      "defer": {},
-      "reactor": {
-        "run": 1
-      }
-    },
-    "tests/apps/voicemail/check_voicemail_while_leaving_msg/run-test": {
-      "defer": {},
-      "reactor": {
-        "run": 1
-      }
-    },
-    "tests/apps/voicemail/leave_voicemail_contexts/run-test": {
-      "defer": {},
-      "reactor": {
-        "run": 1
-      }
-    },
-    "tests/apps/voicemail/leave_voicemail_external_notification/run-test": {
-      "defer": {},
-      "reactor": {
-        "run": 1
-      }
-    },
-    "tests/apps/voicemail/leave_voicemail_forwarding/run-test": {
-      "defer": {},
-      "reactor": {
-        "run": 1
-      }
-    },
-    "tests/apps/voicemail/leave_voicemail_forwarding_auto_urgent/run-test": {
-      "defer": {},
-      "reactor": {
-        "run": 1
-      }
-    },
-    "tests/apps/voicemail/leave_voicemail_nominal/run-test": {
-      "defer": {},
-      "reactor": {
-        "run": 1
-      }
-    },
-    "tests/apps/voicemail/leave_voicemail_priority/run-test": {
-      "defer": {},
-      "reactor": {
-        "run": 1
-      }
-    },
     "tests/blind-transfer-parkingtimeout/run-test": {
       "defer": {},
       "reactor": {
@@ -1047,7 +771,7 @@
       }
     }
   },
-  "reactor_grand_total": 470,
+  "reactor_grand_total": 447,
   "reactor_totals": {
     "_ensure_loop": 6,
     "addAsyncCleanup": 2,
@@ -1058,7 +782,7 @@
     "connectTCP": 5,
     "listenTCP": 29,
     "listenUDP": 14,
-    "run": 69,
+    "run": 46,
     "running": 14,
     "spawnProcess": 11,
     "stop": 89
