@@ -1,29 +1,30 @@
 # B2.0 entrypoint classification
-run-test files: 159   (python: 147, shell: 12, with reactor.run: 35)
+run-test files: 159   (python: 147, shell: 12, with reactor.run: 27)
 
 ## migration strategies
-  hand-convert       35
+  hand-convert       27
   helper-owned       1
-  migrated           111
+  migrated           119
   shell              12
 
 ## dimension totals (independent; a file may set several)
-  custom_assertions  31
+  custom_assertions  23
   direct_lifecycle   4
   helper_owned       1
-  migrated           111
+  migrated           119
   multiple_objects   23
-  post_run_cleanup   31
-  pre_run            30
+  post_run_cleanup   23
+  pre_run            22
 
 ## non-run-test loop owners (reactor.run inside a def/ctor)
   tests/rest_api/applications/stasisstatus/test_case.py  [StasisStatusTestCase.__init__]
 
-## migrated (111)
+## migrated (119)
   tests/agi/exit_status/run-test
   tests/agi/nominal/run-test
   tests/apps/bridge/bridge_transfer_callee/run-test
   tests/apps/chanspy/chanspy_w_mixmonitor/run-test
+  tests/apps/confbridge/confbridge_nominal/run-test
   tests/apps/confbridge/confbridge_recording/run-test
   tests/apps/directed_pickup/pickup_chan/run-test
   tests/apps/directory/directory_attendant_exit/run-test
@@ -35,19 +36,24 @@ run-test files: 159   (python: 147, shell: 12, with reactor.run: 35)
   tests/apps/mixmonitor_rxtx/run-test
   tests/apps/page/page_baseline/run-test
   tests/apps/queues/position_priority_maxlen/run-test
+  tests/apps/queues/queue_baseline/run-test
+  tests/apps/queues/queue_transfer_callee/run-test
   tests/apps/queues/reason_pause_ami/run-test
   tests/apps/queues/reload_queue_members/run-test
   tests/apps/queues/set_penalty/run-test
   tests/apps/voicemail/authenticate_extensions/run-test
   tests/apps/voicemail/authenticate_invalid_mailbox/run-test
   tests/apps/voicemail/authenticate_invalid_password/run-test
+  tests/apps/voicemail/authenticate_nominal/run-test
   tests/apps/voicemail/check_voicemail_options_change_password_spooldir/run-test
+  tests/apps/voicemail/func_vmcount/run-test
   tests/apps/voicemail/play_message/run-test
   tests/apps/voicemail/polling/poll_multiple_mailboxes/run-test
   tests/apps/voicemail/polling/poll_no_subs/run-test
   tests/apps/voicemail/polling/poll_same_mailbox/run-test
   tests/apps/voicemail/polling/poll_single_mailbox/run-test
   tests/apps/voicemail/polling/poll_sub_unsub/run-test
+  tests/callparking/run-test
   tests/callparking_retrieval/run-test
   tests/cause_answered_elsewhere/run-test
   tests/channels/iax2/acl_call/run-test
@@ -65,8 +71,10 @@ run-test files: 159   (python: 147, shell: 12, with reactor.run: 35)
   tests/channels/pjsip/subscriptions/presence/digium_presence/run-test
   tests/channels/pjsip/subscriptions/presence/no_accept_header/run-test
   tests/connected_line/subroutine/run-test
+  tests/fastagi/channel-status/run-test
   tests/fastagi/connect/run-test
   tests/fastagi/control-stream-file/run-test
+  tests/fastagi/database/run-test
   tests/fastagi/execute/run-test
   tests/fastagi/get-data/run-test
   tests/fastagi/hangup/run-test
@@ -132,11 +140,7 @@ run-test files: 159   (python: 147, shell: 12, with reactor.run: 35)
   tests/udptl/run-test
   tests/udptl_v6/run-test
 
-## hand-convert (35)
-  tests/apps/confbridge/confbridge_nominal/run-test   pre-run post-cleanup custom-assert
-  tests/apps/queues/queue_baseline/run-test   pre-run post-cleanup custom-assert
-  tests/apps/queues/queue_transfer_callee/run-test   pre-run post-cleanup custom-assert
-  tests/apps/voicemail/authenticate_nominal/run-test   pre-run post-cleanup custom-assert
+## hand-convert (27)
   tests/apps/voicemail/check_voicemail_callback/run-test   pre-run post-cleanup custom-assert multi-object
   tests/apps/voicemail/check_voicemail_delete/run-test   pre-run post-cleanup custom-assert multi-object
   tests/apps/voicemail/check_voicemail_dialout/run-test   pre-run post-cleanup custom-assert multi-object
@@ -154,7 +158,6 @@ run-test files: 159   (python: 147, shell: 12, with reactor.run: 35)
   tests/apps/voicemail/check_voicemail_options_record_unavail/run-test   pre-run post-cleanup custom-assert multi-object
   tests/apps/voicemail/check_voicemail_reply/run-test   pre-run post-cleanup custom-assert multi-object
   tests/apps/voicemail/check_voicemail_while_leaving_msg/run-test   pre-run post-cleanup custom-assert multi-object
-  tests/apps/voicemail/func_vmcount/run-test   pre-run post-cleanup custom-assert
   tests/apps/voicemail/leave_voicemail_contexts/run-test   custom-assert multi-object
   tests/apps/voicemail/leave_voicemail_external_notification/run-test   pre-run post-cleanup custom-assert multi-object
   tests/apps/voicemail/leave_voicemail_forwarding/run-test   pre-run post-cleanup custom-assert multi-object
@@ -162,9 +165,6 @@ run-test files: 159   (python: 147, shell: 12, with reactor.run: 35)
   tests/apps/voicemail/leave_voicemail_nominal/run-test   pre-run post-cleanup custom-assert multi-object
   tests/apps/voicemail/leave_voicemail_priority/run-test   pre-run post-cleanup custom-assert multi-object
   tests/blind-transfer-parkingtimeout/run-test   post-cleanup direct-lifecycle=callWhenRunning,running,stop
-  tests/callparking/run-test   pre-run post-cleanup custom-assert
-  tests/fastagi/channel-status/run-test   pre-run post-cleanup custom-assert
-  tests/fastagi/database/run-test   pre-run post-cleanup custom-assert
   tests/fastagi/wait-for-digit/run-test   direct-lifecycle=callWhenRunning,running,stop
   tests/funcs/func_presencestate/run-test   direct-lifecycle=stop
   tests/manager/mixmonitor/mixmonitor_id/run-test   direct-lifecycle=stop

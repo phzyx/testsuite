@@ -8,7 +8,7 @@ the GNU General Public License Version 2.
 '''
 
 import sys
-from asterisk.aio import reactor
+from asterisk.test_runner import run_test_object
 
 sys.path.append("lib/python")
 from asterisk.test_case import TestCase
@@ -81,10 +81,10 @@ class FastAGIChannelStatusTest(TestCase):
         self.launch_test()
 
 def main():
-    test = FastAGIChannelStatusTest()
-    test.start_asterisk()
-    reactor.run()
-    test.stop_asterisk()
+    test = run_test_object(
+        FastAGIChannelStatusTest,
+        before_start=lambda t: t.start_asterisk(),
+        after_run=lambda t: t.stop_asterisk())
     if test.test_status[4] is not True or test.test_status[6] is not True:
         return 1
 

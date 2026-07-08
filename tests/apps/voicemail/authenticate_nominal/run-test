@@ -11,7 +11,7 @@ the GNU General Public License Version 2.
 import sys
 import logging
 
-from asterisk.aio import reactor
+from asterisk.test_runner import run_test_object
 
 sys.path.append("lib/python")
 
@@ -175,14 +175,15 @@ class AuthenticateNominal(VoiceMailTest):
 
 def main():
 
-    test = AuthenticateNominal()
-    test.passed = True
+    def _make():
+        obj = AuthenticateNominal()
+        obj.passed = True
+        return obj
 
-    test.start_asterisk()
-
-    reactor.run()
-
-    test.stop_asterisk()
+    test = run_test_object(
+        _make,
+        before_start=lambda t: t.start_asterisk(),
+        after_run=lambda t: t.stop_asterisk())
 
     for result in test.results:
         test.passed = test.passed and result
