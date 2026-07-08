@@ -1,0 +1,1940 @@
+{
+  "ambiguous_totals": {
+    "callback": 18,
+    "cancel": 24,
+    "errback": 7
+  },
+  "chain_by_role": {
+    "core": {
+      "addCallback": 58,
+      "addCallbacks": 8,
+      "addErrback": 19,
+      "callback": 29,
+      "errback": 6
+    },
+    "fixture": {
+      "addCallback": 70,
+      "addCallbacks": 18,
+      "addErrback": 138,
+      "callback": 3
+    },
+    "other": {
+      "addBoth": 1,
+      "addCallback": 1,
+      "callback": 1
+    },
+    "shim": {
+      "addBoth": 1,
+      "addCallback": 29,
+      "addCallbacks": 6,
+      "addErrback": 8,
+      "callback": 22,
+      "errback": 13
+    },
+    "starpy": {
+      "addBoth": 2,
+      "addCallback": 145,
+      "addCallbacks": 30,
+      "addErrback": 17,
+      "callback": 11,
+      "errback": 11
+    }
+  },
+  "chain_totals": {
+    "addBoth": 4,
+    "addCallback": 303,
+    "addCallbacks": 62,
+    "addErrback": 182,
+    "callback": 66,
+    "errback": 30
+  },
+  "ctor_by_role": {
+    "core": {
+      "Deferred": 32,
+      "DeferredList": 15,
+      "getProcessOutputAndValue": 1
+    },
+    "fixture": {
+      "Deferred": 3,
+      "DeferredList": 5,
+      "LoopingCall": 1
+    },
+    "other": {
+      "Deferred": 1
+    },
+    "shim": {
+      "Deferred": 31,
+      "DeferredList": 5,
+      "fail": 3,
+      "gatherResults": 1,
+      "getProcessOutputAndValue": 3,
+      "maybeDeferred": 8,
+      "succeed": 2
+    },
+    "starpy": {
+      "Deferred": 13,
+      "DeferredList": 1,
+      "fail": 2,
+      "maybeDeferred": 1,
+      "succeed": 1
+    }
+  },
+  "ctor_totals": {
+    "Deferred": 80,
+    "DeferredList": 26,
+    "LoopingCall": 1,
+    "fail": 5,
+    "gatherResults": 1,
+    "getProcessOutputAndValue": 4,
+    "maybeDeferred": 9,
+    "succeed": 3
+  },
+  "deferredlist_flag_totals": {
+    "consumeErrors": 4,
+    "fireOnOneCallback": 1,
+    "fireOnOneErrback": 2
+  },
+  "files_by_role": {
+    "core": 23,
+    "fixture": 112,
+    "other": 2,
+    "shim": 5,
+    "starpy": 20
+  },
+  "files_with_defer": 162,
+  "inline_callbacks_files": [],
+  "per_file": {
+    "[starpy] examples/amicommand.py": {
+      "ambiguous": {},
+      "chain": {
+        "addCallback": 1,
+        "addCallbacks": 2
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "starpy"
+    },
+    "[starpy] examples/autosurvey/frontend.py": {
+      "ambiguous": {},
+      "chain": {
+        "addCallback": 3,
+        "addCallbacks": 1,
+        "addErrback": 1
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "starpy"
+    },
+    "[starpy] examples/calldurationcallback.py": {
+      "ambiguous": {},
+      "chain": {
+        "addCallback": 4,
+        "addCallbacks": 2,
+        "addErrback": 1
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "starpy"
+    },
+    "[starpy] examples/connecttoivr.py": {
+      "ambiguous": {},
+      "chain": {
+        "addCallbacks": 3,
+        "addErrback": 1
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "starpy"
+    },
+    "[starpy] examples/connecttoivrapp.py": {
+      "ambiguous": {},
+      "chain": {
+        "addCallbacks": 3
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "starpy"
+    },
+    "[starpy] examples/fastagisetvariable.py": {
+      "ambiguous": {},
+      "chain": {
+        "addCallback": 1,
+        "addCallbacks": 1
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "starpy"
+    },
+    "[starpy] examples/getvariable.py": {
+      "ambiguous": {},
+      "chain": {
+        "addCallback": 2,
+        "addErrback": 2
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "starpy"
+    },
+    "[starpy] examples/hellofastagi.py": {
+      "ambiguous": {},
+      "chain": {
+        "addErrback": 1
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "starpy"
+    },
+    "[starpy] examples/hellofastagiapp.py": {
+      "ambiguous": {},
+      "chain": {
+        "addErrback": 1
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "starpy"
+    },
+    "[starpy] examples/menu.py": {
+      "ambiguous": {
+        "callback": 1,
+        "errback": 1
+      },
+      "chain": {
+        "addCallback": 10,
+        "addCallbacks": 4,
+        "addErrback": 6
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "starpy"
+    },
+    "[starpy] examples/menutest.py": {
+      "ambiguous": {},
+      "chain": {
+        "addCallbacks": 1
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "starpy"
+    },
+    "[starpy] examples/priexhaustion.py": {
+      "ambiguous": {},
+      "chain": {
+        "addCallback": 2
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "starpy"
+    },
+    "[starpy] examples/priexhaustionbare.py": {
+      "ambiguous": {},
+      "chain": {
+        "addCallback": 2
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "starpy"
+    },
+    "[starpy] examples/readingdigits.py": {
+      "ambiguous": {},
+      "chain": {
+        "addCallback": 1,
+        "addCallbacks": 2,
+        "addErrback": 1
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "starpy"
+    },
+    "[starpy] examples/timestamp.py": {
+      "ambiguous": {},
+      "chain": {
+        "addCallback": 3,
+        "addCallbacks": 1,
+        "addErrback": 1
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "starpy"
+    },
+    "[starpy] examples/timestampapp.py": {
+      "ambiguous": {},
+      "chain": {
+        "addCallback": 4,
+        "addCallbacks": 1,
+        "addErrback": 1
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "starpy"
+    },
+    "[starpy] starpy/_async.py": {
+      "ambiguous": {
+        "cancel": 6,
+        "errback": 1
+      },
+      "chain": {
+        "addBoth": 1,
+        "addCallbacks": 6,
+        "callback": 6,
+        "errback": 5
+      },
+      "ctor": {
+        "Deferred": 5,
+        "DeferredList": 1,
+        "fail": 2,
+        "succeed": 1
+      },
+      "deferredlist_flags": {
+        "consumeErrors": 1,
+        "fireOnOneErrback": 1
+      },
+      "inline_callbacks_decorators": 0,
+      "role": "starpy"
+    },
+    "[starpy] starpy/fastagi.py": {
+      "ambiguous": {},
+      "chain": {
+        "addCallback": 60,
+        "addErrback": 1,
+        "callback": 2,
+        "errback": 4
+      },
+      "ctor": {
+        "Deferred": 4,
+        "maybeDeferred": 1
+      },
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "starpy"
+    },
+    "[starpy] starpy/manager.py": {
+      "ambiguous": {
+        "callback": 1,
+        "errback": 2
+      },
+      "chain": {
+        "addCallback": 51,
+        "addCallbacks": 3,
+        "callback": 3,
+        "errback": 2
+      },
+      "ctor": {
+        "Deferred": 4
+      },
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "starpy"
+    },
+    "[starpy] tests/test_async_smoke.py": {
+      "ambiguous": {},
+      "chain": {
+        "addBoth": 1,
+        "addCallback": 1
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "starpy"
+    },
+    "doc/untwist/test_core_runtime.py": {
+      "ambiguous": {},
+      "chain": {
+        "addCallback": 1,
+        "callback": 1
+      },
+      "ctor": {
+        "Deferred": 1
+      },
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "other"
+    },
+    "doc/untwist/test_ssh_parity.py": {
+      "ambiguous": {},
+      "chain": {
+        "addBoth": 1
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "other"
+    },
+    "lib/python/asterisk/aio/defer.py": {
+      "ambiguous": {
+        "errback": 1
+      },
+      "chain": {
+        "addBoth": 1,
+        "addCallbacks": 6,
+        "callback": 5,
+        "errback": 4
+      },
+      "ctor": {
+        "Deferred": 4,
+        "DeferredList": 1,
+        "fail": 2,
+        "succeed": 1
+      },
+      "deferredlist_flags": {
+        "consumeErrors": 1,
+        "fireOnOneErrback": 1
+      },
+      "inline_callbacks_decorators": 0,
+      "role": "shim"
+    },
+    "lib/python/asterisk/aio/protocols.py": {
+      "ambiguous": {
+        "cancel": 1
+      },
+      "chain": {
+        "callback": 1,
+        "errback": 1
+      },
+      "ctor": {
+        "Deferred": 1
+      },
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "shim"
+    },
+    "lib/python/asterisk/aio/runtime.py": {
+      "ambiguous": {
+        "cancel": 8
+      },
+      "chain": {
+        "callback": 1,
+        "errback": 2
+      },
+      "ctor": {
+        "Deferred": 1
+      },
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "shim"
+    },
+    "lib/python/asterisk/aio/test_aio.py": {
+      "ambiguous": {
+        "callback": 7,
+        "cancel": 8,
+        "errback": 2
+      },
+      "chain": {
+        "addCallback": 29,
+        "addErrback": 8,
+        "callback": 14,
+        "errback": 3
+      },
+      "ctor": {
+        "Deferred": 24,
+        "DeferredList": 4,
+        "fail": 1,
+        "gatherResults": 1,
+        "getProcessOutputAndValue": 3,
+        "maybeDeferred": 8,
+        "succeed": 1
+      },
+      "deferredlist_flags": {
+        "consumeErrors": 1,
+        "fireOnOneCallback": 1
+      },
+      "inline_callbacks_decorators": 0,
+      "role": "shim"
+    },
+    "lib/python/asterisk/aio/utils.py": {
+      "ambiguous": {},
+      "chain": {
+        "callback": 1,
+        "errback": 3
+      },
+      "ctor": {
+        "Deferred": 1
+      },
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "shim"
+    },
+    "lib/python/asterisk/ami.py": {
+      "ambiguous": {},
+      "chain": {
+        "addCallbacks": 2
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "core"
+    },
+    "lib/python/asterisk/apptest.py": {
+      "ambiguous": {
+        "callback": 4
+      },
+      "chain": {
+        "addCallback": 5,
+        "addErrback": 2,
+        "callback": 2
+      },
+      "ctor": {
+        "Deferred": 6
+      },
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "core"
+    },
+    "lib/python/asterisk/ari.py": {
+      "ambiguous": {
+        "callback": 1
+      },
+      "chain": {
+        "addErrback": 1
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "core"
+    },
+    "lib/python/asterisk/asterisk.py": {
+      "ambiguous": {
+        "cancel": 1
+      },
+      "chain": {
+        "addCallback": 1,
+        "addCallbacks": 2,
+        "callback": 7,
+        "errback": 6
+      },
+      "ctor": {
+        "Deferred": 4,
+        "getProcessOutputAndValue": 1
+      },
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "core"
+    },
+    "lib/python/asterisk/bridge_test_case.py": {
+      "ambiguous": {},
+      "chain": {
+        "addCallback": 4
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "core"
+    },
+    "lib/python/asterisk/channel_test_condition.py": {
+      "ambiguous": {},
+      "chain": {
+        "addCallback": 2,
+        "callback": 1
+      },
+      "ctor": {
+        "Deferred": 1,
+        "DeferredList": 1
+      },
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "core"
+    },
+    "lib/python/asterisk/confbridge.py": {
+      "ambiguous": {},
+      "chain": {
+        "addErrback": 4
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "core"
+    },
+    "lib/python/asterisk/fd_test_condition.py": {
+      "ambiguous": {},
+      "chain": {
+        "addCallback": 3,
+        "callback": 2
+      },
+      "ctor": {
+        "Deferred": 2,
+        "DeferredList": 2
+      },
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "core"
+    },
+    "lib/python/asterisk/linkedid_check.py": {
+      "ambiguous": {},
+      "chain": {
+        "addCallbacks": 1
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "core"
+    },
+    "lib/python/asterisk/lock_test_condition.py": {
+      "ambiguous": {},
+      "chain": {
+        "addCallback": 2,
+        "callback": 1
+      },
+      "ctor": {
+        "Deferred": 1,
+        "DeferredList": 1
+      },
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "core"
+    },
+    "lib/python/asterisk/originate.py": {
+      "ambiguous": {},
+      "chain": {
+        "addErrback": 1
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "core"
+    },
+    "lib/python/asterisk/pjsip_channel_test_condition.py": {
+      "ambiguous": {},
+      "chain": {
+        "addCallback": 2,
+        "callback": 1
+      },
+      "ctor": {
+        "Deferred": 1,
+        "DeferredList": 1
+      },
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "core"
+    },
+    "lib/python/asterisk/pluggable_modules.py": {
+      "ambiguous": {
+        "callback": 1
+      },
+      "chain": {
+        "addCallback": 1,
+        "addErrback": 4
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "core"
+    },
+    "lib/python/asterisk/self_test/harness_shared.py": {
+      "ambiguous": {},
+      "chain": {
+        "callback": 1
+      },
+      "ctor": {
+        "Deferred": 1
+      },
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "core"
+    },
+    "lib/python/asterisk/sip_channel_test_condition.py": {
+      "ambiguous": {},
+      "chain": {
+        "addCallback": 2,
+        "callback": 1
+      },
+      "ctor": {
+        "Deferred": 1,
+        "DeferredList": 1
+      },
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "core"
+    },
+    "lib/python/asterisk/sip_dialog_test_condition.py": {
+      "ambiguous": {},
+      "chain": {
+        "addCallback": 6,
+        "callback": 4
+      },
+      "ctor": {
+        "Deferred": 3,
+        "DeferredList": 1
+      },
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "core"
+    },
+    "lib/python/asterisk/sipp.py": {
+      "ambiguous": {
+        "callback": 3
+      },
+      "chain": {
+        "addCallback": 14,
+        "callback": 2
+      },
+      "ctor": {
+        "Deferred": 5,
+        "DeferredList": 2
+      },
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "core"
+    },
+    "lib/python/asterisk/sipp_iterator.py": {
+      "ambiguous": {},
+      "chain": {
+        "addCallback": 1
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "core"
+    },
+    "lib/python/asterisk/taskprocessor_test_condition.py": {
+      "ambiguous": {},
+      "chain": {
+        "addCallback": 3,
+        "callback": 2
+      },
+      "ctor": {
+        "Deferred": 2,
+        "DeferredList": 2
+      },
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "core"
+    },
+    "lib/python/asterisk/test_case.py": {
+      "ambiguous": {},
+      "chain": {
+        "addCallback": 7,
+        "addCallbacks": 3,
+        "addErrback": 2,
+        "callback": 1
+      },
+      "ctor": {
+        "Deferred": 1,
+        "DeferredList": 2
+      },
+      "deferredlist_flags": {
+        "consumeErrors": 1
+      },
+      "inline_callbacks_decorators": 0,
+      "role": "core"
+    },
+    "lib/python/asterisk/test_conditions.py": {
+      "ambiguous": {},
+      "chain": {
+        "addCallback": 1,
+        "addErrback": 1,
+        "callback": 1
+      },
+      "ctor": {
+        "Deferred": 2
+      },
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "core"
+    },
+    "lib/python/asterisk/thread_test_condition.py": {
+      "ambiguous": {},
+      "chain": {
+        "addCallback": 4,
+        "callback": 3
+      },
+      "ctor": {
+        "Deferred": 2,
+        "DeferredList": 2
+      },
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "core"
+    },
+    "lib/python/asterisk/voicemail.py": {
+      "ambiguous": {},
+      "chain": {
+        "addErrback": 4
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "core"
+    },
+    "tests/agi/exit_status/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addErrback": 8
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/agi/nominal/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addErrback": 1
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/apps/bridge/bridge_transfer_callee/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addErrback": 3
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/apps/chanspy/chanspy_w_mixmonitor/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addErrback": 2
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/apps/confbridge/confbridge_nominal/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addErrback": 1
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/apps/confbridge/confbridge_recording/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addErrback": 2
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/apps/directed_pickup/pickup_chan/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addCallback": 1,
+        "addErrback": 2
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/apps/directory/directory_attendant_exit/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addErrback": 1
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/apps/directory/directory_context_operator_exit/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addErrback": 1
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/apps/directory/directory_operator_exit/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addErrback": 1
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/apps/mixmonitor_audiohook_inherit/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addErrback": 1
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/apps/page/page_baseline/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addErrback": 1
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/apps/queues/queue_baseline/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addErrback": 1
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/apps/queues/queue_transfer_callee/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addErrback": 1
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/apps/voicemail/authenticate_extensions/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addErrback": 2
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/apps/voicemail/authenticate_invalid_mailbox/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addErrback": 1
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/apps/voicemail/authenticate_invalid_password/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addErrback": 2
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/apps/voicemail/authenticate_nominal/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addErrback": 1
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/apps/voicemail/check_voicemail_callback/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addErrback": 1
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/apps/voicemail/check_voicemail_delete/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addErrback": 1
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/apps/voicemail/check_voicemail_dialout/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addErrback": 1
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/apps/voicemail/check_voicemail_envelope/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addErrback": 1
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/apps/voicemail/check_voicemail_forward/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addErrback": 1
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/apps/voicemail/check_voicemail_forward_hangup/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addErrback": 1
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/apps/voicemail/check_voicemail_forward_with_prepend/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addCallback": 1,
+        "addErrback": 1
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/apps/voicemail/check_voicemail_new_user/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addErrback": 1
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/apps/voicemail/check_voicemail_new_user_hangup/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addErrback": 1
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/apps/voicemail/check_voicemail_nominal/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addErrback": 1
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/apps/voicemail/check_voicemail_options_change_password/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addErrback": 1
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/apps/voicemail/check_voicemail_options_change_password_spooldir/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addErrback": 1
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/apps/voicemail/check_voicemail_options_record_busy/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addErrback": 1
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/apps/voicemail/check_voicemail_options_record_name/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addErrback": 1
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/apps/voicemail/check_voicemail_options_record_temp/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addErrback": 1
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/apps/voicemail/check_voicemail_options_record_unavail/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addErrback": 1
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/apps/voicemail/check_voicemail_reply/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addErrback": 1
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/apps/voicemail/check_voicemail_while_leaving_msg/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addErrback": 2
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/apps/voicemail/func_vmcount/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addErrback": 1
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/apps/voicemail/leave_voicemail_contexts/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addErrback": 2
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/apps/voicemail/leave_voicemail_external_notification/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addErrback": 5
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/apps/voicemail/leave_voicemail_forwarding/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addErrback": 1
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/apps/voicemail/leave_voicemail_forwarding_auto_urgent/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addErrback": 1
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/apps/voicemail/leave_voicemail_nominal/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addErrback": 1
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/apps/voicemail/leave_voicemail_priority/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addErrback": 1
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/apps/voicemail/play_message/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addErrback": 1
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/apps/voicemail/polling/poll_no_subs/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addErrback": 1
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/apps/voicemail/polling/poll_sub_unsub/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addErrback": 1
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/bridge/bridge_action/bridge_action.py": {
+      "ambiguous": {},
+      "chain": {
+        "addErrback": 2
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/bridge/hold_redirect/devstate_check.py": {
+      "ambiguous": {},
+      "chain": {
+        "addCallbacks": 1
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/callparking_retrieval/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addErrback": 2
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/cause_answered_elsewhere/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addErrback": 1
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/cdr/cdr-tests.py": {
+      "ambiguous": {},
+      "chain": {
+        "addErrback": 1
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/channels/iax2/acl_call/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addErrback": 1
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/channels/iax2/hangupcause/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addErrback": 3
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/channels/pjsip/call_pickup/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addCallback": 2,
+        "addErrback": 2
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/channels/pjsip/configuration/test_scenario.py": {
+      "ambiguous": {},
+      "chain": {
+        "addCallback": 2
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/channels/pjsip/hold/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addCallback": 4
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/channels/pjsip/hold_inactive/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addCallback": 4
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/channels/pjsip/sdp_offer_answer/attribute_passthrough/speex_h263_h264/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addCallback": 4
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/channels/pjsip/subscriptions/mwi/missing_aor/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addCallback": 1
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/channels/pjsip/subscriptions/mwi/no_accept_header/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addCallback": 1
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/channels/pjsip/subscriptions/presence/digium_presence/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addCallback": 1
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/channels/pjsip/subscriptions/presence/no_accept_header/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addCallback": 1
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/fastagi/channel-status/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addCallback": 2,
+        "addErrback": 2
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/fastagi/control-stream-file/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addCallback": 1
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/fastagi/database/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addCallback": 6,
+        "addErrback": 6
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/fastagi/execute/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addCallback": 6,
+        "addErrback": 6
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/fastagi/get-data/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addCallback": 1,
+        "addErrback": 1
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/fastagi/hangup/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addCallback": 3,
+        "addErrback": 3
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/fastagi/record-file/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addCallback": 1,
+        "addErrback": 1
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/fastagi/say-alpha/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addCallback": 1,
+        "addErrback": 1
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/fastagi/say-date/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addCallback": 1,
+        "addErrback": 1
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/fastagi/say-datetime/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addCallback": 1,
+        "addErrback": 1
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/fastagi/say-digits/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addCallback": 1,
+        "addErrback": 1
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/fastagi/say-number/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addCallback": 1,
+        "addErrback": 1
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/fastagi/say-phonetic/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addCallback": 1,
+        "addErrback": 1
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/fastagi/say-time/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addCallback": 1,
+        "addErrback": 1
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/fastagi/stream-file/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addCallback": 1
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/fastagi/wait-for-digit/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addCallback": 3,
+        "addErrback": 1
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/fax/pjsip/gateway_g711_t38/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addErrback": 1
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/fax/pjsip/gateway_native_t38/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addErrback": 1
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/fax/pjsip/gateway_t38_g711_rx/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addErrback": 1
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/fax/pjsip/gateway_t38_g711_tx/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addErrback": 1
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/fax/pjsip/t38/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addErrback": 1
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/fax/pjsip/t38_with_auth/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addErrback": 1
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/feature_call_pickup/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addCallback": 2,
+        "addErrback": 2
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/funcs/func_jitterbuffer/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addErrback": 2
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/hangup/handlers/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addErrback": 1
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/hangup/handlers_endbeforehexten/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addErrback": 1
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/manager/acl-login/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addCallbacks": 3
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/manager/bridge_actions/check_bridge.py": {
+      "ambiguous": {},
+      "chain": {
+        "addCallbacks": 2
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/manager/danger/dangerous/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addCallbacks": 1
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/manager/danger/safe/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addCallbacks": 1
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/manager/device_state_list/ami_device_state_list.py": {
+      "ambiguous": {},
+      "chain": {
+        "addCallback": 1,
+        "addCallbacks": 1,
+        "addErrback": 1
+      },
+      "ctor": {
+        "DeferredList": 1
+      },
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/manager/exten_state_list/ami_exten_state_list.py": {
+      "ambiguous": {},
+      "chain": {
+        "addCallbacks": 1,
+        "addErrback": 1
+      },
+      "ctor": {
+        "DeferredList": 1
+      },
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/manager/login/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addCallbacks": 1
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/manager/presence_state_list/ami_presence_state_list.py": {
+      "ambiguous": {},
+      "chain": {
+        "addCallback": 1,
+        "addCallbacks": 1,
+        "addErrback": 1
+      },
+      "ctor": {
+        "DeferredList": 1
+      },
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/manager/status/status.py": {
+      "ambiguous": {},
+      "chain": {
+        "addCallback": 1
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/manager/status_all_vars/status.py": {
+      "ambiguous": {},
+      "chain": {
+        "addCallback": 1
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/masquerade/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addCallbacks": 1,
+        "addErrback": 2
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/pbx/dialplan_reload/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addCallback": 3,
+        "addErrback": 3
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/pbx/dialplan_save/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addCallback": 4,
+        "addErrback": 4
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/pbx/manager_extensions/ami_extension_control.py": {
+      "ambiguous": {},
+      "chain": {
+        "addCallback": 1,
+        "addErrback": 1
+      },
+      "ctor": {
+        "DeferredList": 1
+      },
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/pbx/merge_contexts/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addErrback": 3
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/pbx/pbx_lua_background/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addErrback": 1
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/pbx/pbx_lua_goto/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addErrback": 1
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/predial/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addErrback": 1
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/regressions/M18882/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addCallbacks": 5
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/rest_api/applications/stasisstatus/ari_client.py": {
+      "ambiguous": {},
+      "chain": {
+        "callback": 2
+      },
+      "ctor": {
+        "Deferred": 2
+      },
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/rest_api/applications/stasisstatus/test_case.py": {
+      "ambiguous": {},
+      "chain": {
+        "addCallback": 1,
+        "callback": 1
+      },
+      "ctor": {
+        "Deferred": 1
+      },
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/rest_api/message/message_modules.py": {
+      "ambiguous": {},
+      "chain": {
+        "addCallback": 2
+      },
+      "ctor": {
+        "DeferredList": 1
+      },
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/rtp/strict_rtp/strict_rtp_seqno/strict_rtp.py": {
+      "ambiguous": {},
+      "chain": {
+        "addErrback": 1
+      },
+      "ctor": {
+        "LoopingCall": 1
+      },
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    },
+    "tests/skeleton_test/run-test": {
+      "ambiguous": {},
+      "chain": {
+        "addErrback": 1
+      },
+      "ctor": {},
+      "deferredlist_flags": {},
+      "inline_callbacks_decorators": 0,
+      "role": "fixture"
+    }
+  },
+  "repo_root": "/usr/src/phzyx/testsuite",
+  "starpy_root": "/usr/src/phzyx/starpy"
+}

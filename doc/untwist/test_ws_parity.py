@@ -30,7 +30,6 @@ Run:  PYTHONPATH=lib/python .venv/bin/python doc/untwist/test_ws_parity.py
 
 import os
 import socket
-import sys
 import tempfile
 
 from asterisk.aio.runtime import current_runtime

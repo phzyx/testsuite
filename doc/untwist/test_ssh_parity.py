@@ -28,7 +28,6 @@ Run:  PYTHONPATH=lib/python .venv/bin/python doc/untwist/test_ssh_parity.py
 
 import asyncio
 import shlex
-import sys
 
 import asyncssh
 

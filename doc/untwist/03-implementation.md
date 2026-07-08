@@ -5,6 +5,12 @@ Branch: `master-untwisted` (suite) / `master-untwisted` (starpy fork)
 Date: 2026-06-30
 Companion to: `doc/untwist/01-scope-analysis.md`, `doc/untwist/02-design.md`
 
+> **Historical note (Phase B, step B4):** This is the Phase A implementation plan.
+> The `reactor.py` shim module and `asterisk.aio.reactor` facade described below
+> were **deleted** in Phase B step B4; their primitives now live on
+> `AsyncTestRuntime` (`from asterisk.aio.runtime import current_runtime`).
+> Present-tense references to `reactor.py` here are historical.
+
 ## 1. Purpose and how to use this document
 
 This is the executable plan for **Phase A** (the cutover, per design §14): land

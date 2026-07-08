@@ -15,7 +15,7 @@
   },
   "files_with_reactor_or_defer": 26,
   "lifecycle_owners": {},
-  "parsed": 395,
+  "parsed": 396,
   "per_file": {
     "doc/untwist/test_core_runtime.py": {
       "defer": {
@@ -199,6 +199,6 @@
   "reactor_grand_total": 0,
   "reactor_totals": {},
   "root": "/usr/src/phzyx/testsuite",
-  "scanned": 395,
+  "scanned": 396,
   "skipped_non_python": 0
 }

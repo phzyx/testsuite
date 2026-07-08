@@ -5,6 +5,13 @@ Branch: `master-untwisted`
 Date: 2026-06-30
 Companion to: `doc/untwist/01-scope-analysis.md`
 
+> **Historical note (Phase B, step B4):** This design document is a Phase A
+> record and describes the module layout as first built. The transitional
+> `asterisk.aio.reactor` shim/facade it references has since been **deleted** —
+> reactor-shaped primitives now live on `AsyncTestRuntime` (obtain via
+> `from asterisk.aio.runtime import current_runtime`). Present-tense mentions of
+> `reactor.py` / `asterisk.aio.reactor` below are historical.
+
 ## 1. Purpose and approach
 
 This document specifies the target architecture for running the test suite on

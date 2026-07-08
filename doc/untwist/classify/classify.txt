@@ -1,0 +1,372 @@
+# Deferred/defer classification  (B5.0)
+files_with_defer=162  roles={'core': 23, 'fixture': 112, 'other': 2, 'shim': 5, 'starpy': 20}
+
+## construction totals
+  Deferred                   80
+  DeferredList               26
+  LoopingCall                1
+  fail                       5
+  gatherResults              1
+  getProcessOutputAndValue   4
+  maybeDeferred              9
+  succeed                    3
+
+## chaining totals (Deferred-attributed method calls)
+  addBoth                    4
+  addCallback                303
+  addCallbacks               62
+  addErrback                 182
+  callback                   66
+  errback                    30
+
+## ambiguous defer-shaped calls  (callback/errback/cancel/pause on non-Deferred or unresolved receivers -- NOT migration sites)
+  callback                   18
+  cancel                     24
+  errback                    7
+
+## DeferredList flags
+  consumeErrors              4
+  fireOnOneCallback          1
+  fireOnOneErrback           2
+
+## construction by role
+  [core] {'Deferred': 32, 'DeferredList': 15, 'getProcessOutputAndValue': 1}
+  [fixture] {'Deferred': 3, 'DeferredList': 5, 'LoopingCall': 1}
+  [other] {'Deferred': 1}
+  [shim] {'Deferred': 31, 'DeferredList': 5, 'fail': 3, 'gatherResults': 1, 'getProcessOutputAndValue': 3, 'maybeDeferred': 8, 'succeed': 2}
+  [starpy] {'Deferred': 13, 'DeferredList': 1, 'fail': 2, 'maybeDeferred': 1, 'succeed': 1}
+
+## chaining by role
+  [core] {'addCallback': 58, 'addCallbacks': 8, 'addErrback': 19, 'callback': 29, 'errback': 6}
+  [fixture] {'addCallback': 70, 'addCallbacks': 18, 'addErrback': 138, 'callback': 3}
+  [other] {'addBoth': 1, 'addCallback': 1, 'callback': 1}
+  [shim] {'addBoth': 1, 'addCallback': 29, 'addCallbacks': 6, 'addErrback': 8, 'callback': 22, 'errback': 13}
+  [starpy] {'addBoth': 2, 'addCallback': 145, 'addCallbacks': 30, 'addErrback': 17, 'callback': 11, 'errback': 11}
+
+## inlineCallbacks decorators (should be 0): none
+
+## per-file (role | ctor | chain | ambiguous | dlist-flags)
+  [starpy  ] [starpy] examples/amicommand.py
+             chain=addCallback:1,addCallbacks:2
+  [starpy  ] [starpy] examples/autosurvey/frontend.py
+             chain=addCallback:3,addCallbacks:1,addErrback:1
+  [starpy  ] [starpy] examples/calldurationcallback.py
+             chain=addCallback:4,addCallbacks:2,addErrback:1
+  [starpy  ] [starpy] examples/connecttoivr.py
+             chain=addCallbacks:3,addErrback:1
+  [starpy  ] [starpy] examples/connecttoivrapp.py
+             chain=addCallbacks:3
+  [starpy  ] [starpy] examples/fastagisetvariable.py
+             chain=addCallback:1,addCallbacks:1
+  [starpy  ] [starpy] examples/getvariable.py
+             chain=addCallback:2,addErrback:2
+  [starpy  ] [starpy] examples/hellofastagi.py
+             chain=addErrback:1
+  [starpy  ] [starpy] examples/hellofastagiapp.py
+             chain=addErrback:1
+  [starpy  ] [starpy] examples/menu.py
+             chain=addCallback:10,addCallbacks:4,addErrback:6  amb=callback:1,errback:1
+  [starpy  ] [starpy] examples/menutest.py
+             chain=addCallbacks:1
+  [starpy  ] [starpy] examples/priexhaustion.py
+             chain=addCallback:2
+  [starpy  ] [starpy] examples/priexhaustionbare.py
+             chain=addCallback:2
+  [starpy  ] [starpy] examples/readingdigits.py
+             chain=addCallback:1,addCallbacks:2,addErrback:1
+  [starpy  ] [starpy] examples/timestamp.py
+             chain=addCallback:3,addCallbacks:1,addErrback:1
+  [starpy  ] [starpy] examples/timestampapp.py
+             chain=addCallback:4,addCallbacks:1,addErrback:1
+  [starpy  ] [starpy] starpy/_async.py
+             ctor=Deferred:5,DeferredList:1,fail:2,succeed:1  chain=addBoth:1,addCallbacks:6,callback:6,errback:5  amb=cancel:6,errback:1  dl=consumeErrors:1,fireOnOneErrback:1
+  [starpy  ] [starpy] starpy/fastagi.py
+             ctor=Deferred:4,maybeDeferred:1  chain=addCallback:60,addErrback:1,callback:2,errback:4
+  [starpy  ] [starpy] starpy/manager.py
+             ctor=Deferred:4  chain=addCallback:51,addCallbacks:3,callback:3,errback:2  amb=callback:1,errback:2
+  [starpy  ] [starpy] tests/test_async_smoke.py
+             chain=addBoth:1,addCallback:1
+  [other   ] doc/untwist/test_core_runtime.py
+             ctor=Deferred:1  chain=addCallback:1,callback:1
+  [other   ] doc/untwist/test_ssh_parity.py
+             chain=addBoth:1
+  [shim    ] lib/python/asterisk/aio/defer.py
+             ctor=Deferred:4,DeferredList:1,fail:2,succeed:1  chain=addBoth:1,addCallbacks:6,callback:5,errback:4  amb=errback:1  dl=consumeErrors:1,fireOnOneErrback:1
+  [shim    ] lib/python/asterisk/aio/protocols.py
+             ctor=Deferred:1  chain=callback:1,errback:1  amb=cancel:1
+  [shim    ] lib/python/asterisk/aio/runtime.py
+             ctor=Deferred:1  chain=callback:1,errback:2  amb=cancel:8
+  [shim    ] lib/python/asterisk/aio/test_aio.py
+             ctor=Deferred:24,DeferredList:4,fail:1,gatherResults:1,getProcessOutputAndValue:3,maybeDeferred:8,succeed:1  chain=addCallback:29,addErrback:8,callback:14,errback:3  amb=callback:7,cancel:8,errback:2  dl=consumeErrors:1,fireOnOneCallback:1
+  [shim    ] lib/python/asterisk/aio/utils.py
+             ctor=Deferred:1  chain=callback:1,errback:3
+  [core    ] lib/python/asterisk/ami.py
+             chain=addCallbacks:2
+  [core    ] lib/python/asterisk/apptest.py
+             ctor=Deferred:6  chain=addCallback:5,addErrback:2,callback:2  amb=callback:4
+  [core    ] lib/python/asterisk/ari.py
+             chain=addErrback:1  amb=callback:1
+  [core    ] lib/python/asterisk/asterisk.py
+             ctor=Deferred:4,getProcessOutputAndValue:1  chain=addCallback:1,addCallbacks:2,callback:7,errback:6  amb=cancel:1
+  [core    ] lib/python/asterisk/bridge_test_case.py
+             chain=addCallback:4
+  [core    ] lib/python/asterisk/channel_test_condition.py
+             ctor=Deferred:1,DeferredList:1  chain=addCallback:2,callback:1
+  [core    ] lib/python/asterisk/confbridge.py
+             chain=addErrback:4
+  [core    ] lib/python/asterisk/fd_test_condition.py
+             ctor=Deferred:2,DeferredList:2  chain=addCallback:3,callback:2
+  [core    ] lib/python/asterisk/linkedid_check.py
+             chain=addCallbacks:1
+  [core    ] lib/python/asterisk/lock_test_condition.py
+             ctor=Deferred:1,DeferredList:1  chain=addCallback:2,callback:1
+  [core    ] lib/python/asterisk/originate.py
+             chain=addErrback:1
+  [core    ] lib/python/asterisk/pjsip_channel_test_condition.py
+             ctor=Deferred:1,DeferredList:1  chain=addCallback:2,callback:1
+  [core    ] lib/python/asterisk/pluggable_modules.py
+             chain=addCallback:1,addErrback:4  amb=callback:1
+  [core    ] lib/python/asterisk/self_test/harness_shared.py
+             ctor=Deferred:1  chain=callback:1
+  [core    ] lib/python/asterisk/sip_channel_test_condition.py
+             ctor=Deferred:1,DeferredList:1  chain=addCallback:2,callback:1
+  [core    ] lib/python/asterisk/sip_dialog_test_condition.py
+             ctor=Deferred:3,DeferredList:1  chain=addCallback:6,callback:4
+  [core    ] lib/python/asterisk/sipp.py
+             ctor=Deferred:5,DeferredList:2  chain=addCallback:14,callback:2  amb=callback:3
+  [core    ] lib/python/asterisk/sipp_iterator.py
+             chain=addCallback:1
+  [core    ] lib/python/asterisk/taskprocessor_test_condition.py
+             ctor=Deferred:2,DeferredList:2  chain=addCallback:3,callback:2
+  [core    ] lib/python/asterisk/test_case.py
+             ctor=Deferred:1,DeferredList:2  chain=addCallback:7,addCallbacks:3,addErrback:2,callback:1  dl=consumeErrors:1
+  [core    ] lib/python/asterisk/test_conditions.py
+             ctor=Deferred:2  chain=addCallback:1,addErrback:1,callback:1
+  [core    ] lib/python/asterisk/thread_test_condition.py
+             ctor=Deferred:2,DeferredList:2  chain=addCallback:4,callback:3
+  [core    ] lib/python/asterisk/voicemail.py
+             chain=addErrback:4
+  [fixture ] tests/agi/exit_status/run-test
+             chain=addErrback:8
+  [fixture ] tests/agi/nominal/run-test
+             chain=addErrback:1
+  [fixture ] tests/apps/bridge/bridge_transfer_callee/run-test
+             chain=addErrback:3
+  [fixture ] tests/apps/chanspy/chanspy_w_mixmonitor/run-test
+             chain=addErrback:2
+  [fixture ] tests/apps/confbridge/confbridge_nominal/run-test
+             chain=addErrback:1
+  [fixture ] tests/apps/confbridge/confbridge_recording/run-test
+             chain=addErrback:2
+  [fixture ] tests/apps/directed_pickup/pickup_chan/run-test
+             chain=addCallback:1,addErrback:2
+  [fixture ] tests/apps/directory/directory_attendant_exit/run-test
+             chain=addErrback:1
+  [fixture ] tests/apps/directory/directory_context_operator_exit/run-test
+             chain=addErrback:1
+  [fixture ] tests/apps/directory/directory_operator_exit/run-test
+             chain=addErrback:1
+  [fixture ] tests/apps/mixmonitor_audiohook_inherit/run-test
+             chain=addErrback:1
+  [fixture ] tests/apps/page/page_baseline/run-test
+             chain=addErrback:1
+  [fixture ] tests/apps/queues/queue_baseline/run-test
+             chain=addErrback:1
+  [fixture ] tests/apps/queues/queue_transfer_callee/run-test
+             chain=addErrback:1
+  [fixture ] tests/apps/voicemail/authenticate_extensions/run-test
+             chain=addErrback:2
+  [fixture ] tests/apps/voicemail/authenticate_invalid_mailbox/run-test
+             chain=addErrback:1
+  [fixture ] tests/apps/voicemail/authenticate_invalid_password/run-test
+             chain=addErrback:2
+  [fixture ] tests/apps/voicemail/authenticate_nominal/run-test
+             chain=addErrback:1
+  [fixture ] tests/apps/voicemail/check_voicemail_callback/run-test
+             chain=addErrback:1
+  [fixture ] tests/apps/voicemail/check_voicemail_delete/run-test
+             chain=addErrback:1
+  [fixture ] tests/apps/voicemail/check_voicemail_dialout/run-test
+             chain=addErrback:1
+  [fixture ] tests/apps/voicemail/check_voicemail_envelope/run-test
+             chain=addErrback:1
+  [fixture ] tests/apps/voicemail/check_voicemail_forward/run-test
+             chain=addErrback:1
+  [fixture ] tests/apps/voicemail/check_voicemail_forward_hangup/run-test
+             chain=addErrback:1
+  [fixture ] tests/apps/voicemail/check_voicemail_forward_with_prepend/run-test
+             chain=addCallback:1,addErrback:1
+  [fixture ] tests/apps/voicemail/check_voicemail_new_user/run-test
+             chain=addErrback:1
+  [fixture ] tests/apps/voicemail/check_voicemail_new_user_hangup/run-test
+             chain=addErrback:1
+  [fixture ] tests/apps/voicemail/check_voicemail_nominal/run-test
+             chain=addErrback:1
+  [fixture ] tests/apps/voicemail/check_voicemail_options_change_password/run-test
+             chain=addErrback:1
+  [fixture ] tests/apps/voicemail/check_voicemail_options_change_password_spooldir/run-test
+             chain=addErrback:1
+  [fixture ] tests/apps/voicemail/check_voicemail_options_record_busy/run-test
+             chain=addErrback:1
+  [fixture ] tests/apps/voicemail/check_voicemail_options_record_name/run-test
+             chain=addErrback:1
+  [fixture ] tests/apps/voicemail/check_voicemail_options_record_temp/run-test
+             chain=addErrback:1
+  [fixture ] tests/apps/voicemail/check_voicemail_options_record_unavail/run-test
+             chain=addErrback:1
+  [fixture ] tests/apps/voicemail/check_voicemail_reply/run-test
+             chain=addErrback:1
+  [fixture ] tests/apps/voicemail/check_voicemail_while_leaving_msg/run-test
+             chain=addErrback:2
+  [fixture ] tests/apps/voicemail/func_vmcount/run-test
+             chain=addErrback:1
+  [fixture ] tests/apps/voicemail/leave_voicemail_contexts/run-test
+             chain=addErrback:2
+  [fixture ] tests/apps/voicemail/leave_voicemail_external_notification/run-test
+             chain=addErrback:5
+  [fixture ] tests/apps/voicemail/leave_voicemail_forwarding/run-test
+             chain=addErrback:1
+  [fixture ] tests/apps/voicemail/leave_voicemail_forwarding_auto_urgent/run-test
+             chain=addErrback:1
+  [fixture ] tests/apps/voicemail/leave_voicemail_nominal/run-test
+             chain=addErrback:1
+  [fixture ] tests/apps/voicemail/leave_voicemail_priority/run-test
+             chain=addErrback:1
+  [fixture ] tests/apps/voicemail/play_message/run-test
+             chain=addErrback:1
+  [fixture ] tests/apps/voicemail/polling/poll_no_subs/run-test
+             chain=addErrback:1
+  [fixture ] tests/apps/voicemail/polling/poll_sub_unsub/run-test
+             chain=addErrback:1
+  [fixture ] tests/bridge/bridge_action/bridge_action.py
+             chain=addErrback:2
+  [fixture ] tests/bridge/hold_redirect/devstate_check.py
+             chain=addCallbacks:1
+  [fixture ] tests/callparking_retrieval/run-test
+             chain=addErrback:2
+  [fixture ] tests/cause_answered_elsewhere/run-test
+             chain=addErrback:1
+  [fixture ] tests/cdr/cdr-tests.py
+             chain=addErrback:1
+  [fixture ] tests/channels/iax2/acl_call/run-test
+             chain=addErrback:1
+  [fixture ] tests/channels/iax2/hangupcause/run-test
+             chain=addErrback:3
+  [fixture ] tests/channels/pjsip/call_pickup/run-test
+             chain=addCallback:2,addErrback:2
+  [fixture ] tests/channels/pjsip/configuration/test_scenario.py
+             chain=addCallback:2
+  [fixture ] tests/channels/pjsip/hold/run-test
+             chain=addCallback:4
+  [fixture ] tests/channels/pjsip/hold_inactive/run-test
+             chain=addCallback:4
+  [fixture ] tests/channels/pjsip/sdp_offer_answer/attribute_passthrough/speex_h263_h264/run-test
+             chain=addCallback:4
+  [fixture ] tests/channels/pjsip/subscriptions/mwi/missing_aor/run-test
+             chain=addCallback:1
+  [fixture ] tests/channels/pjsip/subscriptions/mwi/no_accept_header/run-test
+             chain=addCallback:1
+  [fixture ] tests/channels/pjsip/subscriptions/presence/digium_presence/run-test
+             chain=addCallback:1
+  [fixture ] tests/channels/pjsip/subscriptions/presence/no_accept_header/run-test
+             chain=addCallback:1
+  [fixture ] tests/fastagi/channel-status/run-test
+             chain=addCallback:2,addErrback:2
+  [fixture ] tests/fastagi/control-stream-file/run-test
+             chain=addCallback:1
+  [fixture ] tests/fastagi/database/run-test
+             chain=addCallback:6,addErrback:6
+  [fixture ] tests/fastagi/execute/run-test
+             chain=addCallback:6,addErrback:6
+  [fixture ] tests/fastagi/get-data/run-test
+             chain=addCallback:1,addErrback:1
+  [fixture ] tests/fastagi/hangup/run-test
+             chain=addCallback:3,addErrback:3
+  [fixture ] tests/fastagi/record-file/run-test
+             chain=addCallback:1,addErrback:1
+  [fixture ] tests/fastagi/say-alpha/run-test
+             chain=addCallback:1,addErrback:1
+  [fixture ] tests/fastagi/say-date/run-test
+             chain=addCallback:1,addErrback:1
+  [fixture ] tests/fastagi/say-datetime/run-test
+             chain=addCallback:1,addErrback:1
+  [fixture ] tests/fastagi/say-digits/run-test
+             chain=addCallback:1,addErrback:1
+  [fixture ] tests/fastagi/say-number/run-test
+             chain=addCallback:1,addErrback:1
+  [fixture ] tests/fastagi/say-phonetic/run-test
+             chain=addCallback:1,addErrback:1
+  [fixture ] tests/fastagi/say-time/run-test
+             chain=addCallback:1,addErrback:1
+  [fixture ] tests/fastagi/stream-file/run-test
+             chain=addCallback:1
+  [fixture ] tests/fastagi/wait-for-digit/run-test
+             chain=addCallback:3,addErrback:1
+  [fixture ] tests/fax/pjsip/gateway_g711_t38/run-test
+             chain=addErrback:1
+  [fixture ] tests/fax/pjsip/gateway_native_t38/run-test
+             chain=addErrback:1
+  [fixture ] tests/fax/pjsip/gateway_t38_g711_rx/run-test
+             chain=addErrback:1
+  [fixture ] tests/fax/pjsip/gateway_t38_g711_tx/run-test
+             chain=addErrback:1
+  [fixture ] tests/fax/pjsip/t38/run-test
+             chain=addErrback:1
+  [fixture ] tests/fax/pjsip/t38_with_auth/run-test
+             chain=addErrback:1
+  [fixture ] tests/feature_call_pickup/run-test
+             chain=addCallback:2,addErrback:2
+  [fixture ] tests/funcs/func_jitterbuffer/run-test
+             chain=addErrback:2
+  [fixture ] tests/hangup/handlers/run-test
+             chain=addErrback:1
+  [fixture ] tests/hangup/handlers_endbeforehexten/run-test
+             chain=addErrback:1
+  [fixture ] tests/manager/acl-login/run-test
+             chain=addCallbacks:3
+  [fixture ] tests/manager/bridge_actions/check_bridge.py
+             chain=addCallbacks:2
+  [fixture ] tests/manager/danger/dangerous/run-test
+             chain=addCallbacks:1
+  [fixture ] tests/manager/danger/safe/run-test
+             chain=addCallbacks:1
+  [fixture ] tests/manager/device_state_list/ami_device_state_list.py
+             ctor=DeferredList:1  chain=addCallback:1,addCallbacks:1,addErrback:1
+  [fixture ] tests/manager/exten_state_list/ami_exten_state_list.py
+             ctor=DeferredList:1  chain=addCallbacks:1,addErrback:1
+  [fixture ] tests/manager/login/run-test
+             chain=addCallbacks:1
+  [fixture ] tests/manager/presence_state_list/ami_presence_state_list.py
+             ctor=DeferredList:1  chain=addCallback:1,addCallbacks:1,addErrback:1
+  [fixture ] tests/manager/status/status.py
+             chain=addCallback:1
+  [fixture ] tests/manager/status_all_vars/status.py
+             chain=addCallback:1
+  [fixture ] tests/masquerade/run-test
+             chain=addCallbacks:1,addErrback:2
+  [fixture ] tests/pbx/dialplan_reload/run-test
+             chain=addCallback:3,addErrback:3
+  [fixture ] tests/pbx/dialplan_save/run-test
+             chain=addCallback:4,addErrback:4
+  [fixture ] tests/pbx/manager_extensions/ami_extension_control.py
+             ctor=DeferredList:1  chain=addCallback:1,addErrback:1
+  [fixture ] tests/pbx/merge_contexts/run-test
+             chain=addErrback:3
+  [fixture ] tests/pbx/pbx_lua_background/run-test
+             chain=addErrback:1
+  [fixture ] tests/pbx/pbx_lua_goto/run-test
+             chain=addErrback:1
+  [fixture ] tests/predial/run-test
+             chain=addErrback:1
+  [fixture ] tests/regressions/M18882/run-test
+             chain=addCallbacks:5
+  [fixture ] tests/rest_api/applications/stasisstatus/ari_client.py
+             ctor=Deferred:2  chain=callback:2
+  [fixture ] tests/rest_api/applications/stasisstatus/test_case.py
+             ctor=Deferred:1  chain=addCallback:1,callback:1
+  [fixture ] tests/rest_api/message/message_modules.py
+             ctor=DeferredList:1  chain=addCallback:2
+  [fixture ] tests/rtp/strict_rtp/strict_rtp_seqno/strict_rtp.py
+             ctor=LoopingCall:1  chain=addErrback:1
+  [fixture ] tests/skeleton_test/run-test
+             chain=addErrback:1

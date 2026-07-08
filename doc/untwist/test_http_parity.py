@@ -31,7 +31,6 @@ Run:  PYTHONPATH=lib/python .venv/bin/python doc/untwist/test_http_parity.py
 import asyncio
 import os
 import socket
-import sys
 import tempfile
 from urllib.parse import urlencode
 

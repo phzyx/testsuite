@@ -25,7 +25,6 @@ Run:  PYTHONPATH=lib/python .venv/bin/python doc/untwist/test_dns_parity.py
 import asyncio
 import os
 import socket
-import sys
 import tempfile
 
 from dnslib import DNSRecord, QTYPE, RCODE
