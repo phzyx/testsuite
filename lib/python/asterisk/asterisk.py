@@ -27,7 +27,7 @@ from .config import ConfigFile
 
 from subprocess import PIPE, TimeoutExpired
 
-from asterisk.aio import reactor, defer, utils, error
+from asterisk.aio import defer, utils, error
 from asterisk.aio.runtime import current_runtime
 from asterisk.aio import Failure, ProcessProtocol
 
@@ -486,7 +486,7 @@ class Asterisk(object):
                 return
 
             self.protocol = AsteriskProtocol(self.host, self._stop_deferred)
-            self.process = reactor.spawnProcess(self.protocol,
+            self.process = current_runtime().spawnProcess(self.protocol,
                                                 cmd[0],
                                                 cmd, env=os.environ)
             # This was a one second delay, now is passed in.  This is to allow

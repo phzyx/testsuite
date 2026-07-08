@@ -197,9 +197,7 @@
         "defer.AlreadyCalledError": 3,
         "defer.Deferred": 4
       },
-      "reactor": {
-        "spawnProcess": 1
-      }
+      "reactor": {}
     },
     "lib/python/asterisk/channel_test_condition.py": {
       "defer": {
@@ -300,9 +298,7 @@
         "defer.Deferred": 5,
         "defer.DeferredList": 2
       },
-      "reactor": {
-        "spawnProcess": 1
-      }
+      "reactor": {}
     },
     "lib/python/asterisk/taskprocessor_test_condition.py": {
       "defer": {
@@ -510,7 +506,7 @@
       }
     }
   },
-  "reactor_grand_total": 326,
+  "reactor_grand_total": 324,
   "reactor_totals": {
     "_ensure_loop": 6,
     "addAsyncCleanup": 2,
@@ -523,7 +519,7 @@
     "listenUDP": 14,
     "run": 41,
     "running": 11,
-    "spawnProcess": 11,
+    "spawnProcess": 9,
     "stop": 84
   },
   "root": "/usr/src/phzyx/testsuite",

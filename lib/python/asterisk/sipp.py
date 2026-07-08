@@ -13,7 +13,7 @@ import logging
 from . import test_suite_utils
 
 from abc import ABCMeta, abstractmethod
-from asterisk.aio import reactor, defer, error
+from asterisk.aio import defer, error
 from asterisk.aio.runtime import current_runtime
 from asterisk.aio import ProcessProtocol
 from .test_case import TestCase
@@ -757,7 +757,7 @@ class SIPpScenario(object):
 
         self._process = SIPpProtocol(self.scenario['scenario'], exit_deferred,
                                      start_deferred)
-        reactor.spawnProcess(self._process,
+        current_runtime().spawnProcess(self._process,
                              sipp_args[0],
                              sipp_args,
                              {"TERM": "vt100", },
