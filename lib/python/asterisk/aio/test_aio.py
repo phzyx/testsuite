@@ -7,7 +7,7 @@ Covers the Twisted semantics the test suite relies on:
   * DeferredList result shaping, fireOnOne*, and consumeErrors
   * maybeDeferred wrapping of plain values, Failures, and raised exceptions
   * Failure.check/trap
-  * reactor.callLater / _DelayedCall.cancel
+  * current_runtime().callLater / _DelayedCall.cancel
   * a UDP echo round-trip through the DatagramProtocol adapter
   * a subprocess exit through the ProcessProtocol adapter
 
@@ -22,7 +22,6 @@ import unittest
 import warnings
 from unittest import mock
 
-from asterisk.aio import defer, reactor
 from asterisk.aio.defer import (
     Deferred, DeferredList, gatherResults, maybeDeferred, succeed, fail,
     AlreadyCalledError, TimeoutError as DeferTimeoutError,
@@ -41,14 +40,14 @@ from asterisk.test_runner import run_test_object
 
 
 class _LoopTestCase(unittest.TestCase):
-    """Base class giving each test a fresh event loop bound to the reactor."""
+    """Base class giving each test a fresh event loop bound to the current runtime."""
 
     def setUp(self):
         self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.loop)
         # Install a *fresh* runtime bound to this loop as the current runtime, so
         # each test gets an isolated per-run owner rather than a reset shared
-        # singleton. The reactor facade resolves this dynamically on every call.
+        # singleton. current_runtime() resolves this dynamically on every call.
         self.runtime = new_runtime(self.loop)
 
     def tearDown(self):
@@ -243,24 +242,24 @@ class DelayedCallTests(_LoopTestCase):
 
     def test_call_later_fires(self):
         out = []
-        reactor.callWhenRunning(
-            lambda: reactor.callLater(0.01, lambda: (out.append('fired'),
-                                                     reactor.stop())))
-        reactor.run()
+        current_runtime().callWhenRunning(
+            lambda: current_runtime().callLater(0.01, lambda: (out.append('fired'),
+                                                     current_runtime().stop())))
+        current_runtime().run()
         self.assertEqual(out, ['fired'])
 
     def test_cancel_prevents_firing(self):
         out = []
 
         def setup():
-            dc = reactor.callLater(0.05, lambda: out.append('should-not'))
+            dc = current_runtime().callLater(0.05, lambda: out.append('should-not'))
             self.assertTrue(dc.active())
             dc.cancel()
             self.assertFalse(dc.active())
-            reactor.callLater(0.02, reactor.stop)
+            current_runtime().callLater(0.02, current_runtime().stop)
 
-        reactor.callWhenRunning(setup)
-        reactor.run()
+        current_runtime().callWhenRunning(setup)
+        current_runtime().run()
         self.assertEqual(out, [])
 
     def test_get_time_and_reset(self):
@@ -274,7 +273,7 @@ class DelayedCallTests(_LoopTestCase):
         out = {}
 
         def setup():
-            dc = reactor.callLater(30.0, lambda: None)
+            dc = current_runtime().callLater(30.0, lambda: None)
             t0 = dc.getTime()
             # Sane POSIX timestamp (fromtimestamp must not raise).
             _datetime.datetime.fromtimestamp(t0)
@@ -285,10 +284,10 @@ class DelayedCallTests(_LoopTestCase):
             self.assertGreater(t1, t0)
             dc.cancel()
             out['ok'] = True
-            reactor.stop()
+            current_runtime().stop()
 
-        reactor.callWhenRunning(setup)
-        reactor.run()
+        current_runtime().callWhenRunning(setup)
+        current_runtime().run()
         self.assertTrue(out.get('ok'))
 
 
@@ -310,7 +309,7 @@ class _EchoClient(DatagramProtocol):
             self._holder['dc'].cancel()
         for port in self._holder.get('ports', []):
             port.stopListening()
-        reactor.stop()
+        current_runtime().stop()
 
 
 class _EchoServer(DatagramProtocol):
@@ -321,7 +320,7 @@ class _EchoServer(DatagramProtocol):
     def startProtocol(self):
         port = self.transport.getHost()[1]
         client = _EchoClient(port, self._result, self._holder)
-        handle = reactor.listenUDP(0, client, '127.0.0.1')
+        handle = current_runtime().listenUDP(0, client, '127.0.0.1')
         self._holder.setdefault('ports', []).append(handle)
 
     def datagramReceived(self, data, addr):
@@ -335,14 +334,14 @@ class UDPEchoTests(_LoopTestCase):
         holder = {}
 
         def setup():
-            holder['dc'] = reactor.callLater(3.0, reactor.stop)  # safety net
+            holder['dc'] = current_runtime().callLater(3.0, current_runtime().stop)  # safety net
             holder['ports'] = []
             server = _EchoServer(result, holder)
-            handle = reactor.listenUDP(0, server, '127.0.0.1')
+            handle = current_runtime().listenUDP(0, server, '127.0.0.1')
             holder['ports'].append(handle)
 
-        reactor.callWhenRunning(setup)
-        reactor.run()
+        current_runtime().callWhenRunning(setup)
+        current_runtime().run()
         self.assertEqual(result.get('data'), b'echo:ping')
 
 
@@ -363,7 +362,7 @@ class UDPSyncTransportTests(_LoopTestCase):
 
         def setup():
             proto = DatagramProtocol()
-            handle = reactor.listenUDP(0, proto, '127.0.0.1')
+            handle = current_runtime().listenUDP(0, proto, '127.0.0.1')
             # Synchronously — no await, no callLater — the transport must exist
             # and expose a bound host and a working write().
             observed['transport'] = proto.transport
@@ -374,10 +373,10 @@ class UDPSyncTransportTests(_LoopTestCase):
             except Exception as exc:                       # pragma: no cover
                 observed['error'] = repr(exc)
             handle.stopListening()
-            reactor.stop()
+            current_runtime().stop()
 
-        reactor.callWhenRunning(setup)
-        reactor.run()
+        current_runtime().callWhenRunning(setup)
+        current_runtime().run()
         self.assertIsNotNone(observed.get('transport'),
                              'transport was None synchronously')
         self.assertIsInstance(observed.get('host'), tuple)
@@ -402,7 +401,7 @@ class _CollectingProcess(ProcessProtocol):
 
     def processEnded(self, reason):
         self._record['reason'] = reason
-        reactor.stop()
+        current_runtime().stop()
 
 
 class SubprocessTests(_LoopTestCase):
@@ -413,12 +412,12 @@ class SubprocessTests(_LoopTestCase):
 
         def setup():
             proto = _CollectingProcess(record)
-            reactor.spawnProcess(proto, sys.executable,
+            current_runtime().spawnProcess(proto, sys.executable,
                                  [sys.executable, '-c', script])
-            reactor.callLater(5.0, reactor.stop)  # safety net
+            current_runtime().callLater(5.0, current_runtime().stop)  # safety net
 
-        reactor.callWhenRunning(setup)
-        reactor.run()
+        current_runtime().callWhenRunning(setup)
+        current_runtime().run()
 
         self.assertEqual(record.get('out'), b'hi')
         reason = record.get('reason')
@@ -432,12 +431,12 @@ class SubprocessTests(_LoopTestCase):
 
         def setup():
             proto = _CollectingProcess(record)
-            reactor.spawnProcess(proto, sys.executable,
+            current_runtime().spawnProcess(proto, sys.executable,
                                  [sys.executable, '-c', script])
-            reactor.callLater(5.0, reactor.stop)  # safety net
+            current_runtime().callLater(5.0, current_runtime().stop)  # safety net
 
-        reactor.callWhenRunning(setup)
-        reactor.run()
+        current_runtime().callWhenRunning(setup)
+        current_runtime().run()
 
         reason = record.get('reason')
         self.assertIsInstance(reason, Failure)
@@ -474,17 +473,17 @@ class SubprocessSyncKillTests(_LoopTestCase):
 
         def setup():
             proto = _CollectingProcess(record)
-            reactor.spawnProcess(proto, sys.executable,
+            current_runtime().spawnProcess(proto, sys.executable,
                                  [sys.executable, '-c', script])
             # Synchronously, before connection_made: transport must exist and
             # accept a kill (mirrors SIPpProtocol.kill()).
             record['transport_sync'] = proto.transport
             proto.transport.signalProcess('KILL')
-            reactor.callLater(10.0, reactor.stop)  # safety net
+            current_runtime().callLater(10.0, current_runtime().stop)  # safety net
 
         try:
-            reactor.callWhenRunning(setup)
-            reactor.run()
+            current_runtime().callWhenRunning(setup)
+            current_runtime().run()
         finally:
             asyncio_logger.removeHandler(warning_capture)
 
@@ -585,14 +584,14 @@ class SubprocessSyncKillTests(_LoopTestCase):
 
         def setup():
             proto = _CollectingProcess(record)
-            reactor.spawnProcess(
+            current_runtime().spawnProcess(
                 proto, sys.executable,
                 [sys.executable, '-c', 'import time; time.sleep(30)'])
-            reactor.callLater(0.1, reactor.stop)
+            current_runtime().callLater(0.1, current_runtime().stop)
 
         try:
-            reactor.callWhenRunning(setup)
-            reactor.run()
+            current_runtime().callWhenRunning(setup)
+            current_runtime().run()
         finally:
             asyncio_logger.removeHandler(warning_capture)
 
@@ -743,10 +742,10 @@ class BindFailureTests(_LoopTestCase):
         # bind error out of run() rather than swallowing it in a task.
         proto = ProcessProtocol()
         bad = '/nonexistent/binary/definitely-not-here'
-        reactor.spawnProcess(proto, bad, [bad])
+        current_runtime().spawnProcess(proto, bad, [bad])
         with self.assertRaises(FileNotFoundError):
-            reactor.run()
-        self.assertFalse(reactor.running)
+            current_runtime().run()
+        self.assertFalse(current_runtime().running)
 
     def test_running_spawn_failure_propagates(self):
         # Registered while running (via callWhenRunning): a fatal bind error
@@ -755,13 +754,13 @@ class BindFailureTests(_LoopTestCase):
         bad = '/nonexistent/binary/definitely-not-here'
 
         def setup():
-            reactor.spawnProcess(proto, bad, [bad])
-            reactor.callLater(5.0, reactor.stop)  # safety net
+            current_runtime().spawnProcess(proto, bad, [bad])
+            current_runtime().callLater(5.0, current_runtime().stop)  # safety net
 
-        reactor.callWhenRunning(setup)
+        current_runtime().callWhenRunning(setup)
         with self.assertRaises(FileNotFoundError):
-            reactor.run()
-        self.assertFalse(reactor.running)
+            current_runtime().run()
+        self.assertFalse(current_runtime().running)
 
 
 # --------------------------------------------------------------------------- #
@@ -777,7 +776,7 @@ class _BulkCollectingProcess(ProcessProtocol):
 
     def processEnded(self, reason):
         self._record['reason'] = reason
-        reactor.stop()
+        current_runtime().stop()
 
 
 class PipeDrainTests(_LoopTestCase):
@@ -791,12 +790,12 @@ class PipeDrainTests(_LoopTestCase):
 
         def setup():
             proto = _BulkCollectingProcess(record)
-            reactor.spawnProcess(proto, sys.executable,
+            current_runtime().spawnProcess(proto, sys.executable,
                                  [sys.executable, '-c', script])
-            reactor.callLater(5.0, reactor.stop)  # safety net
+            current_runtime().callLater(5.0, current_runtime().stop)  # safety net
 
-        reactor.callWhenRunning(setup)
-        reactor.run()
+        current_runtime().callWhenRunning(setup)
+        current_runtime().run()
         self.assertEqual(len(record.get('out', b'')), 200000)
         self.assertEqual(record['reason'].check(ProcessDone), ProcessDone)
 
@@ -810,12 +809,12 @@ class CallInThreadTests(_LoopTestCase):
         record = {}
 
         def setup():
-            d = reactor.callInThread(lambda: 21 * 2)
-            d.addCallback(lambda r: (record.__setitem__('r', r), reactor.stop()))
-            reactor.callLater(5.0, reactor.stop)  # safety net
+            d = current_runtime().callInThread(lambda: 21 * 2)
+            d.addCallback(lambda r: (record.__setitem__('r', r), current_runtime().stop()))
+            current_runtime().callLater(5.0, current_runtime().stop)  # safety net
 
-        reactor.callWhenRunning(setup)
-        reactor.run()
+        current_runtime().callWhenRunning(setup)
+        current_runtime().run()
         self.assertEqual(record.get('r'), 42)
 
 
@@ -872,11 +871,11 @@ class _RecordingClientFactory(object):
             self._reconnected = True
             connector.connect()          # retry, like ReconnectingClientFactory
         else:
-            reactor.stop()
+            current_runtime().stop()
 
     def clientConnectionFailed(self, connector, reason):
         self.events.append(('failed', reason))
-        reactor.stop()
+        current_runtime().stop()
 
     def stopTrying(self):
         self.events.append('stopTrying')
@@ -890,32 +889,32 @@ class TCPClientNotificationTests(_LoopTestCase):
 
     def test_connection_lost_notifies_factory(self):
         events = []
-        server_handle = reactor.listenTCP(0, _DroppingServerFactory(),
+        server_handle = current_runtime().listenTCP(0, _DroppingServerFactory(),
                                           interface='127.0.0.1')
 
         def setup():
             port = _server_port(server_handle)
             factory = _RecordingClientFactory(events)
-            reactor.connectTCP('127.0.0.1', port, factory)
-            reactor.callLater(5.0, reactor.stop)  # safety net
+            current_runtime().connectTCP('127.0.0.1', port, factory)
+            current_runtime().callLater(5.0, current_runtime().stop)  # safety net
 
-        reactor.callWhenRunning(setup)
-        reactor.run()
+        current_runtime().callWhenRunning(setup)
+        current_runtime().run()
         self.assertIn('lost', events)
 
     def test_reconnect_via_retry(self):
         events = []
-        server_handle = reactor.listenTCP(0, _DroppingServerFactory(),
+        server_handle = current_runtime().listenTCP(0, _DroppingServerFactory(),
                                           interface='127.0.0.1')
 
         def setup():
             port = _server_port(server_handle)
             factory = _RecordingClientFactory(events, reconnect_once=True)
-            reactor.connectTCP('127.0.0.1', port, factory)
-            reactor.callLater(5.0, reactor.stop)  # safety net
+            current_runtime().connectTCP('127.0.0.1', port, factory)
+            current_runtime().callLater(5.0, current_runtime().stop)  # safety net
 
-        reactor.callWhenRunning(setup)
-        reactor.run()
+        current_runtime().callWhenRunning(setup)
+        current_runtime().run()
         # connecting -> lost -> (retry) connecting -> lost
         self.assertEqual(events.count('lost'), 2)
         self.assertEqual(events.count('connecting'), 2)
@@ -950,7 +949,7 @@ class ConnectTCPOptionsTests(_LoopTestCase):
 
     def test_bind_address_is_used(self):
         peers = []
-        server_handle = reactor.listenTCP(0, _AcceptingServerFactory(peers),
+        server_handle = current_runtime().listenTCP(0, _AcceptingServerFactory(peers),
                                           interface='127.0.0.1')
 
         def setup():
@@ -958,12 +957,12 @@ class ConnectTCPOptionsTests(_LoopTestCase):
             factory = _RecordingClientFactory([])
             # Bind the client socket to loopback explicitly; the server should
             # see a 127.0.0.1 peer, proving local_addr was applied.
-            reactor.connectTCP('127.0.0.1', port, factory,
+            current_runtime().connectTCP('127.0.0.1', port, factory,
                                bindAddress=('127.0.0.1', 0))
-            reactor.callLater(0.3, reactor.stop)
+            current_runtime().callLater(0.3, current_runtime().stop)
 
-        reactor.callWhenRunning(setup)
-        reactor.run()
+        current_runtime().callWhenRunning(setup)
+        current_runtime().run()
         self.assertTrue(peers)
         self.assertEqual(peers[0][0], '127.0.0.1')
 
@@ -974,34 +973,34 @@ class ConnectTCPOptionsTests(_LoopTestCase):
             factory = _RecordingClientFactory(events)
             # 192.0.2.0/24 is TEST-NET-1 (RFC 5737), guaranteed unreachable; a
             # short timeout must surface as clientConnectionFailed, not a hang.
-            reactor.connectTCP('192.0.2.1', 9, factory, timeout=0.2)
-            reactor.callLater(5.0, reactor.stop)  # safety net
+            current_runtime().connectTCP('192.0.2.1', 9, factory, timeout=0.2)
+            current_runtime().callLater(5.0, current_runtime().stop)  # safety net
 
-        reactor.callWhenRunning(setup)
-        reactor.run()
+        current_runtime().callWhenRunning(setup)
+        current_runtime().run()
         self.assertTrue(any(isinstance(e, tuple) and e[0] == 'failed'
                             for e in events))
 
 
 # --------------------------------------------------------------------------- #
-# reactor.stop() is idempotent (review blocker 3)
+# current_runtime().stop() is idempotent (review blocker 3)
 # --------------------------------------------------------------------------- #
 class ReactorStopIdempotentTests(_LoopTestCase):
 
     def test_stop_when_not_running_is_noop(self):
-        self.assertFalse(reactor.running)
-        reactor.stop()                      # must not raise
-        self.assertFalse(reactor.running)
+        self.assertFalse(current_runtime().running)
+        current_runtime().stop()                      # must not raise
+        self.assertFalse(current_runtime().running)
 
     def test_double_stop_while_running(self):
         def setup():
-            reactor.stop()
-            reactor.stop()                  # second call is a no-op
-            reactor.callLater(5.0, reactor.stop)  # safety net
+            current_runtime().stop()
+            current_runtime().stop()                  # second call is a no-op
+            current_runtime().callLater(5.0, current_runtime().stop)  # safety net
 
-        reactor.callWhenRunning(setup)
-        reactor.run()
-        self.assertFalse(reactor.running)
+        current_runtime().callWhenRunning(setup)
+        current_runtime().run()
+        self.assertFalse(current_runtime().running)
 
 
 # --------------------------------------------------------------------------- #
@@ -1016,11 +1015,11 @@ class MaybeDeferredAwaitableTests(_LoopTestCase):
 
         def run():
             d = maybeDeferred(producer)
-            d.addCallback(lambda r: out.append(r) or reactor.stop())
-            reactor.callLater(5.0, reactor.stop)
+            d.addCallback(lambda r: out.append(r) or current_runtime().stop())
+            current_runtime().callLater(5.0, current_runtime().stop)
 
-        reactor.callWhenRunning(run)
-        reactor.run()
+        current_runtime().callWhenRunning(run)
+        current_runtime().run()
         self.assertEqual(out, ['async-result'])
 
     def test_future_result(self):
@@ -1029,12 +1028,12 @@ class MaybeDeferredAwaitableTests(_LoopTestCase):
         def run():
             fut = self.loop.create_future()
             d = maybeDeferred(lambda: fut)
-            d.addCallback(lambda r: out.append(r) or reactor.stop())
+            d.addCallback(lambda r: out.append(r) or current_runtime().stop())
             self.loop.call_later(0.01, lambda: fut.set_result('fut-val'))
-            reactor.callLater(5.0, reactor.stop)
+            current_runtime().callLater(5.0, current_runtime().stop)
 
-        reactor.callWhenRunning(run)
-        reactor.run()
+        current_runtime().callWhenRunning(run)
+        current_runtime().run()
         self.assertEqual(out, ['fut-val'])
 
     def test_coroutine_failure_errbacks(self):
@@ -1044,11 +1043,11 @@ class MaybeDeferredAwaitableTests(_LoopTestCase):
 
         def run():
             d = maybeDeferred(boom)
-            d.addErrback(lambda f: out.append(f.check(ValueError)) or reactor.stop())
-            reactor.callLater(5.0, reactor.stop)
+            d.addErrback(lambda f: out.append(f.check(ValueError)) or current_runtime().stop())
+            current_runtime().callLater(5.0, current_runtime().stop)
 
-        reactor.callWhenRunning(run)
-        reactor.run()
+        current_runtime().callWhenRunning(run)
+        current_runtime().run()
         self.assertEqual(out, [ValueError])
 
     def test_no_unawaited_coroutine_warning(self):
@@ -1063,11 +1062,11 @@ class MaybeDeferredAwaitableTests(_LoopTestCase):
 
             def run():
                 d = maybeDeferred(producer)
-                d.addCallback(lambda r: out.append(r) or reactor.stop())
-                reactor.callLater(5.0, reactor.stop)
+                d.addCallback(lambda r: out.append(r) or current_runtime().stop())
+                current_runtime().callLater(5.0, current_runtime().stop)
 
-            reactor.callWhenRunning(run)
-            reactor.run()
+            current_runtime().callWhenRunning(run)
+            current_runtime().run()
             gc.collect()                    # force any "never awaited" warning
         self.assertEqual(out, [1])
 
@@ -1085,11 +1084,11 @@ class GetProcessOutputAndValueTests(_LoopTestCase):
 
         def run():
             d = utils.getProcessOutputAndValue(sys.executable, ['-c', script])
-            d.addCallback(lambda r: record.__setitem__('r', r) or reactor.stop())
-            reactor.callLater(5.0, reactor.stop)
+            d.addCallback(lambda r: record.__setitem__('r', r) or current_runtime().stop())
+            current_runtime().callLater(5.0, current_runtime().stop)
 
-        reactor.callWhenRunning(run)
-        reactor.run()
+        current_runtime().callWhenRunning(run)
+        current_runtime().run()
         out, err, code = record['r']
         self.assertEqual(out, b'hi')
         self.assertEqual(err, b'eh')
@@ -1103,11 +1102,11 @@ class GetProcessOutputAndValueTests(_LoopTestCase):
 
         def run():
             d = utils.getProcessOutputAndValue(sys.executable, ['-c', script])
-            d.addErrback(lambda f: record.__setitem__('f', f) or reactor.stop())
-            reactor.callLater(5.0, reactor.stop)
+            d.addErrback(lambda f: record.__setitem__('f', f) or current_runtime().stop())
+            current_runtime().callLater(5.0, current_runtime().stop)
 
-        reactor.callWhenRunning(run)
-        reactor.run()
+        current_runtime().callWhenRunning(run)
+        current_runtime().run()
         f = record['f']
         self.assertIsInstance(f, Failure)
         out, err, sig = f.value
@@ -1125,10 +1124,10 @@ class ShutdownStrayTaskTests(_LoopTestCase):
         # a live task past run().
         def setup():
             maybeDeferred(lambda: asyncio.sleep(60))   # stray task
-            reactor.callLater(0.05, reactor.stop)
+            current_runtime().callLater(0.05, current_runtime().stop)
 
-        reactor.callWhenRunning(setup)
-        reactor.run()
+        current_runtime().callWhenRunning(setup)
+        current_runtime().run()
         pending = [t for t in asyncio.all_tasks(self.loop) if not t.done()]
         self.assertEqual(pending, [])
 
@@ -1162,16 +1161,16 @@ class ShutdownStrayTaskTests(_LoopTestCase):
 
             def check_ready():
                 if os.path.getsize(pidfile) > 0:
-                    reactor.stop()
+                    current_runtime().stop()
                 else:
-                    reactor.callLater(0.02, check_ready)
+                    current_runtime().callLater(0.02, check_ready)
 
-            reactor.callLater(0.02, check_ready)
-            reactor.callLater(10.0, reactor.stop)   # safety net
+            current_runtime().callLater(0.02, check_ready)
+            current_runtime().callLater(10.0, current_runtime().stop)   # safety net
 
         try:
-            reactor.callWhenRunning(setup)
-            reactor.run()
+            current_runtime().callWhenRunning(setup)
+            current_runtime().run()
         finally:
             asyncio_logger.removeHandler(warning_capture)
 
@@ -1252,69 +1251,36 @@ class RuntimeStateMachineTests(_LoopTestCase):
 
         def cb():
             seen['at_run'] = self.runtime.state
-            reactor.stop()
+            current_runtime().stop()
 
-        reactor.callWhenRunning(cb)
-        reactor.run()
+        current_runtime().callWhenRunning(cb)
+        current_runtime().run()
         self.assertIs(seen['at_run'], _RuntimeState.RUNNING)
         self.assertIs(self.runtime.state, _RuntimeState.STOPPED)
 
     def test_running_property_derives_from_state(self):
         obs = {}
-        self.assertFalse(reactor.running)          # COLLECTING
+        self.assertFalse(current_runtime().running)          # COLLECTING
 
         def cb():
-            obs['before_stop'] = reactor.running   # RUNNING, not stopped -> True
-            reactor.stop()
-            obs['after_stop'] = reactor.running    # stop requested -> False
+            obs['before_stop'] = current_runtime().running   # RUNNING, not stopped -> True
+            current_runtime().stop()
+            obs['after_stop'] = current_runtime().running    # stop requested -> False
 
-        reactor.callWhenRunning(cb)
-        reactor.run()
+        current_runtime().callWhenRunning(cb)
+        current_runtime().run()
         self.assertTrue(obs['before_stop'])
         self.assertFalse(obs['after_stop'])
-        self.assertFalse(reactor.running)          # STOPPED
+        self.assertFalse(current_runtime().running)          # STOPPED
 
     def test_fatal_prerun_bind_ends_in_stopped(self):
         proto = ProcessProtocol()
         bad = '/nonexistent/binary/definitely-not-here'
-        reactor.spawnProcess(proto, bad, [bad])
+        current_runtime().spawnProcess(proto, bad, [bad])
         with self.assertRaises(FileNotFoundError):
-            reactor.run()
+            current_runtime().run()
         self.assertIs(self.runtime.state, _RuntimeState.STOPPED)
-        self.assertFalse(reactor.running)
-
-
-# --------------------------------------------------------------------------- #
-# B1.0: single-owner facade over the installable current runtime
-# --------------------------------------------------------------------------- #
-class CurrentRuntimeFacadeTests(_LoopTestCase):
-    """The reactor facade holds no fixed reference: it resolves whatever runtime
-    is currently installed, and install/detach change what it forwards to."""
-
-    def test_facade_forwards_to_installed_runtime(self):
-        self.assertIs(get_current_runtime(), self.runtime)
-        # A delegated bound method resolves against the current runtime.
-        self.assertIs(reactor.callLater.__self__, self.runtime)
-        self.assertIs(reactor._ensure_loop(), self.loop)
-
-    def test_facade_follows_install_and_detach(self):
-        self.assertIs(reactor.callLater.__self__, self.runtime)
-
-        other = AsyncTestRuntime()
-        install_runtime(other)
-        self.assertIs(current_runtime(), other)
-        self.assertIs(reactor.callLater.__self__, other)
-
-        # Detaching empties the holder; the next facade use lazily installs a
-        # brand-new owner (not the detached one, not the fixture's).
-        detach_runtime()
-        self.assertIsNone(get_current_runtime())
-        fresh = reactor.callLater.__self__
-        self.assertIsNot(fresh, other)
-        self.assertIsNot(fresh, self.runtime)
-
-        # Restore the fixture's runtime so tearDown's detach matches.
-        install_runtime(self.runtime)
+        self.assertFalse(current_runtime().running)
 
 
 # --------------------------------------------------------------------------- #
@@ -1326,19 +1292,19 @@ class ReentrantRunTests(_LoopTestCase):
         outcome = {}
 
         def cb():
-            reactor.stop()
+            current_runtime().stop()
             # stop() has flipped ``running`` False (stop requested) while the
             # outer run() is still in RUNNING and about to unwind. A guard on
             # ``running`` would let this re-enter; a state guard must reject it.
-            self.assertFalse(reactor.running)
+            self.assertFalse(current_runtime().running)
             try:
-                reactor.run()
+                current_runtime().run()
                 outcome['result'] = 'ran'
             except ReactorAlreadyRunning:
                 outcome['result'] = 'rejected'
 
-        reactor.callWhenRunning(cb)
-        reactor.run()
+        current_runtime().callWhenRunning(cb)
+        current_runtime().run()
         self.assertEqual(outcome['result'], 'rejected')
 
 
@@ -1348,14 +1314,14 @@ class ReentrantRunTests(_LoopTestCase):
 class ResetSafetyTests(_LoopTestCase):
 
     def test_reset_after_clean_run_is_allowed(self):
-        reactor.callWhenRunning(lambda: reactor.callLater(0.01, reactor.stop))
-        reactor.run()
+        current_runtime().callWhenRunning(lambda: current_runtime().callLater(0.01, current_runtime().stop))
+        current_runtime().run()
         # Clean completion: registries drained, STOPPED -> reset permitted.
         self.runtime.reset(self.loop)
         self.assertIs(self.runtime.state, _RuntimeState.COLLECTING)
 
     def test_reset_rejected_with_live_resources(self):
-        dc = reactor.callLater(30.0, lambda: None)   # a live timer
+        dc = current_runtime().callLater(30.0, lambda: None)   # a live timer
         with self.assertRaises(RuntimeError):
             self.runtime.reset(self.loop)
         dc.cancel()
@@ -1368,10 +1334,10 @@ class ResetSafetyTests(_LoopTestCase):
                 self.runtime.reset()
             except RuntimeError:
                 outcome['reset'] = 'rejected'
-            reactor.stop()
+            current_runtime().stop()
 
-        reactor.callWhenRunning(cb)
-        reactor.run()
+        current_runtime().callWhenRunning(cb)
+        current_runtime().run()
         self.assertEqual(outcome.get('reset'), 'rejected')
 
 
@@ -1396,15 +1362,15 @@ class InstallGuardTests(_LoopTestCase):
                 outcome['install'] = 'rejected'
             # Holder untouched: the facade still resolves to self.runtime.
             self.assertIs(get_current_runtime(), self.runtime)
-            reactor.stop()
+            current_runtime().stop()
 
-        reactor.callWhenRunning(cb)
-        reactor.run()
+        current_runtime().callWhenRunning(cb)
+        current_runtime().run()
         self.assertEqual(outcome.get('install'), 'rejected')
 
     def test_install_rejected_when_current_owns_resources(self):
         other = AsyncTestRuntime()
-        dc = reactor.callLater(30.0, lambda: None)   # idle runtime, live timer
+        dc = current_runtime().callLater(30.0, lambda: None)   # idle runtime, live timer
         with self.assertRaises(RuntimeError):
             install_runtime(other)
         # Holder unchanged; the incumbent still owns its timer.
@@ -1441,8 +1407,8 @@ class SequentialRunOwnershipTests(unittest.TestCase):
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         rt = new_runtime(loop)
-        reactor.callWhenRunning(lambda: reactor.callLater(0.01, reactor.stop))
-        reactor.run()
+        current_runtime().callWhenRunning(lambda: current_runtime().callLater(0.01, current_runtime().stop))
+        current_runtime().run()
         self.assertIs(rt.state, _RuntimeState.STOPPED)
         self.assertEqual(rt.live_resources(), [])
         # Blocking run() does not detach; the caller does before the next run.
@@ -1474,7 +1440,7 @@ class NativeEntrypointTests(_LoopTestCase):
 
     def test_startup_then_bridge_then_finish(self):
         async def go():
-            reactor.callWhenRunning(lambda: reactor.callLater(0.01, reactor.stop))
+            current_runtime().callWhenRunning(lambda: current_runtime().callLater(0.01, current_runtime().stop))
             await self.runtime.start_all()
             # After startup: RUNNING with a live completion future.
             self.assertIs(self.runtime.state, _RuntimeState.RUNNING)
@@ -1490,8 +1456,8 @@ class NativeEntrypointTests(_LoopTestCase):
         # live after it returns (teardown is _finish's job, not the bridge's).
         async def go():
             await self.runtime.start_all()
-            dc = reactor.callLater(30.0, lambda: None)
-            reactor.stop()
+            dc = current_runtime().callLater(30.0, lambda: None)
+            current_runtime().stop()
             await self.runtime.run_async()
             # Bridge returned on stop; the timer is untouched (still RUNNING).
             self.assertIs(self.runtime.state, _RuntimeState.RUNNING)
@@ -1593,13 +1559,13 @@ class StartupDriverTests(_LoopTestCase):
             return 'ok'
 
         def stop_now(_result):
-            reactor.stop()
+            current_runtime().stop()
 
         async def second():
             events['second'] = True
 
         async def go():
-            reactor.callWhenRunning(
+            current_runtime().callWhenRunning(
                 lambda: events.__setitem__('launched', True))
             self.runtime.addStartupBind(first, stop_now)
             self.runtime.addStartupBind(second)
@@ -1632,10 +1598,10 @@ class StartupDriverTests(_LoopTestCase):
 
         def on_running():
             order.append('kickoff')
-            reactor.stop()
+            current_runtime().stop()
 
         async def go():
-            reactor.callWhenRunning(on_running)
+            current_runtime().callWhenRunning(on_running)
             self.runtime.addStartupBind(first, apply_first)
             await self.runtime.start_all()
             # Startup reached RUNNING; both binds ran during the drain, and the
@@ -1675,7 +1641,7 @@ class StartupDriverTests(_LoopTestCase):
         async def go():
             nonlocal gate
             gate = asyncio.Event()
-            reactor.callWhenRunning(reactor.stop)
+            current_runtime().callWhenRunning(current_runtime().stop)
             self.runtime.addStartupBind(slow_bind)
 
             first = asyncio.ensure_future(self.runtime.start_all())
@@ -1718,7 +1684,7 @@ class StartupDriverTests(_LoopTestCase):
         async def go():
             nonlocal gate
             gate = asyncio.Event()
-            reactor.callWhenRunning(reactor.stop)
+            current_runtime().callWhenRunning(current_runtime().stop)
             self.runtime.addStartupBind(slow_bind)
 
             first = asyncio.ensure_future(self.runtime.start_all())
@@ -1759,14 +1725,14 @@ class StartupDriverTests(_LoopTestCase):
 
         def kickoff():
             counts['runs'] += 1
-            reactor.stop()
+            current_runtime().stop()
 
         async def go():
             for _ in range(2):
                 self.assertEqual(self.runtime.live_resources(), [])
                 self.runtime.reset(self.loop)
                 self.assertIs(self.runtime.state, _RuntimeState.COLLECTING)
-                reactor.callWhenRunning(kickoff)
+                current_runtime().callWhenRunning(kickoff)
                 await self.runtime.start_all()
                 await self.runtime.run_async()
                 await self.runtime._finish()
@@ -1786,10 +1752,10 @@ class StartupDriverTests(_LoopTestCase):
 
         def on_running():
             events['kickoff'] = True
-            reactor.callLater(0.01, reactor.stop)
+            current_runtime().callLater(0.01, current_runtime().stop)
 
-        reactor.addStartupBind(bind)
-        reactor.callWhenRunning(on_running)
+        current_runtime().addStartupBind(bind)
+        current_runtime().callWhenRunning(on_running)
         self.runtime.run()
         self.assertTrue(events['bind'])
         self.assertTrue(events['kickoff'])
@@ -1808,8 +1774,8 @@ class StartupDriverTests(_LoopTestCase):
             self.runtime.stop()     # cross-thread
 
         t = threading.Thread(target=stopper)
-        reactor.callWhenRunning(launched.set)
-        reactor.callWhenRunning(t.start)
+        current_runtime().callWhenRunning(launched.set)
+        current_runtime().callWhenRunning(t.start)
         self.runtime.run()          # blocks until the other thread stops it
         t.join(2.0)
         self.assertFalse(t.is_alive())
@@ -1874,7 +1840,7 @@ class ModuleLifecycleTests(_LoopTestCase):
             self.runtime.register_module(m)
 
         async def go():
-            reactor.callWhenRunning(reactor.stop)
+            current_runtime().callWhenRunning(current_runtime().stop)
             await self.runtime.start_all()
             self.assertIs(self.runtime.state, _RuntimeState.RUNNING)
             await self.runtime.run_async()
@@ -1897,7 +1863,7 @@ class ModuleLifecycleTests(_LoopTestCase):
         self.runtime.register_module(b)
 
         async def go():
-            reactor.callWhenRunning(reactor.stop)
+            current_runtime().callWhenRunning(current_runtime().stop)
             await self.runtime.start_all()
             await self.runtime.run_async()
             await self.runtime._finish()
@@ -1944,7 +1910,7 @@ class ModuleLifecycleTests(_LoopTestCase):
         class StoppingModule(object):
             async def start(self):
                 log.append(('start', 'a'))
-                reactor.stop()
+                current_runtime().stop()
 
             async def close(self):
                 log.append(('close', 'a'))
@@ -1953,7 +1919,7 @@ class ModuleLifecycleTests(_LoopTestCase):
         self.runtime.register_module(b)
 
         async def go():
-            reactor.callWhenRunning(
+            current_runtime().callWhenRunning(
                 lambda: log.append(('kickoff', None)))
             await self.runtime.start_all()
             self.assertIs(self.runtime.state, _RuntimeState.STOPPING)
@@ -1979,7 +1945,7 @@ class ModuleLifecycleTests(_LoopTestCase):
             self.runtime.register_module(m)
 
         async def go():
-            reactor.callWhenRunning(reactor.stop)
+            current_runtime().callWhenRunning(current_runtime().stop)
             await self.runtime.start_all()
             await self.runtime.run_async()
             await self.runtime._finish()
@@ -2020,10 +1986,10 @@ class ModuleLifecycleTests(_LoopTestCase):
 
         def on_running():
             order.append('kickoff')
-            reactor.stop()
+            current_runtime().stop()
 
         async def go():
-            reactor.callWhenRunning(on_running)
+            current_runtime().callWhenRunning(on_running)
             await self.runtime.start_all()
             await self.runtime.run_async()
             await self.runtime._finish()
@@ -2070,7 +2036,7 @@ class ModuleLifecycleTests(_LoopTestCase):
         self.runtime.register_module(a)
 
         async def go():
-            reactor.callWhenRunning(reactor.stop)
+            current_runtime().callWhenRunning(current_runtime().stop)
             await self.runtime.start_all()
             await self.runtime.run_async()
             await self.runtime._finish()
@@ -2128,8 +2094,8 @@ class MainEntrypointTests(unittest.TestCase):
                 # Construction happens with a live loop AND a live runtime.
                 captured['loop_running'] = asyncio.get_running_loop().is_running()
                 captured['runtime'] = get_current_runtime()
-                reactor.callWhenRunning(
-                    lambda: reactor.callLater(0.01, reactor.stop))
+                current_runtime().callWhenRunning(
+                    lambda: current_runtime().callLater(0.01, current_runtime().stop))
 
         self.test_runner.create_test_object = lambda d, c: Obj()
         self.test_runner.load_test_modules = lambda c, o: None
@@ -2151,7 +2117,7 @@ class MainEntrypointTests(unittest.TestCase):
                 self.global_config = tc._Global()
                 # Register a resource, THEN fail -- it must not leak.
                 captured['runtime'] = get_current_runtime()
-                captured['timer'] = reactor.callLater(30.0, lambda: None)
+                captured['timer'] = current_runtime().callLater(30.0, lambda: None)
                 raise RuntimeError('constructor blew up')
 
         self.test_runner.create_test_object = lambda d, c: Obj()
@@ -2177,7 +2143,7 @@ class MainEntrypointTests(unittest.TestCase):
         def bad_load(config, obj):
             # A module registers a resource, then loading raises.
             captured['runtime'] = get_current_runtime()
-            captured['timer'] = reactor.callLater(30.0, lambda: None)
+            captured['timer'] = current_runtime().callLater(30.0, lambda: None)
             raise RuntimeError('module load failed')
 
         self.test_runner.create_test_object = lambda d, c: Obj()
@@ -2205,8 +2171,8 @@ class MainEntrypointTests(unittest.TestCase):
 
                 async def never_awaited():
                     return 'unused'
-                reactor.addStartupBind(never_awaited)
-                reactor.callWhenRunning(lambda: None)   # queues _when_running
+                current_runtime().addStartupBind(never_awaited)
+                current_runtime().callWhenRunning(lambda: None)   # queues _when_running
                 raise RuntimeError('constructor blew up after bind')
 
         self.test_runner.create_test_object = lambda d, c: Obj()
@@ -2278,8 +2244,8 @@ class MainEntrypointTests(unittest.TestCase):
             def __init__(self):
                 self.passed = True
                 self.global_config = tc._Global()
-                reactor.callWhenRunning(
-                    lambda: reactor.callLater(0.01, reactor.stop))
+                current_runtime().callWhenRunning(
+                    lambda: current_runtime().callLater(0.01, current_runtime().stop))
 
         async def exploding_shutdown():
             raise ValueError('teardown exploded on a clean run')
@@ -2321,7 +2287,7 @@ class MainEntrypointTests(unittest.TestCase):
 
                 def spawn_fatal():
                     get_current_runtime().create_task(boom(), fatal=True)
-                reactor.callWhenRunning(spawn_fatal)
+                current_runtime().callWhenRunning(spawn_fatal)
 
         async def exploding_shutdown():
             raise ValueError('teardown exploded while a fatal was pending')
@@ -2437,7 +2403,7 @@ class TeardownPolicyTests(_LoopTestCase):
 
         async def go():
             self.runtime.addAsyncCleanup(probe)
-            reactor.callWhenRunning(reactor.stop)
+            current_runtime().callWhenRunning(current_runtime().stop)
             await self.runtime.start_all()
             await self.runtime.run_async()
             await self.runtime._finish()
@@ -2479,7 +2445,7 @@ class TeardownPolicyTests(_LoopTestCase):
         fired = {'timer': False, 'kickoff': False}
 
         async def go():
-            reactor.callWhenRunning(reactor.stop)
+            current_runtime().callWhenRunning(current_runtime().stop)
             await self.runtime.start_all()
             await self.runtime.run_async()
             await self.runtime._finish()
@@ -2528,7 +2494,7 @@ class TeardownPolicyTests(_LoopTestCase):
             raise ValueError('failed before loop closed')
 
         async def go():
-            reactor.callWhenRunning(reactor.stop)
+            current_runtime().callWhenRunning(current_runtime().stop)
             await self.runtime.start_all()
             await self.runtime.run_async()
             # Create + finish a failing task while the loop is open; hand it to
@@ -2570,18 +2536,18 @@ class TeardownPolicyTests(_LoopTestCase):
         self.assertIsNone(self.runtime._failure)
 
     def test_midrun_shim_timer_is_torn_down_by_runtime_shutdown(self):
-        # Single-registry ownership: a callLater scheduled mid-run through the
-        # reactor facade lands in the runtime's own registry and is cancelled by
-        # the ordered shutdown -- it neither fires after the run nor leaks.
+        # Single-registry ownership: a callLater scheduled mid-run through
+        # current_runtime() lands in the runtime's own registry and is cancelled
+        # by the ordered shutdown -- it neither fires after the run nor leaks.
         fired = {'late': False}
 
         def on_running():
             # A long timer that must NOT survive teardown.
-            reactor.callLater(30, lambda: fired.__setitem__('late', True))
-            reactor.stop()
+            current_runtime().callLater(30, lambda: fired.__setitem__('late', True))
+            current_runtime().stop()
 
         async def go():
-            reactor.callWhenRunning(on_running)
+            current_runtime().callWhenRunning(on_running)
             await self.runtime.start_all()
             await self.runtime.run_async()
             await self.runtime._finish()
@@ -2616,7 +2582,7 @@ class OwnedTaskExceptionTests(_LoopTestCase):
             self.runtime.create_task(boom(), fatal=False)
             await asyncio.sleep(0)                    # let boom raise
             await asyncio.sleep(0)                    # let the done-callback run
-            reactor.stop()
+            current_runtime().stop()
             await self.runtime.run_async()
             await self.runtime._finish()
 
@@ -2635,7 +2601,7 @@ class OwnedTaskExceptionTests(_LoopTestCase):
             await self.runtime.start_all()          # -> RUNNING
             self.runtime.create_task(boom(), fatal=True)
             # A fatal task drives stop() -> completion resolves -> run_async
-            # returns without an explicit reactor.stop().
+            # returns without an explicit current_runtime().stop().
             await self.runtime.run_async()
             await self.runtime._finish()
 
@@ -2655,10 +2621,10 @@ class OwnedTaskExceptionTests(_LoopTestCase):
         def on_running():
             box['task'] = self.runtime.create_task(worker())
             box['tracked'] = box['task'] in self.runtime._tasks
-            reactor.stop()
+            current_runtime().stop()
 
         async def go():
-            reactor.callWhenRunning(on_running)
+            current_runtime().callWhenRunning(on_running)
             await self.runtime.start_all()
             await self.runtime.run_async()
             await self.runtime._finish()
@@ -2693,7 +2659,7 @@ class OwnedTaskExceptionTests(_LoopTestCase):
 
         async def go():
             self.runtime.addAsyncCleanup(probe)
-            reactor.callWhenRunning(reactor.stop)
+            current_runtime().callWhenRunning(current_runtime().stop)
             await self.runtime.start_all()
             await self.runtime.run_async()
             await self.runtime._finish()
@@ -2925,7 +2891,7 @@ class TeardownCorrectnessTests(_LoopTestCase):
             self.runtime.create_task(boom(), fatal=True)
 
         self.runtime._shutdown = exploding_shutdown
-        reactor.callWhenRunning(on_running)
+        current_runtime().callWhenRunning(on_running)
 
         # The suppressed teardown error is LOGGER.exception'd; silence it so the
         # expected-and-swallowed traceback does not clutter the test output.
@@ -2957,14 +2923,14 @@ class _RunTestObjectFake(object):
         self.passed = False
         self._on_running_extra = on_running
         log.append('construct')
-        reactor.callWhenRunning(self._kick)
+        current_runtime().callWhenRunning(self._kick)
 
     def _kick(self):
         self.log.append('running')
         self.passed = True
         if self._on_running_extra is not None:
             self._on_running_extra(self)
-        reactor.stop()
+        current_runtime().stop()
 
 
 class RunTestObjectTests(unittest.TestCase):

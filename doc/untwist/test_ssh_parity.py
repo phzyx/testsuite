@@ -32,7 +32,7 @@ import sys
 
 import asyncssh
 
-from asterisk.aio import reactor, defer
+from asterisk.aio.runtime import current_runtime
 from asterisk.asterisk import AsteriskRemoteCliCommand
 
 results = {}
@@ -152,13 +152,13 @@ async def _run_scenarios():
         results['s3_err'] = c3.err
     finally:
         server.close()
-        reactor.stop()
+        current_runtime().stop()
 
 
 def main():
-    reactor.callWhenRunning(lambda: asyncio.ensure_future(_run_scenarios()))
-    reactor.callLater(30, reactor.stop)  # safety net against a hang
-    reactor.run()
+    current_runtime().callWhenRunning(lambda: asyncio.ensure_future(_run_scenarios()))
+    current_runtime().callLater(30, current_runtime().stop)  # safety net against a hang
+    current_runtime().run()
 
     # -- Scenario 1: success + quoting + stream separation -------------------
     assert results.get('s1_exit') == 0, \

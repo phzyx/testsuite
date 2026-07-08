@@ -7,7 +7,7 @@ They now use the ``websockets`` library over the ``asterisk.aio`` reactor loop:
 a high-level ``websockets.connect`` client (``AriClientFactory`` /
 ``AriClientProtocol``) and the shared sans-I/O ``ServerProtocol`` adapter
 (``AriServerFactory`` / ``AriServerProtocol``) bound through
-``reactor.listenTCP``.
+``current_runtime().listenTCP``.
 
 The media WebSocket parity test (``test_ws_parity.py``) already covers the
 low-level framing/fragmentation/sendFile mechanics of the shared adapter. This
@@ -29,7 +29,7 @@ Run:  PYTHONPATH=lib/python .venv/bin/python doc/untwist/test_ari_parity.py
 
 import socket
 
-from asterisk.aio import reactor
+from asterisk.aio.runtime import current_runtime
 from asterisk.ari import ARI, AriClientFactory, AriServerFactory
 
 results = {}
@@ -124,7 +124,7 @@ class _ClientReceiver(object):
 
     def on_ws_closed(self, protocol):
         results['client_closed'] = True
-        reactor.stop()
+        current_runtime().stop()
 
 
 def main():
@@ -136,16 +136,16 @@ def main():
         server_rcv, "ws://127.0.0.1:%d/ari/events" % port,
         ['ari'], "localhost")
     # Bind BEFORE run() so the awaited startup guarantees the listener is up.
-    reactor.listenTCP(port, server_factory, 10, "127.0.0.1")
+    current_runtime().listenTCP(port, server_factory, 10, "127.0.0.1")
 
     client_rcv = _ClientReceiver()
     client_factory = AriClientFactory(
         client_rcv, "127.0.0.1", "hello", ("user", "pass"),
         port=port, timeout_secs=10)
 
-    reactor.callWhenRunning(client_factory.connect)
-    reactor.callLater(15, reactor.stop)   # safety net
-    reactor.run()
+    current_runtime().callWhenRunning(client_factory.connect)
+    current_runtime().callLater(15, current_runtime().stop)   # safety net
+    current_runtime().run()
 
     # -- subprotocol -------------------------------------------------------- #
     assert results.get('client_subprotocol') == 'ari', \

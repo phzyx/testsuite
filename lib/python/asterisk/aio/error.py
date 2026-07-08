@@ -9,7 +9,7 @@ the call sites is the import (``from twisted.internet import error`` ->
 Part of the transitional ``asterisk.aio`` layer (design doc Section 14).
 """
 
-from .reactor import (
+from .runtime import (
     ReactorNotRunning,
     ReactorAlreadyRunning,
     AlreadyCalled,

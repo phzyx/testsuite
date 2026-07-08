@@ -1,19 +1,7 @@
 # reactor/defer manifest  (root=.)
-scanned=396 parsed=396 skipped_non_python=0 files_with_usage=31
+scanned=395 parsed=395 skipped_non_python=0 files_with_usage=26
 
-## reactor.* totals  (grand=276)
-  reactor._ensure_loop         1
-  reactor.addStartupBind       2
-  reactor.callInThread         2
-  reactor.callLater            49
-  reactor.callWhenRunning      65
-  reactor.connectTCP           4
-  reactor.listenTCP            5
-  reactor.listenUDP            3
-  reactor.run                  41
-  reactor.running              11
-  reactor.spawnProcess         9
-  reactor.stop                 84
+## reactor.* totals  (grand=0)
 
 ## defer totals  (grand=106)
   AlreadyCalledError         2
@@ -28,13 +16,6 @@ scanned=396 parsed=396 skipped_non_python=0 files_with_usage=31
   maybeDeferred              8
   succeed                    1
 
-## lifecycle owners (7)  [run/stop/running/callWhenRunning]
-  [module  ] doc/untwist/test_ari_parity.py   callWhenRunning=1 run=1 stop=2
-  [module  ] doc/untwist/test_core_runtime.py   callWhenRunning=1 run=1 stop=2
-  [module  ] doc/untwist/test_dns_parity.py   callWhenRunning=1 run=1 stop=2
-  [module  ] doc/untwist/test_http_parity.py   callWhenRunning=1 run=1 stop=2
-  [module  ] doc/untwist/test_ssh_parity.py   callWhenRunning=1 run=1 stop=2
-  [module  ] doc/untwist/test_ws_parity.py   callWhenRunning=1 run=1 stop=2
-  [module  ] lib/python/asterisk/aio/test_aio.py   callWhenRunning=59 run=35 running=11 stop=72
+## lifecycle owners (0)  [run/stop/running/callWhenRunning]
 
-## consumer reactor-facade importers (0)  [must be 0 outside aio/ + doc/untwist/]
+## reactor-facade importers (0)  [B4: facade deleted -- must be 0 everywhere]

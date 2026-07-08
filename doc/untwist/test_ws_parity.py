@@ -5,12 +5,12 @@
 ``media_websocket.py`` (and ``ari.py``) used ``autobahn.twisted`` for their
 WebSocket client and server. They now use the ``websockets`` library over the
 ``asterisk.aio`` reactor loop: a high-level ``websockets.connect`` client and a
-sans-I/O ``ServerProtocol`` adapter bound through ``reactor.listenTCP`` (so the
-existing ``reactor.listenTCP(port, factory, ...)`` server call sites are
+sans-I/O ``ServerProtocol`` adapter bound through ``current_runtime().listenTCP`` (so the
+existing ``current_runtime().listenTCP(port, factory, ...)`` server call sites are
 unchanged).
 
 This test stands the real server factory up on the reactor via
-``reactor.listenTCP`` and drives the real client factory against it, asserting
+``current_runtime().listenTCP`` and drives the real client factory against it, asserting
 the §6.5 WebSocket contract points:
 
   * Subprotocol negotiation: the client requests ``media`` and the server's
@@ -20,7 +20,7 @@ the §6.5 WebSocket contract points:
     a large message into multiple frames on the wire, and the receiver
     reassembles it into the original bytes.
   * ``sendFile`` streams a file (run in a worker thread via
-    ``reactor.callInThread``) with the START/STOP media sentinels, and every
+    ``current_runtime().callInThread``) with the START/STOP media sentinels, and every
     byte arrives intact and in order.
   * Close callbacks (``on_ws_closed``) fire on both ends.
 
@@ -33,7 +33,7 @@ import socket
 import sys
 import tempfile
 
-from asterisk.aio import reactor
+from asterisk.aio.runtime import current_runtime
 from asterisk.media_websocket import (MediaWebSocketClientFactory,
                                       MediaWebSocketServerFactory)
 
@@ -111,7 +111,7 @@ class _ClientReceiver(object):
         # worker thread.
         protocol.sendMessage(b'HELLO', isBinary=False)
         protocol.sendMessage(BIG, isBinary=True)
-        reactor.callInThread(protocol.sendFile, self.ulaw_path)
+        current_runtime().callInThread(protocol.sendFile, self.ulaw_path)
 
     def on_message(self, message, binary):
         if not binary and message.decode('utf-8') == 'ACK':
@@ -121,7 +121,7 @@ class _ClientReceiver(object):
 
     def on_ws_closed(self, protocol):
         results['client_closed'] = True
-        reactor.stop()
+        current_runtime().stop()
 
 
 def main():
@@ -138,7 +138,7 @@ def main():
         server_rcv, "ws://127.0.0.1:%d/media" % port, "localhost",
         protocols=['media'])
     # Bind BEFORE run() so the awaited startup guarantees the listener is up.
-    reactor.listenTCP(port, server_factory, 10, "127.0.0.1")
+    current_runtime().listenTCP(port, server_factory, 10, "127.0.0.1")
 
     client_rcv = _ClientReceiver(ulaw)
     client_factory = MediaWebSocketClientFactory(
@@ -147,9 +147,9 @@ def main():
     client_factory.setProtocolOptions(tcpNoDelay=True,
                                       autoFragmentSize=FRAGMENT)
 
-    reactor.callWhenRunning(client_factory.connect)
-    reactor.callLater(15, reactor.stop)   # safety net
-    reactor.run()
+    current_runtime().callWhenRunning(client_factory.connect)
+    current_runtime().callLater(15, current_runtime().stop)   # safety net
+    current_runtime().run()
 
     # -- subprotocol -------------------------------------------------------- #
     assert results.get('client_subprotocol') == 'media', \

@@ -35,7 +35,7 @@ import sys
 import tempfile
 from urllib.parse import urlencode
 
-from asterisk.aio import reactor
+from asterisk.aio.runtime import current_runtime
 from asterisk.http_static_server import HTTPStaticServer
 from asterisk.realtime_test_module import RealtimeTestModule
 
@@ -186,7 +186,7 @@ async def _run(static_port):
                                 {'id': 'x'})
         results['rt_badop_status'] = status
     finally:
-        reactor.stop()
+        current_runtime().stop()
 
 
 def main():
@@ -213,9 +213,9 @@ def main():
     ]}
     RealtimeTestModule({'data': data}, _TestObj())
 
-    reactor.callWhenRunning(lambda: asyncio.ensure_future(_run(static_port)))
-    reactor.callLater(20, reactor.stop)  # safety net
-    reactor.run()
+    current_runtime().callWhenRunning(lambda: asyncio.ensure_future(_run(static_port)))
+    current_runtime().callLater(20, current_runtime().stop)  # safety net
+    current_runtime().run()
 
     # --- Static assertions -------------------------------------------------- #
     assert results.get('static_ok_status') == 200, \

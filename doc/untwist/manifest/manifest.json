@@ -13,128 +13,16 @@
     "maybeDeferred": 8,
     "succeed": 1
   },
-  "files_with_reactor_or_defer": 31,
-  "lifecycle_owners": {
-    "doc/untwist/test_ari_parity.py": {
-      "counts": {
-        "callWhenRunning": 1,
-        "run": 1,
-        "stop": 2
-      },
-      "is_run_test": false
-    },
-    "doc/untwist/test_core_runtime.py": {
-      "counts": {
-        "callWhenRunning": 1,
-        "run": 1,
-        "stop": 2
-      },
-      "is_run_test": false
-    },
-    "doc/untwist/test_dns_parity.py": {
-      "counts": {
-        "callWhenRunning": 1,
-        "run": 1,
-        "stop": 2
-      },
-      "is_run_test": false
-    },
-    "doc/untwist/test_http_parity.py": {
-      "counts": {
-        "callWhenRunning": 1,
-        "run": 1,
-        "stop": 2
-      },
-      "is_run_test": false
-    },
-    "doc/untwist/test_ssh_parity.py": {
-      "counts": {
-        "callWhenRunning": 1,
-        "run": 1,
-        "stop": 2
-      },
-      "is_run_test": false
-    },
-    "doc/untwist/test_ws_parity.py": {
-      "counts": {
-        "callWhenRunning": 1,
-        "run": 1,
-        "stop": 2
-      },
-      "is_run_test": false
-    },
-    "lib/python/asterisk/aio/test_aio.py": {
-      "counts": {
-        "callWhenRunning": 59,
-        "run": 35,
-        "running": 11,
-        "stop": 72
-      },
-      "is_run_test": false
-    }
-  },
-  "parsed": 396,
+  "files_with_reactor_or_defer": 26,
+  "lifecycle_owners": {},
+  "parsed": 395,
   "per_file": {
-    "doc/untwist/test_ari_parity.py": {
-      "defer": {},
-      "reactor": {
-        "callLater": 1,
-        "callWhenRunning": 1,
-        "listenTCP": 1,
-        "run": 1,
-        "stop": 2
-      }
-    },
     "doc/untwist/test_core_runtime.py": {
       "defer": {
         "defer.AlreadyCalledError": 1,
         "defer.Deferred": 1
       },
-      "reactor": {
-        "callLater": 1,
-        "callWhenRunning": 1,
-        "run": 1,
-        "spawnProcess": 1,
-        "stop": 2
-      }
-    },
-    "doc/untwist/test_dns_parity.py": {
-      "defer": {},
-      "reactor": {
-        "callLater": 1,
-        "callWhenRunning": 1,
-        "run": 1,
-        "stop": 2
-      }
-    },
-    "doc/untwist/test_http_parity.py": {
-      "defer": {},
-      "reactor": {
-        "callLater": 1,
-        "callWhenRunning": 1,
-        "run": 1,
-        "stop": 2
-      }
-    },
-    "doc/untwist/test_ssh_parity.py": {
-      "defer": {},
-      "reactor": {
-        "callLater": 1,
-        "callWhenRunning": 1,
-        "run": 1,
-        "stop": 2
-      }
-    },
-    "doc/untwist/test_ws_parity.py": {
-      "defer": {},
-      "reactor": {
-        "callInThread": 1,
-        "callLater": 1,
-        "callWhenRunning": 1,
-        "listenTCP": 1,
-        "run": 1,
-        "stop": 2
-      }
+      "reactor": {}
     },
     "lib/python/asterisk/aio/protocols.py": {
       "defer": {
@@ -159,20 +47,7 @@
         "maybeDeferred": 8,
         "succeed": 1
       },
-      "reactor": {
-        "_ensure_loop": 1,
-        "addStartupBind": 2,
-        "callInThread": 1,
-        "callLater": 43,
-        "callWhenRunning": 59,
-        "connectTCP": 4,
-        "listenTCP": 3,
-        "listenUDP": 3,
-        "run": 35,
-        "running": 11,
-        "spawnProcess": 8,
-        "stop": 72
-      }
+      "reactor": {}
     },
     "lib/python/asterisk/aio/utils.py": {
       "defer": {
@@ -319,23 +194,11 @@
       "reactor": {}
     }
   },
+  "reactor_all_importers": [],
   "reactor_consumer_importers": [],
-  "reactor_grand_total": 276,
-  "reactor_totals": {
-    "_ensure_loop": 1,
-    "addStartupBind": 2,
-    "callInThread": 2,
-    "callLater": 49,
-    "callWhenRunning": 65,
-    "connectTCP": 4,
-    "listenTCP": 5,
-    "listenUDP": 3,
-    "run": 41,
-    "running": 11,
-    "spawnProcess": 9,
-    "stop": 84
-  },
+  "reactor_grand_total": 0,
+  "reactor_totals": {},
   "root": "/usr/src/phzyx/testsuite",
-  "scanned": 396,
+  "scanned": 395,
   "skipped_non_python": 0
 }

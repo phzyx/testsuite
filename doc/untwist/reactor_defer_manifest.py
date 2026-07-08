@@ -66,10 +66,14 @@ DEFER_SYMBOLS = {
 
 LIFECYCLE_ATTRS = ("run", "stop", "running", "callWhenRunning")
 
-# Files permitted to import the reactor facade and/or drive its lifecycle: the
-# transitional shim's own code + unit tests (lib/python/asterisk/aio/) and the
-# doc/untwist/ parity harnesses.  Everything else is a "consumer" and must be
-# free of the reactor facade by the end of Phase B step B3.
+# Prefixes retained for the (now-vacuous) zero-lifecycle gate only.  Through
+# Phase B step B3 these files -- the transitional shim's own code + unit tests
+# (lib/python/asterisk/aio/) and the doc/untwist/ parity harnesses -- were the
+# sole callers permitted to import the reactor facade or drive its lifecycle.
+# In step B4 the facade module was DELETED and every one of these harnesses was
+# converted to current_runtime(), so the import carve-out no longer applies:
+# the B4 zero-import gate below bans the facade import EVERYWHERE, with no
+# exception for these prefixes.
 ALLOWED_REACTOR_PREFIXES = ("lib/python/asterisk/aio/", "doc/untwist/")
 
 
@@ -275,6 +279,7 @@ def main():
         "reactor_consumer_importers": sorted(
             f for f in reactor_importers
             if not f.startswith(ALLOWED_REACTOR_PREFIXES)),
+        "reactor_all_importers": sorted(reactor_importers),
         "per_file": dict(sorted(per_file.items())),
     }
 
@@ -304,18 +309,26 @@ def main():
             "not remain outside the shim's own aio/ and doc/untwist/ harnesses; "
             f"found: {offenders}")
 
-    # Zero-import gate (end of Phase B step B3).  Beyond the reactor.<attr> call
-    # scan, no CONSUMER file (outside the shim's aio/ and the doc/untwist/
-    # harnesses) may even IMPORT the reactor facade.  A stale, unused
-    # `from asterisk.aio import reactor` does not show up in the call totals but
-    # still binds the facade and would break B4 when reactor.py is deleted, so it
-    # is rejected here as a hard failure.
+    # Zero-import gate (Phase B step B4).  The transitional reactor facade
+    # module (lib/python/asterisk/aio/reactor.py) was DELETED in B4, so nothing
+    # may import it any more -- not consumers, and not the shim's own aio/ or
+    # doc/untwist/ harnesses, which were all converted to current_runtime().
+    # The aio/ + doc/untwist/ carve-out that applied while the facade still
+    # existed is therefore gone: ANY importer, anywhere, is a hard failure, and
+    # the facade file itself must stay absent.  (A stale `from asterisk.aio
+    # import reactor` would not show up in the call totals, but now that the
+    # module is gone it would raise ImportError at run time.)
     if root == REPO:
-        importer_offenders = manifest["reactor_consumer_importers"]
+        facade = os.path.join(REPO, "lib", "python", "asterisk", "aio",
+                              "reactor.py")
+        assert not os.path.exists(facade), (
+            "B4 gate: lib/python/asterisk/aio/reactor.py must not exist -- the "
+            "transitional reactor facade was deleted in step B4.")
+        importer_offenders = manifest["reactor_all_importers"]
         assert not importer_offenders, (
-            "zero-import gate: the reactor facade must not be imported outside "
-            "the shim's aio/ and doc/untwist/ harnesses; stale importers: "
-            f"{importer_offenders}")
+            "B4 zero-import gate: the reactor facade module no longer exists; "
+            "nothing may import it (anywhere, including aio/ and doc/untwist/). "
+            f"Offending importers: {importer_offenders}")
 
     text = json.dumps(manifest, indent=2, sort_keys=True) + "\n"
 
@@ -353,9 +366,9 @@ def main():
         cs = " ".join(f"{a}={c}" for a, c in o["counts"].items())
         lines.append(f"  [{tag:8}] {f}   {cs}")
     lines.append("")
-    ci = manifest["reactor_consumer_importers"]
-    lines.append(f"## consumer reactor-facade importers ({len(ci)})  "
-                 "[must be 0 outside aio/ + doc/untwist/]")
+    ci = manifest["reactor_all_importers"]
+    lines.append(f"## reactor-facade importers ({len(ci)})  "
+                 "[B4: facade deleted -- must be 0 everywhere]")
     for f in ci:
         lines.append(f"  {f}")
     with open(os.path.join(args.out, "manifest.txt"), "w") as fh:

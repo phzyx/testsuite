@@ -5,20 +5,23 @@ test suite (and the bundled starpy fork) depend on, implemented on top of
 ``asyncio``. The goal is to make removing Twisted a mostly mechanical import
 swap::
 
-    from twisted.internet import reactor, defer      ->  from asterisk.aio import reactor, defer
+    from twisted.internet import defer                ->  from asterisk.aio import defer
     from twisted.python.failure import Failure        ->  from asterisk.aio import Failure
     from twisted.internet.protocol import ProcessProtocol, DatagramProtocol
                                                       ->  from asterisk.aio import ProcessProtocol, DatagramProtocol
 
-See doc/untwist/02-design.md for the full design. Per Section 14, the
-reactor-shaped pieces of this package are transitional; the modernization phase
-migrates callers to idiomatic asyncio and removes them.
+The transitional ``reactor`` facade that this package once re-exported has been
+removed (Phase B step B4). Reactor-shaped primitives now live on
+``AsyncTestRuntime``; obtain the current runtime via
+``from asterisk.aio.runtime import current_runtime`` and call
+``current_runtime().<method>()`` directly.
+
+See doc/untwist/02-design.md for the full design.
 """
 
 from . import defer
 from . import utils
 from . import error
-from .reactor import reactor
 from .failure import Failure
 from .protocols import (
     Protocol,
@@ -37,7 +40,6 @@ __all__ = [
     'defer',
     'utils',
     'error',
-    'reactor',
     'Failure',
     'Protocol',
     'Factory',

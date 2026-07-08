@@ -5,7 +5,7 @@ parity contract §6.5).
 `dns_server.py` used to serve zones with `twisted.names`; it now serves them with
 `dnslib` over the `asterisk.aio` reactor. This test loads a real twisted-style
 Python zone file through the converted loader, binds the server *before*
-`reactor.run()` (so the reactor's awaited startup guarantees it is answering
+`current_runtime().run()` (so the reactor's awaited startup guarantees it is answering
 before any query), and drives async UDP and TCP DNS clients on the reactor loop
 to assert the contract points:
 
@@ -30,7 +30,7 @@ import tempfile
 
 from dnslib import DNSRecord, QTYPE, RCODE
 
-from asterisk.aio import reactor
+from asterisk.aio.runtime import current_runtime
 from asterisk.dns_server import DNSServer
 
 results = {}
@@ -152,7 +152,7 @@ async def _run(port):
         results['tcp_answers'] = sum(1 for r in big_tcp.rr
                                      if r.rtype == QTYPE.SRV)
     finally:
-        reactor.stop()
+        current_runtime().stop()
 
 
 def main():
@@ -166,9 +166,9 @@ def main():
     # before the first query (the contract's startup-readiness point).
     DNSServer({'port': port, 'python-zones': ['example.com']}, _TestObj(tmp))
 
-    reactor.callWhenRunning(lambda: asyncio.ensure_future(_run(port)))
-    reactor.callLater(15, reactor.stop)  # safety net
-    reactor.run()
+    current_runtime().callWhenRunning(lambda: asyncio.ensure_future(_run(port)))
+    current_runtime().callLater(15, current_runtime().stop)  # safety net
+    current_runtime().run()
 
     assert results.get('srv_aa') == 1, "AA flag not set on SRV answer"
     assert results.get('srv_answers') and \

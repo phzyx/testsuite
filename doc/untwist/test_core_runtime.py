@@ -5,12 +5,12 @@ Proves the converted core modules (`test_runner`, `test_case`, `asterisk`) drive
 the asyncio reactor shim end to end with NO Twisted in the code path:
 
   * The `asterisk.aio` reactor runs and stops cleanly via `callWhenRunning` /
-    `reactor.stop()` (test_runner's `reactor.run()` / test_case's stop path).
+    `current_runtime().stop()` (test_runner's `current_runtime().run()` / test_case's stop path).
   * `asterisk.AsteriskProtocol` (now an `aio.ProcessProtocol` subclass) receives
     a real child process's stdout through `outReceived` and fires its
     `stop_deferred` from `processEnded`, with `reason.value.exitCode` intact --
     the exact shape `Asterisk.stop()` relies on.
-  * `reactor.spawnProcess` returns a transport whose `signalProcess`/
+  * `current_runtime().spawnProcess` returns a transport whose `signalProcess`/
     `loseConnection` work, and `error.ProcessExitedAlready` is raised (not a raw
     ProcessLookupError) when signalling a dead child -- the `Asterisk.stop()`
     kill path.
@@ -23,7 +23,8 @@ Run:  PYTHONPATH=lib/python .venv/bin/python test_core_runtime.py   (exit 0 = OK
 import os
 import sys
 
-from asterisk.aio import reactor, defer, error
+from asterisk.aio import defer, error
+from asterisk.aio.runtime import current_runtime
 from asterisk.asterisk import AsteriskProtocol
 
 results = {}
@@ -37,7 +38,7 @@ def _drive_process_and_stop():
 
     # A short-lived child that writes to stdout and exits non-zero, so we can
     # assert outReceived captured the bytes and processEnded carried exitCode.
-    transport = reactor.spawnProcess(
+    transport = current_runtime().spawnProcess(
         proto, sys.executable,
         [sys.executable, '-c', "import sys; sys.stdout.write('hello-core'); "
                                "sys.stdout.flush(); sys.exit(7)"],
@@ -65,7 +66,7 @@ def _drive_process_and_stop():
         except defer.AlreadyCalledError:
             results['double_callback'] = 'AlreadyCalledError'
 
-        reactor.stop()
+        current_runtime().stop()
         return message
 
     stop_deferred.addCallback(_on_stopped)
@@ -75,10 +76,10 @@ def main():
     assert 'twisted' not in [m.split('.')[0] for m in _core_module_files()], \
         "core modules must not import twisted"
 
-    reactor.callWhenRunning(_drive_process_and_stop)
+    current_runtime().callWhenRunning(_drive_process_and_stop)
     # Safety net so a regression fails instead of hanging.
-    reactor.callLater(20, reactor.stop)
-    reactor.run()
+    current_runtime().callLater(20, current_runtime().stop)
+    current_runtime().run()
 
     assert results.get('output') == 'hello-core', \
         "outReceived did not capture stdout: %r" % results.get('output')
