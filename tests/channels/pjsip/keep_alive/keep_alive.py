@@ -14,7 +14,7 @@ the GNU General Public License Version 2.
 import logging
 from datetime import datetime
 
-from asterisk.aio import reactor
+from asterisk.aio.runtime import current_runtime
 from asterisk.aio import protocols as protocol
 
 LOGGER = logging.getLogger(__name__)
@@ -103,7 +103,7 @@ class KeepAliveReceiver(object):
         Keyword Arguments:
         ami The AMI manager object for our Asterisk instance
         """
-        reactor.connectTCP('localhost', 5060,
+        current_runtime().connectTCP('localhost', 5060,
                            KeepAliveFactory(self.test_object))
 
     def stop_cb(self, result):

@@ -11,7 +11,7 @@ the GNU General Public License Version 2.
 import sys
 import logging
 
-from asterisk.aio import reactor
+from asterisk.aio.runtime import current_runtime
 from asterisk.test_runner import run_test_object
 from starpy import fastagi
 
@@ -32,12 +32,12 @@ class FastAGISayNumberTest(TestCase):
 
         # Listen for results from dialplan
         self.agi_factory = fastagi.FastAGIFactory(self.do_test)
-        reactor.listenTCP(4573, self.agi_factory, self.timeout, '127.0.0.1')
+        current_runtime().listenTCP(4573, self.agi_factory, self.timeout, '127.0.0.1')
         self.agi = None
 
         # Listen for success or failure of talkdetect
         self.agi_factory2 = fastagi.FastAGIFactory(self.listen_result)
-        reactor.listenTCP(4574, self.agi_factory2, self.timeout, '127.0.0.1')
+        current_runtime().listenTCP(4574, self.agi_factory2, self.timeout, '127.0.0.1')
         self.agi2 = None
 
         self.create_asterisk(base_configs_path="%s/configs" % testdir)

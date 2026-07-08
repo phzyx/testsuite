@@ -14,7 +14,7 @@ import logging
 import json
 import os
 import time
-from asterisk.aio import reactor
+from asterisk.aio.runtime import current_runtime
 
 sys.path.append("lib/python")
 from asterisk.test_runner import run_test_object
@@ -41,14 +41,14 @@ class PersistentWebsocketTest(TestCase):
             self.reactor_timeout = self.test_config.config['test-object-config'].get('reactor-timeout', 10)
 
         self.factory = AriServerFactory(self, "ws://localhost:9000/ari",
-                                        ['ari'], "localhost", reactor)
+                                        ['ari'], "localhost")
         self.create_asterisk()
 
     def run(self):
         """Entry point for the twisted reactor"""
         super(PersistentWebsocketTest, self).run()
         LOGGER.info("Binding websocket server")
-        reactor.listenTCP(9000, self.factory, 10, "127.0.0.1")
+        current_runtime().listenTCP(9000, self.factory, 10, "127.0.0.1")
 
     def on_reactor_timeout(self):
         LOGGER.info("on_reactor_timeout")

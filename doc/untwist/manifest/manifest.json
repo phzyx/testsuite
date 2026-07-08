@@ -13,7 +13,7 @@
     "maybeDeferred": 8,
     "succeed": 1
   },
-  "files_with_reactor_or_defer": 61,
+  "files_with_reactor_or_defer": 47,
   "lifecycle_owners": {
     "doc/untwist/test_ari_parity.py": {
       "counts": {
@@ -209,7 +209,6 @@
     "lib/python/asterisk/dns_server.py": {
       "defer": {},
       "reactor": {
-        "listenTCP": 1,
         "listenUDP": 1
       }
     },
@@ -259,12 +258,6 @@
       },
       "reactor": {}
     },
-    "lib/python/asterisk/pluggable_modules.py": {
-      "defer": {},
-      "reactor": {
-        "listenTCP": 1
-      }
-    },
     "lib/python/asterisk/realtime_test_module.py": {
       "defer": {},
       "reactor": {
@@ -312,9 +305,7 @@
         "defer.Deferred": 1,
         "defer.DeferredList": 2
       },
-      "reactor": {
-        "listenTCP": 1
-      }
+      "reactor": {}
     },
     "lib/python/asterisk/test_conditions.py": {
       "defer": {
@@ -328,18 +319,6 @@
         "defer.DeferredList": 2
       },
       "reactor": {}
-    },
-    "tests/blind-transfer-parkingtimeout/run-test": {
-      "defer": {},
-      "reactor": {
-        "listenTCP": 1
-      }
-    },
-    "tests/channels/pjsip/keep_alive/keep_alive.py": {
-      "defer": {},
-      "reactor": {
-        "connectTCP": 1
-      }
     },
     "tests/channels/pjsip/rtp/bind_rtp_to_media_address/rtp.py": {
       "defer": {},
@@ -368,63 +347,13 @@
     "tests/channels/websocket/outbound/basic-call/media_server.py": {
       "defer": {},
       "reactor": {
-        "callInThread": 1,
-        "listenTCP": 1
+        "callInThread": 1
       }
     },
     "tests/channels/websocket/outbound/flow-control/media_server.py": {
       "defer": {},
       "reactor": {
-        "callInThread": 1,
-        "listenTCP": 1
-      }
-    },
-    "tests/fastagi/say-alpha/run-test": {
-      "defer": {},
-      "reactor": {
-        "listenTCP": 2
-      }
-    },
-    "tests/fastagi/say-date/run-test": {
-      "defer": {},
-      "reactor": {
-        "listenTCP": 2
-      }
-    },
-    "tests/fastagi/say-datetime/run-test": {
-      "defer": {},
-      "reactor": {
-        "listenTCP": 2
-      }
-    },
-    "tests/fastagi/say-digits/run-test": {
-      "defer": {},
-      "reactor": {
-        "listenTCP": 2
-      }
-    },
-    "tests/fastagi/say-number/run-test": {
-      "defer": {},
-      "reactor": {
-        "listenTCP": 2
-      }
-    },
-    "tests/fastagi/say-phonetic/run-test": {
-      "defer": {},
-      "reactor": {
-        "listenTCP": 2
-      }
-    },
-    "tests/fastagi/say-time/run-test": {
-      "defer": {},
-      "reactor": {
-        "listenTCP": 2
-      }
-    },
-    "tests/fastagi/wait-for-digit/run-test": {
-      "defer": {},
-      "reactor": {
-        "listenTCP": 1
+        "callInThread": 1
       }
     },
     "tests/hep/hep_capture_node.py": {
@@ -475,24 +404,6 @@
       },
       "reactor": {}
     },
-    "tests/rest_api/websocket/outbound_websocket/local_ari_user_read_only/run-test": {
-      "defer": {},
-      "reactor": {
-        "listenTCP": 1
-      }
-    },
-    "tests/rest_api/websocket/outbound_websocket/per_call/run-test": {
-      "defer": {},
-      "reactor": {
-        "listenTCP": 1
-      }
-    },
-    "tests/rest_api/websocket/outbound_websocket/persistent/run-test": {
-      "defer": {},
-      "reactor": {
-        "listenTCP": 1
-      }
-    },
     "tests/rtp/strict_rtp/strict_rtp_seqno/strict_rtp.py": {
       "defer": {},
       "reactor": {
@@ -506,7 +417,7 @@
       }
     }
   },
-  "reactor_grand_total": 324,
+  "reactor_grand_total": 299,
   "reactor_totals": {
     "_ensure_loop": 6,
     "addAsyncCleanup": 2,
@@ -514,8 +425,8 @@
     "callInThread": 5,
     "callLater": 49,
     "callWhenRunning": 65,
-    "connectTCP": 5,
-    "listenTCP": 29,
+    "connectTCP": 4,
+    "listenTCP": 5,
     "listenUDP": 14,
     "run": 41,
     "running": 11,

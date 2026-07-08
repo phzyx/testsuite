@@ -15,6 +15,7 @@ import logging
 import io
 import os
 from asterisk.aio import reactor
+from asterisk.aio.runtime import current_runtime
 
 sys.path.append("lib/python")
 from asterisk.test_case import TestCase
@@ -55,7 +56,7 @@ class ChanWebSocketTest(TestCase):
     def run(self):
         super().run()
         LOGGER.info("Binding websocket server")
-        reactor.listenTCP(self.listen_port, self.factory,
+        current_runtime().listenTCP(self.listen_port, self.factory,
                           self.reactor_timeout, "127.0.0.1")
 
     def on_startup(self, ast):

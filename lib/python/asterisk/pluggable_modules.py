@@ -14,7 +14,6 @@ import re
 
 sys.path.append("lib/python")
 from .ami import AMIEventInstance
-from asterisk.aio import reactor
 from asterisk.aio.runtime import current_runtime
 from starpy import fastagi
 from .test_runner import load_and_parse_module
@@ -698,7 +697,7 @@ class FastAGIModule(object):
             self.callback_module = instance_config['callback']['module']
             self.callback_method = instance_config['callback']['method']
         fastagi_factory = fastagi.FastAGIFactory(self.fastagi_connect)
-        reactor.listenTCP(self.port, fastagi_factory,
+        current_runtime().listenTCP(self.port, fastagi_factory,
                           test_object.reactor_timeout, self.host)
 
     def fastagi_connect(self, agi):

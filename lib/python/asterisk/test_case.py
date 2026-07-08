@@ -15,7 +15,7 @@ import traceback
 import uuid
 from datetime import datetime
 from hashlib import md5
-from asterisk.aio import reactor, defer, error as aio_error
+from asterisk.aio import defer, error as aio_error
 from asterisk.aio.runtime import current_runtime
 from starpy import manager, fastagi
 
@@ -381,7 +381,7 @@ class TestCase(object):
             self.fastagi.append(None)
             LOGGER.info("Creating FastAGI Factory %d" % (i + 1))
             fastagi_factory = fastagi.FastAGIFactory(self.fastagi_connect)
-            reactor.listenTCP(4573, fastagi_factory,
+            current_runtime().listenTCP(4573, fastagi_factory,
                               self.reactor_timeout, host)
 
     def fastagi_connect(self, agi):
