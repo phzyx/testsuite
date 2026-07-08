@@ -1,7 +1,7 @@
 # reactor/defer manifest  (root=.)
 scanned=396 parsed=396 skipped_non_python=0 files_with_usage=91
 
-## reactor.* totals  (grand=447)
+## reactor.* totals  (grand=443)
   reactor._ensure_loop         6
   reactor.addAsyncCleanup      2
   reactor.addStartupBind       4
@@ -11,7 +11,7 @@ scanned=396 parsed=396 skipped_non_python=0 files_with_usage=91
   reactor.connectTCP           5
   reactor.listenTCP            29
   reactor.listenUDP            14
-  reactor.run                  46
+  reactor.run                  42
   reactor.running              14
   reactor.spawnProcess         11
   reactor.stop                 89
@@ -39,8 +39,8 @@ scanned=396 parsed=396 skipped_non_python=0 files_with_usage=91
   [module  ] lib/python/asterisk/aio/test_aio.py   callWhenRunning=59 run=35 running=11 stop=72
   [module  ] lib/python/asterisk/asterisk.py   callWhenRunning=1
   [module  ] lib/python/asterisk/test_case.py   callWhenRunning=1 running=1 stop=1
-  [run-test] tests/blind-transfer-parkingtimeout/run-test   callWhenRunning=1 run=1 running=1 stop=1
-  [run-test] tests/fastagi/wait-for-digit/run-test   callWhenRunning=1 run=1 running=1 stop=1
-  [run-test] tests/funcs/func_presencestate/run-test   run=1 stop=1
-  [run-test] tests/manager/mixmonitor/mixmonitor_id/run-test   run=1 stop=1
+  [run-test] tests/blind-transfer-parkingtimeout/run-test   callWhenRunning=1 running=1 stop=1
+  [run-test] tests/fastagi/wait-for-digit/run-test   callWhenRunning=1 running=1 stop=1
+  [run-test] tests/funcs/func_presencestate/run-test   stop=1
+  [run-test] tests/manager/mixmonitor/mixmonitor_id/run-test   stop=1
   [module  ] tests/rest_api/applications/stasisstatus/test_case.py   run=1

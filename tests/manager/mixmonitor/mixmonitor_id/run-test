@@ -10,6 +10,7 @@ the GNU General Public License Version 2.
 import sys
 import logging
 from asterisk.aio import reactor
+from asterisk.test_runner import run_test_object
 from asterisk.test_case import TestCase
 
 LOGGER = logging.getLogger(__name__)
@@ -145,8 +146,7 @@ class MixMonitorTest(TestCase):
 
 
 def main():
-    test = MixMonitorTest()
-    reactor.run()
+    test = run_test_object(MixMonitorTest)
     if test.passed:
         return 0
     return 1

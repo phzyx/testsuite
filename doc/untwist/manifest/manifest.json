@@ -89,7 +89,6 @@
     "tests/blind-transfer-parkingtimeout/run-test": {
       "counts": {
         "callWhenRunning": 1,
-        "run": 1,
         "running": 1,
         "stop": 1
       },
@@ -98,7 +97,6 @@
     "tests/fastagi/wait-for-digit/run-test": {
       "counts": {
         "callWhenRunning": 1,
-        "run": 1,
         "running": 1,
         "stop": 1
       },
@@ -106,14 +104,12 @@
     },
     "tests/funcs/func_presencestate/run-test": {
       "counts": {
-        "run": 1,
         "stop": 1
       },
       "is_run_test": true
     },
     "tests/manager/mixmonitor/mixmonitor_id/run-test": {
       "counts": {
-        "run": 1,
         "stop": 1
       },
       "is_run_test": true
@@ -475,7 +471,6 @@
         "callLater": 3,
         "callWhenRunning": 1,
         "listenTCP": 1,
-        "run": 1,
         "running": 1,
         "stop": 1
       }
@@ -608,7 +603,6 @@
         "callLater": 1,
         "callWhenRunning": 1,
         "listenTCP": 1,
-        "run": 1,
         "running": 1,
         "stop": 1
       }
@@ -616,7 +610,6 @@
     "tests/funcs/func_presencestate/run-test": {
       "defer": {},
       "reactor": {
-        "run": 1,
         "stop": 1
       }
     },
@@ -641,7 +634,6 @@
     "tests/manager/mixmonitor/mixmonitor_id/run-test": {
       "defer": {},
       "reactor": {
-        "run": 1,
         "stop": 1
       }
     },
@@ -771,7 +763,7 @@
       }
     }
   },
-  "reactor_grand_total": 447,
+  "reactor_grand_total": 443,
   "reactor_totals": {
     "_ensure_loop": 6,
     "addAsyncCleanup": 2,
@@ -782,7 +774,7 @@
     "connectTCP": 5,
     "listenTCP": 29,
     "listenUDP": 14,
-    "run": 46,
+    "run": 42,
     "running": 14,
     "spawnProcess": 11,
     "stop": 89
