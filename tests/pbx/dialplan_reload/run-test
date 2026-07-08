@@ -9,7 +9,7 @@ the GNU General Public License Version 2.
 
 import sys
 import logging
-from asterisk.aio import reactor
+from asterisk.aio.runtime import current_runtime
 from asterisk.test_runner import run_test_object
 
 sys.path.append("lib/python")
@@ -77,7 +77,7 @@ class DialplanReloadTest(TestCase):
 
             LOGGER.info("Restarted #%d" % self.count)
             self.count += 1
-            reactor.callLater(3, fullybooted_run)
+            current_runtime().callLater(3, fullybooted_run)
 
         def errback(failure):
             LOGGER.error("CLI restart failed")

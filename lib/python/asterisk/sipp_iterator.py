@@ -90,7 +90,7 @@ import logging
 
 from . import test_suite_utils
 from abc import ABCMeta, abstractmethod
-from asterisk.aio import reactor
+from asterisk.aio.runtime import current_runtime
 from .test_case import TestCase
 from .utils_socket import get_available_port
 from .test_runner import load_and_parse_module
@@ -197,7 +197,7 @@ class singleIterator(object):
             # skip ahead to the next iteration but send the AMI
             # action if set. Speed up the iteration.
             self.__sendMessage(message, 0)
-            reactor.callLater(1, self.run)
+            current_runtime().callLater(1, self.run)
         elif scenario['Name'] != 'done':
             # A scenaro was specified so run it then schedule the
             # AMI event if there is one.
@@ -221,7 +221,7 @@ class singleIterator(object):
         if message['Action'] != 'none':
             testami = self.test_object.ami[0]
             LOGGER.info("Scheduling AMI %s" % message['Action'])
-            reactor.callLater(delay, testami.sendMessage, message)
+            current_runtime().callLater(delay, testami.sendMessage, message)
 
     def run(self, junk=None):
         self.__iterate()
@@ -260,7 +260,7 @@ class multiIterator(object):
             # set, one second apart. Run the next iteration based on how far
             # out we've scheduled messages.
             sequencedelay = self.__sendMessages(messagesequence['Messages'], 1)
-            reactor.callLater(sequencedelay, self.run)
+            current_runtime().callLater(sequencedelay, self.run)
         elif sippsequence['Name'] != 'done':
             # A scenaro sequence was specified so run it then schedule the
             # AMI event(s) normally. Set the delay equal to how many scenarios
@@ -301,7 +301,7 @@ class multiIterator(object):
         for message in messages:
             if message['Action'] !='none':
                 LOGGER.info("Scheduling AMI %s" % message['Action'])
-                reactor.callLater(delay, testami.sendMessage, message)
+                current_runtime().callLater(delay, testami.sendMessage, message)
                 # spread out the messages by 2 seconds
                 messagedelay += 2
         # return last action's delay + 2, ie when to run the next

@@ -482,7 +482,7 @@ class Asterisk(object):
             self.__start_asterisk_time = time.time()
 
             if self.remote_config:
-                reactor.callLater(0, __execute_wait_fully_booted)
+                current_runtime().callLater(0, __execute_wait_fully_booted)
                 return
 
             self.protocol = AsteriskProtocol(self.host, self._stop_deferred)
@@ -494,7 +494,7 @@ class Asterisk(object):
             # file. If we try to send the fully booted command before this
             # happens we wait and try again, but this results in an unhandled
             # error in the reactor after the command succeeds.
-            reactor.callLater(self.wfbdelay, __execute_wait_fully_booted)
+            current_runtime().callLater(self.wfbdelay, __execute_wait_fully_booted)
 
         def __execute_wait_fully_booted():
             """Send the CLI command waitfullybooted"""
@@ -520,7 +520,7 @@ class Asterisk(object):
                 self.wfbdelay = self.wfbdelay*2
                 if self.wfbdelay > (timeout/2):
                     self.wfbdelay = (timeout/2)
-                reactor.callLater(self.wfbdelay, __execute_wait_fully_booted)
+                current_runtime().callLater(self.wfbdelay, __execute_wait_fully_booted)
 
         self.install_configs(os.getcwd() + "/configs", deps)
         self._setup_configs()
@@ -562,7 +562,7 @@ class Asterisk(object):
         # can happen due to the files being created due to a copy operation.
         # If that happens, the test will fail - wait a second to give
         # Asterisk time to come up fully
-        reactor.callLater(0, __start_asterisk_callback, cmd)
+        current_runtime().callLater(0, __start_asterisk_callback, cmd)
 
         return self._start_deferred
 
@@ -599,7 +599,7 @@ class Asterisk(object):
         def __stop_gracefully_callback(cli_command):
             """Callback handler for the core stop gracefully CLI command"""
             LOGGER.debug("Successfully stopped Asterisk %s" % self.host)
-            reactor.callLater(0, __cancel_stops, None)
+            current_runtime().callLater(0, __cancel_stops, None)
             return cli_command
 
         def __stop_gracefully_error(cli_command):
@@ -642,7 +642,7 @@ class Asterisk(object):
             # will ensure that the test is stopped.
             sched_time = 200 if self.valgrind_enabled else 45
 
-            self._stop_cancel_tokens.append(reactor.callLater(sched_time,
+            self._stop_cancel_tokens.append(current_runtime().callLater(sched_time,
                                             __send_kill))
 
             # Start by asking to stop gracefully.
@@ -651,7 +651,7 @@ class Asterisk(object):
             self._stop_deferred.addCallback(__cancel_stops)
 
         if not self.process:
-            reactor.callLater(0, __process_stopped, None)
+            current_runtime().callLater(0, __process_stopped, None)
         elif self.protocol.exited:
             try:
                 if not self._stop_deferred.called:
@@ -667,7 +667,7 @@ class Asterisk(object):
                 if delay != 0:
                     LOGGER.debug("Delaying shutdown by %d seconds" % delay)
 
-            reactor.callLater(delay, __actual_stop)
+            current_runtime().callLater(delay, __actual_stop)
 
         return self._stop_deferred
 

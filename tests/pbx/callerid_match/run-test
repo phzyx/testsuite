@@ -13,7 +13,7 @@ import sys
 import os
 import logging
 
-from asterisk.aio import reactor
+from asterisk.aio.runtime import current_runtime
 from asterisk.test_runner import run_test_object
 from shutil import move, copy
 
@@ -50,10 +50,10 @@ class CallFilesTest(TestCase):
     def fastagi_connect(self, agi):
         LOGGER.info("sample%s.call file executed." % (self.test))
 
-        reactor.callLater(2, agi.finish)
+        current_runtime().callLater(2, agi.finish)
         if self.test < self.num_tests:
             self.launch_test()
-        else: reactor.callLater(4, self.finalize)
+        else: current_runtime().callLater(4, self.finalize)
 
     def move_file(self, i):
         LOGGER.info("Moving the sample%s.call file to the spool dir..." % (i))

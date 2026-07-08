@@ -85,7 +85,7 @@ class FastAGIWaitForDigitTest:
     def run(self):
         def __finish_start_ops(result):
             self.launch_test()
-            reactor.callLater(self.timeout, self.stop_reactor)
+            current_runtime().callLater(self.timeout, self.stop_reactor)
             return result
 
         print("Starting Asterisk")

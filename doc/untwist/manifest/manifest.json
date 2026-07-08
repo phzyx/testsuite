@@ -13,7 +13,7 @@
     "maybeDeferred": 8,
     "succeed": 1
   },
-  "files_with_reactor_or_defer": 89,
+  "files_with_reactor_or_defer": 61,
   "lifecycle_owners": {
     "doc/untwist/test_ari_parity.py": {
       "counts": {
@@ -180,25 +180,16 @@
       },
       "reactor": {}
     },
-    "lib/python/asterisk/ami.py": {
-      "defer": {},
-      "reactor": {
-        "callLater": 1
-      }
-    },
     "lib/python/asterisk/apptest.py": {
       "defer": {
         "defer.Deferred": 6
       },
-      "reactor": {
-        "callLater": 6
-      }
+      "reactor": {}
     },
     "lib/python/asterisk/ari.py": {
       "defer": {},
       "reactor": {
-        "_ensure_loop": 2,
-        "callLater": 4
+        "_ensure_loop": 2
       }
     },
     "lib/python/asterisk/asterisk.py": {
@@ -207,7 +198,6 @@
         "defer.Deferred": 4
       },
       "reactor": {
-        "callLater": 8,
         "spawnProcess": 1
       }
     },
@@ -218,23 +208,11 @@
       },
       "reactor": {}
     },
-    "lib/python/asterisk/confbridge.py": {
-      "defer": {},
-      "reactor": {
-        "callLater": 2
-      }
-    },
     "lib/python/asterisk/dns_server.py": {
       "defer": {},
       "reactor": {
         "listenTCP": 1,
         "listenUDP": 1
-      }
-    },
-    "lib/python/asterisk/extension_bank.py": {
-      "defer": {},
-      "reactor": {
-        "callLater": 1
       }
     },
     "lib/python/asterisk/fd_test_condition.py": {
@@ -267,14 +245,7 @@
     "lib/python/asterisk/media_websocket.py": {
       "defer": {},
       "reactor": {
-        "_ensure_loop": 3,
-        "callLater": 1
-      }
-    },
-    "lib/python/asterisk/originate.py": {
-      "defer": {},
-      "reactor": {
-        "callLater": 5
+        "_ensure_loop": 3
       }
     },
     "lib/python/asterisk/pcap_proxy.py": {
@@ -293,7 +264,6 @@
     "lib/python/asterisk/pluggable_modules.py": {
       "defer": {},
       "reactor": {
-        "callLater": 2,
         "listenTCP": 1
       }
     },
@@ -331,14 +301,7 @@
         "defer.DeferredList": 2
       },
       "reactor": {
-        "callLater": 3,
         "spawnProcess": 1
-      }
-    },
-    "lib/python/asterisk/sipp_iterator.py": {
-      "defer": {},
-      "reactor": {
-        "callLater": 4
       }
     },
     "lib/python/asterisk/taskprocessor_test_condition.py": {
@@ -354,7 +317,6 @@
         "defer.DeferredList": 2
       },
       "reactor": {
-        "callLater": 3,
         "listenTCP": 1
       }
     },
@@ -371,52 +333,9 @@
       },
       "reactor": {}
     },
-    "tests/agi/exit_status/run-test": {
-      "defer": {},
-      "reactor": {
-        "callLater": 1
-      }
-    },
-    "tests/agi/nominal/run-test": {
-      "defer": {},
-      "reactor": {
-        "callLater": 1
-      }
-    },
-    "tests/apps/chanspy/chanspy_w_mixmonitor/run-test": {
-      "defer": {},
-      "reactor": {
-        "callLater": 10
-      }
-    },
-    "tests/apps/confbridge/confbridge_recording/run-test": {
-      "defer": {},
-      "reactor": {
-        "callLater": 1
-      }
-    },
-    "tests/apps/dial/dial_dtmf_hangup_cancel/send_dtmf.py": {
-      "defer": {},
-      "reactor": {
-        "callLater": 1
-      }
-    },
-    "tests/apps/dial/dial_hangup/hangup.py": {
-      "defer": {},
-      "reactor": {
-        "callLater": 1
-      }
-    },
-    "tests/apps/dial/dial_parallel/dial_parallel_all_cancel/send_dtmf.py": {
-      "defer": {},
-      "reactor": {
-        "callLater": 1
-      }
-    },
     "tests/blind-transfer-parkingtimeout/run-test": {
       "defer": {},
       "reactor": {
-        "callLater": 3,
         "listenTCP": 1
       }
     },
@@ -444,24 +363,6 @@
         "listenUDP": 2
       }
     },
-    "tests/channels/pjsip/subscriptions/presence/presence_pidf/state_check.py": {
-      "defer": {},
-      "reactor": {
-        "callLater": 1
-      }
-    },
-    "tests/channels/pjsip/subscriptions/presence/presence_xpidf/state_check.py": {
-      "defer": {},
-      "reactor": {
-        "callLater": 1
-      }
-    },
-    "tests/channels/pjsip/subscriptions/rls/rls_test.py": {
-      "defer": {},
-      "reactor": {
-        "callLater": 3
-      }
-    },
     "tests/channels/websocket/inbound/basic-call/media_client.py": {
       "defer": {},
       "reactor": {
@@ -480,24 +381,6 @@
       "reactor": {
         "callInThread": 1,
         "listenTCP": 1
-      }
-    },
-    "tests/codecs/audio_analyzer.py": {
-      "defer": {},
-      "reactor": {
-        "callLater": 1
-      }
-    },
-    "tests/fastagi/hangup/run-test": {
-      "defer": {},
-      "reactor": {
-        "callLater": 1
-      }
-    },
-    "tests/fastagi/record-file/run-test": {
-      "defer": {},
-      "reactor": {
-        "callLater": 5
       }
     },
     "tests/fastagi/say-alpha/run-test": {
@@ -545,7 +428,6 @@
     "tests/fastagi/wait-for-digit/run-test": {
       "defer": {},
       "reactor": {
-        "callLater": 1,
         "listenTCP": 1
       }
     },
@@ -573,55 +455,17 @@
       },
       "reactor": {}
     },
-    "tests/pbx/call_file_retries_archive/retries_archive.py": {
-      "defer": {},
-      "reactor": {
-        "callLater": 1
-      }
-    },
-    "tests/pbx/callerid_match/run-test": {
-      "defer": {},
-      "reactor": {
-        "callLater": 2
-      }
-    },
-    "tests/pbx/dialplan_reload/run-test": {
-      "defer": {},
-      "reactor": {
-        "callLater": 1
-      }
-    },
-    "tests/pbx/dialplan_save/run-test": {
-      "defer": {},
-      "reactor": {
-        "callLater": 12
-      }
-    },
     "tests/pbx/manager_extensions/ami_extension_control.py": {
       "defer": {
         "defer.DeferredList": 1
       },
       "reactor": {}
     },
-    "tests/rest_api/applications/channel-subscriptions/originate_to_other_stasis_app/local_channels/run-test": {
-      "defer": {},
-      "reactor": {
-        "callLater": 1
-      }
-    },
-    "tests/rest_api/applications/channel-subscriptions/originate_to_other_stasis_app/non_local_channels/run-test": {
-      "defer": {},
-      "reactor": {
-        "callLater": 2
-      }
-    },
     "tests/rest_api/applications/stasisstatus/ari_client.py": {
       "defer": {
         "defer.Deferred": 2
       },
-      "reactor": {
-        "callLater": 8
-      }
+      "reactor": {}
     },
     "tests/rest_api/applications/stasisstatus/test_case.py": {
       "defer": {
@@ -629,35 +473,11 @@
       },
       "reactor": {}
     },
-    "tests/rest_api/external_interaction/attended_transfer/attended_transfer.py": {
-      "defer": {},
-      "reactor": {
-        "callLater": 1
-      }
-    },
     "tests/rest_api/message/message_modules.py": {
       "defer": {
         "defer.DeferredList": 1
       },
       "reactor": {}
-    },
-    "tests/rest_api/recording/format_unavailable/recording.py": {
-      "defer": {},
-      "reactor": {
-        "callLater": 1
-      }
-    },
-    "tests/rest_api/recording/stored/copy/nominal/recording.py": {
-      "defer": {},
-      "reactor": {
-        "callLater": 1
-      }
-    },
-    "tests/rest_api/recording/stored/copy/off-nominal/recording.py": {
-      "defer": {},
-      "reactor": {
-        "callLater": 1
-      }
     },
     "tests/rest_api/websocket/outbound_websocket/local_ari_user_read_only/run-test": {
       "defer": {},
@@ -668,7 +488,6 @@
     "tests/rest_api/websocket/outbound_websocket/per_call/run-test": {
       "defer": {},
       "reactor": {
-        "callLater": 1,
         "listenTCP": 1
       }
     },
@@ -691,13 +510,13 @@
       }
     }
   },
-  "reactor_grand_total": 430,
+  "reactor_grand_total": 326,
   "reactor_totals": {
     "_ensure_loop": 6,
     "addAsyncCleanup": 2,
     "addStartupBind": 4,
     "callInThread": 5,
-    "callLater": 153,
+    "callLater": 49,
     "callWhenRunning": 65,
     "connectTCP": 5,
     "listenTCP": 29,

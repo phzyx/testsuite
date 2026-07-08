@@ -11,7 +11,7 @@ the GNU General Public License Version 2.
 import sys
 import logging
 
-from asterisk.aio import reactor
+from asterisk.aio.runtime import current_runtime
 
 sys.path.append("lib/python")
 from asterisk.test_case import TestCase
@@ -54,10 +54,10 @@ class FastAGIHangupTest(TestCase):
 
         def __try_again():
             """Try finishing again later"""
-            self.agi.channelStatus(agi.variables['agi_channel']
+            self.agi.channelStatus(self.agi.variables['agi_channel']
                 ).addCallback(self.finish_test2).addErrback(self.on_failure)
 
-        reactor.callLater(__try_again, 5)            
+        current_runtime().callLater(5, __try_again)
 
     def finish_test2(self, status):
         LOGGER.error("Channel is still up! Status is %s" % status)

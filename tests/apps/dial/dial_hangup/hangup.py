@@ -8,7 +8,7 @@ the GNU General Public License Version 2.
 
 import logging
 
-from asterisk.aio import reactor
+from asterisk.aio.runtime import current_runtime
 
 LOGGER = logging.getLogger(__name__)
 
@@ -18,6 +18,6 @@ def send_hangup(ami, event):
 
     channel = event['channel']
     LOGGER.info('Hanging up channel %s' % channel)
-    reactor.callLater(2, ami.hangup, channel)
+    current_runtime().callLater(2, ami.hangup, channel)
     return True
 

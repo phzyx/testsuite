@@ -582,7 +582,7 @@ class TestCase(object):
         fail out mechanism in case the test hangs.
         """
         if self.reactor_timeout > 0:
-            self.timeout_id = reactor.callLater(self.reactor_timeout,
+            self.timeout_id = current_runtime().callLater(self.reactor_timeout,
                                                 self._reactor_timeout)
 
     def ami_login_error(self, reason):
@@ -950,7 +950,7 @@ class SimpleTestCase(TestCase):
             LOGGER.info("All calls executed")
             if self._stop_on_end:
                 LOGGER.info("Stopping")
-                reactor.callLater(self._end_test_delay, self.stop_reactor)
+                current_runtime().callLater(self._end_test_delay, self.stop_reactor)
 
     def __event_cb(self, ami, event):
         """UserEvent callback handler.
@@ -980,7 +980,7 @@ class SimpleTestCase(TestCase):
         """Called when an error occurs during a hangup"""
         # Ignore the hangup error - in this case, the channel was disposed of
         # prior to our hangup request, which is okay
-        reactor.callLater(self._end_test_delay, self.stop_reactor)
+        current_runtime().callLater(self._end_test_delay, self.stop_reactor)
 
     def verify_event(self, event):
         """Virtual method used to verify values in the event."""

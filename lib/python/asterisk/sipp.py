@@ -14,6 +14,7 @@ from . import test_suite_utils
 
 from abc import ABCMeta, abstractmethod
 from asterisk.aio import reactor, defer, error
+from asterisk.aio.runtime import current_runtime
 from asterisk.aio import ProcessProtocol
 from .test_case import TestCase
 from .utils_socket import get_available_port
@@ -303,8 +304,8 @@ class SIPpTestCase(TestCase):
             return result
 
         # Allow some time for the SIPp process to come up
-        reactor.callLater(.25, __run_callback, result)
-        reactor.callLater(1, self.do_start_callback)
+        current_runtime().callLater(.25, __run_callback, result)
+        current_runtime().callLater(1, self.do_start_callback)
 
     def _scenario_stop_callback_fn(self, result):
         """Notify observers that the scenario has stopped"""
@@ -373,7 +374,7 @@ class SIPpAMIActionTestCase(SIPpTestCase):
             ami_out.addCallback(self.ami.errorUnlessResponse)
             ami_out.addCallback(self.remove_token_on_success)
 
-        reactor.callLater(self.ami_delay, _ami_action)
+        current_runtime().callLater(self.ami_delay, _ami_action)
 
     def ami_connect(self, ami):
         """Handle the AMI connect event"""

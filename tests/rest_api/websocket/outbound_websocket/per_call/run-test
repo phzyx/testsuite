@@ -15,6 +15,7 @@ import json
 import os
 import time
 from asterisk.aio import reactor
+from asterisk.aio.runtime import current_runtime
 
 sys.path.append("lib/python")
 from asterisk.test_runner import run_test_object
@@ -105,7 +106,7 @@ class PerCallWebsocketTest(TestCase):
             self.channel_id = message['channel']['id']
             self.protocol.sendRequest("POST", "channels/%s/answer" % self.channel_id)
         elif msg_type == "ChannelStateChange" and message['channel']['state'] == "Up":
-            reactor.callLater(2, closer)
+            current_runtime().callLater(2, closer)
         elif msg_type == "StasisEnd":
             self.passed = True
 

@@ -16,7 +16,8 @@ sys.path.append("tests/rest_api/applications")
 
 from asterisk.ari import ARI, AriClientFactory
 from stasisstatus.observable_object import ObservableObject
-from asterisk.aio import defer, reactor
+from asterisk.aio import defer
+from asterisk.aio.runtime import current_runtime
 
 LOGGER = logging.getLogger(__name__)
 
@@ -77,7 +78,7 @@ class AriClient(ObservableObject):
                 deferred = defer.Deferred()
             if not self.clean:
                 LOGGER.debug(msg + 'I\'m not so fresh so clean.')
-                reactor.callLater(1, wait_for_it, deferred)
+                current_runtime().callLater(1, wait_for_it, deferred)
             else:
                 LOGGER.debug(msg + 'Connecting web socket.')
                 self.__ari = ARI(self.__host, userpass=self.__credentials)
@@ -358,28 +359,28 @@ class AriClient(ObservableObject):
             if run == 0:
                 LOGGER.debug(msg + 'Tearing down active connections.')
                 self.__delete_all_channels()
-                reactor.callLater(2, wait_for_it, deferred, 1)
+                current_runtime().callLater(2, wait_for_it, deferred, 1)
             elif run == 1:
                 if len(self.__channels) > 0:
                     msg += 'Waiting for channels to be destroyed.'
                     LOGGER.debug(msg)
-                    reactor.callLater(2, wait_for_it, deferred, 1)
-                reactor.callLater(2, wait_for_it, deferred, 2)
+                    current_runtime().callLater(2, wait_for_it, deferred, 1)
+                current_runtime().callLater(2, wait_for_it, deferred, 2)
             elif run == 2:
                 LOGGER.debug(msg + 'Disconnecting web socket.')
                 self.__ari = None
                 self.__factory = None
                 self.disconnect_websocket()
-                reactor.callLater(2, wait_for_it, deferred, 3)
+                current_runtime().callLater(2, wait_for_it, deferred, 3)
             elif run == 3:
                 if self.__ws_client is not None:
                     msg += 'Waiting for web socket to be destroyed.'
                     LOGGER.debug(msg)
-                    reactor.callLater(2, wait_for_it, deferred, 3)
+                    current_runtime().callLater(2, wait_for_it, deferred, 3)
                 else:
                     LOGGER.debug(msg + 'Client successfully torn down.')
-                    reactor.callLater(0, self.on_client_stop)
-                    reactor.callLater(2, self.reset_registrar)
+                    current_runtime().callLater(0, self.on_client_stop)
+                    current_runtime().callLater(2, self.reset_registrar)
                     deferred.callback(self.resume())
         wait_for_it()
         return

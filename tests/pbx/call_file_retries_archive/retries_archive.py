@@ -11,7 +11,7 @@ the GNU General Public License Version 2.
 import os
 import logging
 
-from asterisk.aio import reactor
+from asterisk.aio.runtime import current_runtime
 
 LOGGER = logging.getLogger(__name__)
 
@@ -69,7 +69,7 @@ class ArchiveCallFileRetry(object):
                 self.test_failed()
             else:
                 # needs a second to reach the outgoing_done folder
-                reactor.callLater(1, self.archive_handler)
+                current_runtime().callLater(1, self.archive_handler)
         else:
             LOGGER.error("Result Was Not Set to 'archived'")
             self.test_failed()

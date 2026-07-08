@@ -36,6 +36,7 @@ from websockets.http11 import Request
 from websockets.server import ServerProtocol
 
 from asterisk.aio import reactor
+from asterisk.aio.runtime import current_runtime
 
 LOGGER = logging.getLogger(__name__)
 
@@ -170,7 +171,7 @@ class MediaWebSocketClientFactory:
                 self.uri, subprotocols=[self.protocol])
         except Exception as exc:
             LOGGER.debug("Connection failed (%s); retrying in 1s", exc)
-            reactor.callLater(1, self.reconnect)
+            current_runtime().callLater(1, self.reconnect)
             return
         proto = self.buildProtocol()
         proto._attach(connection)

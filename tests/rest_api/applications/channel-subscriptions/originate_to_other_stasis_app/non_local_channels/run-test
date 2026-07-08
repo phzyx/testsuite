@@ -16,7 +16,7 @@ the GNU General Public License Version 2.
 import sys
 import logging
 
-from asterisk.aio import reactor
+from asterisk.aio.runtime import current_runtime
 
 sys.path.append("lib/python")
 from asterisk.test_runner import run_test_object
@@ -232,7 +232,7 @@ class OriginateToDifferentApp(TestCase):
         # a bit cheeky, but we need this thing to chill and let sipp register
         if self.sippstarted is False:
             self.sippstarted = True
-            reactor.callLater(2, self.check_phone_reg)
+            current_runtime().callLater(2, self.check_phone_reg)
             return
         self.originate_call()
 
@@ -240,7 +240,7 @@ class OriginateToDifferentApp(TestCase):
         """Originate channel and schedule hang up"""
         LOGGER.info('Originating call!')
         self.apps[self.orig_src_app].originate_call()
-        reactor.callLater(10, self.hangup_all_channels)
+        current_runtime().callLater(10, self.hangup_all_channels)
 
     def hangup_all_channels(self):
         """Hangs up all channels in each app"""

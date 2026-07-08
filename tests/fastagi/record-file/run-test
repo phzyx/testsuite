@@ -9,7 +9,7 @@ the GNU General Public License Version 2.
 
 import sys
 import os
-from asterisk.aio import reactor
+from asterisk.aio.runtime import current_runtime
 
 sys.path.append("lib/python")
 from asterisk.test_case import TestCase
@@ -47,9 +47,9 @@ class FastAGIRecordFileTest(TestCase):
         print('Could not record file:', reason.getTraceback())
         if self.test is "DTMF":
             self.test = "HANGUP"
-            reactor.callLater(0, self.launch_test)
+            current_runtime().callLater(0, self.launch_test)
         else:
-            reactor.callLater(0, self.stop_reactor)
+            current_runtime().callLater(0, self.stop_reactor)
 
     def on_record_success(self, result):
         try:
@@ -80,9 +80,9 @@ class FastAGIRecordFileTest(TestCase):
 
         if self.test is "DTMF":
             self.test = "HANGUP"
-            reactor.callLater(0, self.launch_test)
+            current_runtime().callLater(0, self.launch_test)
         else:
-            reactor.callLater(0, self.stop_reactor)
+            current_runtime().callLater(0, self.stop_reactor)
 
     # This gets invoked by the dialplan when the call is answered
     def fastagi_connect(self, agi):
@@ -107,7 +107,7 @@ class FastAGIRecordFileTest(TestCase):
         elif self.test is "HANGUP":
             self.ast[0].cli_originate("Local/509@agitest extension 2@record-file")
         else:
-            reactor.callLater(0, self.stop_reactor)
+            current_runtime().callLater(0, self.stop_reactor)
 
     def run(self):
         super(FastAGIRecordFileTest, self).run()

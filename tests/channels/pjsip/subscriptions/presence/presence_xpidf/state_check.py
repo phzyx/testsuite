@@ -5,7 +5,7 @@ import logging
 
 sys.path.append("lib/python")
 
-from asterisk.aio import reactor
+from asterisk.aio.runtime import current_runtime
 
 LOGGER = logging.getLogger(__name__)
 
@@ -25,6 +25,6 @@ def walk_states(test_object, extra):
     statedelay = 0
     for state in states:
         statedelay += 1
-        reactor.callLater(statedelay, test_ami.setVar, channel="",
+        current_runtime().callLater(statedelay, test_ami.setVar, channel="",
                                    variable="DEVICE_STATE(Custom:bob)",
                                    value=state[0])

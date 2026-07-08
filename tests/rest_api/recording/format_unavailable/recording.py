@@ -8,7 +8,7 @@ the GNU General Public License Version 2.
 
 import logging
 import requests
-from asterisk.aio import reactor
+from asterisk.aio.runtime import current_runtime
 
 LOGGER = logging.getLogger(__name__)
 
@@ -55,7 +55,7 @@ def on_start(ari, event, test_object):
     LOGGER.info("Baseline recording started successfully.")
 
     # XXX No recording started events yet, so we allow time before continuing.
-    reactor.callLater(0.2, step_two)
+    current_runtime().callLater(0.2, step_two)
     return True
 
 

@@ -7,7 +7,7 @@ This program is free software, distributed under the terms of
 the GNU General Public License Version 2.
 """
 
-from asterisk.aio import reactor
+from asterisk.aio.runtime import current_runtime
 from starpy import manager
 import datetime
 import logging
@@ -679,7 +679,7 @@ class AMI(object):
         delay = 2 ** self._attempts
         if delay + runtime >= self.login_timeout:
             delay = self.login_timeout - runtime
-        reactor.callLater(delay, self.login)
+        current_runtime().callLater(delay, self.login)
         return reason
 
 

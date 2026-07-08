@@ -16,7 +16,7 @@ sys.path.append("tests/channels/pjsip/subscriptions/rls")
 from asterisk.pcap_proxy import VOIPProxy
 from rls_element import RLSPacket
 from rls_validation import ValidationInfo
-from asterisk.aio import reactor
+from asterisk.aio.runtime import current_runtime
 
 LOGGER = logging.getLogger(__name__)
 
@@ -264,7 +264,7 @@ class RLSTest(VOIPProxy):
             # Notify that we are done - give a couple of seconds for the
             # scenario to stop on its own. If it doesn't not a big deal
             # since it will just be killed instead.
-            reactor.callLater(2, __mark_completed)
+            current_runtime().callLater(2, __mark_completed)
 
     def on_ami_connect(self, ami):
         """Callback when AMI connects. Sets test AMI instance."""
@@ -292,7 +292,7 @@ class RLSTest(VOIPProxy):
             LOGGER.debug(debug_msg.format(action))
             self.ami.sendMessage(action)
             if len(self.ami_action):
-                reactor.callLater(2, _perform_ami_action)
+                current_runtime().callLater(2, _perform_ami_action)
 
         if self.ami_action and len(self.ami_action):
-            reactor.callLater(2, _perform_ami_action)
+            current_runtime().callLater(2, _perform_ami_action)

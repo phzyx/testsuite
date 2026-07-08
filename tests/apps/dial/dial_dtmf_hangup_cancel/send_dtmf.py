@@ -8,7 +8,7 @@ the GNU General Public License Version 2.
 
 import logging
 
-from asterisk.aio import reactor
+from asterisk.aio.runtime import current_runtime
 
 LOGGER = logging.getLogger(__name__)
 
@@ -23,6 +23,6 @@ def send_dtmf(ami, event):
     channel = event['channel'][:len(event['channel']) - 2]
     channel += ';1'
 
-    reactor.callLater(2, actually_send_dtmf, ami, channel)
+    current_runtime().callLater(2, actually_send_dtmf, ami, channel)
 
     return True

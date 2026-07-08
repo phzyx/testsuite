@@ -15,7 +15,8 @@ import sys
 import logging
 import uuid
 
-from asterisk.aio import reactor, defer
+from asterisk.aio import defer
+from asterisk.aio.runtime import current_runtime
 
 sys.path.append("lib/python")
 from .test_case import TestCase
@@ -321,7 +322,7 @@ class ChannelObject(object):
             spawn_call_deferred.callback(self)
 
         spawn_call_deferred = defer.Deferred()
-        reactor.callLater(delay, __spawn_call_callback,
+        current_runtime().callLater(delay, __spawn_call_callback,
                           spawn_call_deferred)
         return spawn_call_deferred
 
@@ -362,7 +363,7 @@ class ChannelObject(object):
             hangup_deferred.callback(self)
 
         hangup_deferred = defer.Deferred()
-        reactor.callLater(delay, __hangup_callback, hangup_deferred)
+        current_runtime().callLater(delay, __hangup_callback, hangup_deferred)
         return hangup_deferred
 
     def is_hungup(self):
@@ -424,7 +425,7 @@ class ChannelObject(object):
         LOGGER.debug("Sending DTMF %s over Controlling Channel %s" %
                      (dtmf, self.controller_channel))
         dtmf_deferred = defer.Deferred()
-        reactor.callLater(delay, __send_dtmf_initial, (dtmf, dtmf_deferred))
+        current_runtime().callLater(delay, __send_dtmf_initial, (dtmf, dtmf_deferred))
         return dtmf_deferred
 
     def stream_audio(self, sound_file, delay=0):
@@ -463,7 +464,7 @@ class ChannelObject(object):
         LOGGER.debug("Streaming Audio File %s over Controlling Channel %s" %
                      (sound_file, self.controller_channel))
         audio_deferred = defer.Deferred()
-        reactor.callLater(delay, __stream_audio_initial,
+        current_runtime().callLater(delay, __stream_audio_initial,
                           (sound_file, audio_deferred))
         return audio_deferred
 
@@ -718,7 +719,7 @@ class ApplicationEventInstance(AMIEventInstance):
         if ret_obj is not None:
             ret_obj.addCallback(self.execute_next_action, actions=actions)
         else:
-            reactor.callLater(0, self.execute_next_action, actions=actions)
+            current_runtime().callLater(0, self.execute_next_action, actions=actions)
         return result
 
     def dispose(self, ami):
@@ -841,7 +842,7 @@ class ActionSetExpectedResult(object):
         self.test_object.set_expected_result(self.expected_result)
         deferred_result = defer.Deferred()
         param = (deferred_result, channel_object)
-        reactor.callLater(0, __raise_deferred, param)
+        current_runtime().callLater(0, __raise_deferred, param)
         return deferred_result
 
 

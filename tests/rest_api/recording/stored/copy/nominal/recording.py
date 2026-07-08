@@ -9,7 +9,7 @@ the GNU General Public License Version 2.
 
 import logging
 import requests
-from asterisk.aio import reactor
+from asterisk.aio.runtime import current_runtime
 
 LOGGER = logging.getLogger(__name__)
 
@@ -85,7 +85,7 @@ def on_recording_started(ari, event, test_object):
             fail_test()
             return True
 
-    reactor.callLater(2, _stop_recording, TEST.ari)
+    current_runtime().callLater(2, _stop_recording, TEST.ari)
     return True
 
 

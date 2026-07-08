@@ -11,7 +11,7 @@ the GNU General Public License Version 2.
 import sys
 import logging
 
-from asterisk.aio import reactor
+from asterisk.aio.runtime import current_runtime
 
 import json
 import requests
@@ -133,10 +133,10 @@ class Originator(object):
         LOGGER.debug('Call originated')
         self.num_originated += 1
         if self.num_originated < self.max_originate:
-            reactor.callLater(self.interval, fun, obj)
+            current_runtime().callLater(self.interval, fun, obj)
         else:
             LOGGER.debug('Finished originating call(s)')
-            reactor.callLater(
+            current_runtime().callLater(
                 self.interval, lambda: self.ami.userEvent('OriginateComplete'))
 
     def _register_ami_event(self, ami):
@@ -160,7 +160,7 @@ class CliOriginator(Originator):
         super(CliOriginator, self).__init__(
             config, test_obj, cli_originate)
         test_obj.register_start_observer(
-            (lambda ast: reactor.callLater(
+            (lambda ast: current_runtime().callLater(
                 self.wait_start, self._originate,
                 ast[self.asterisk_instance])))
 
@@ -175,7 +175,7 @@ class AmiOriginator(Originator):
     def _register_ami_event(self, ami):
         """Start originating once AMI is up."""
         if super(AmiOriginator, self).register_ami_event(ami):
-            reactor.callLater(
+            current_runtime().callLater(
                 self.wait_start, self._originate_deferred, ami)
 
 
@@ -188,5 +188,5 @@ class AriOriginator(Originator):
         super(AriOriginator, self).__init__(
             config, test_obj, ari_originate)
         test_obj.register_start_observer(
-            (lambda ast: reactor.callLater(
+            (lambda ast: current_runtime().callLater(
                 self.wait_start, self._originate, test_obj.ari)))

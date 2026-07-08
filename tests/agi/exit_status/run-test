@@ -11,7 +11,7 @@ import os
 import sys
 import logging
 
-from asterisk.aio import reactor
+from asterisk.aio.runtime import current_runtime
 from asterisk.test_runner import run_test_object
 from shutil import copy
 
@@ -133,7 +133,7 @@ class AGIExitStatusTest(TestCase):
         if event['exten'] == 'waiting' or event['exten'] == 'executing':
             self.interrupt_agi = False
             LOGGER.info("Detected channel %s in AGI" % event['channel'])
-            reactor.callLater(1, _hangup_channel, ami, event['channel'])
+            current_runtime().callLater(1, _hangup_channel, ami, event['channel'])
 
     def hangup_event_handler(self, ami, event):
         """

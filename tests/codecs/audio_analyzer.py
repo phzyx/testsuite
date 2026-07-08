@@ -10,7 +10,7 @@ the GNU General Public License Version 2.
 import os
 import sys
 import logging
-from asterisk.aio import reactor
+from asterisk.aio.runtime import current_runtime
 
 from asterisk import ari
 import tonetest
@@ -70,7 +70,7 @@ def on_start(ari, event, test_object):
 
     LOGGER.info("Generating {0} second(s) of media {1}"
                 .format(duration, media))
-    reactor.callLater(duration, __stop_media)
+    current_runtime().callLater(duration, __stop_media)
     return True
 
 

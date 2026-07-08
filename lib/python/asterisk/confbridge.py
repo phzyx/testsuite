@@ -15,7 +15,7 @@ import sys
 import logging
 
 from .test_state import TestState
-from asterisk.aio import reactor
+from asterisk.aio.runtime import current_runtime
 
 sys.path.append("lib/python")
 
@@ -221,7 +221,7 @@ class ConfbridgeTestState(TestState):
         call_id The channel name, from the perspective of the ConfBridge app
         dtmf    The DTMF code to send
         """
-        reactor.callLater(delay, self.send_dtmf, call_id, dtmf)
+        current_runtime().callLater(delay, self.send_dtmf, call_id, dtmf)
 
     def schedule_sound_file(self, delay, call_id, audio_file):
         """Schedule and send an audio file
@@ -231,4 +231,4 @@ class ConfbridgeTestState(TestState):
         call_id     The channel name, from the perspective of the ConfBridge app
         audio_file  The local path to the file to stream
         """
-        reactor.callLater(delay, self.send_sound_file, call_id, audio_file)
+        current_runtime().callLater(delay, self.send_sound_file, call_id, audio_file)

@@ -27,6 +27,7 @@ from .pluggable_registry import PLUGGABLE_EVENT_REGISTRY,\
     PLUGGABLE_ACTION_REGISTRY, var_replace
 from .test_suite_utils import all_match
 from asterisk.aio import reactor
+from asterisk.aio.runtime import current_runtime
 # asyncio port (design doc Section 6.2): the autobahn ARI WebSocket client is
 # reimplemented on the ``websockets`` library over the ``asterisk.aio`` reactor
 # loop. The (unused) server classes reuse the sans-I/O server adapter shared
@@ -138,7 +139,7 @@ class AriBaseTestObject(TestCase):
         self._ws_connection = protocol
         for observer in self._ws_open_handlers:
             observer(self)
-        reactor.callLater(0, self._create_ami_connection)
+        current_runtime().callLater(0, self._create_ami_connection)
 
     def register_ari_observer(self, observer):
         """Register an observer for ARI WS connection
@@ -403,7 +404,7 @@ class AriClientFactory(object):
         except Exception as exc:
             LOGGER.debug("Connection failed (%s); attempting again in 1 second",
                          exc)
-            reactor.callLater(1, self.reconnect)
+            current_runtime().callLater(1, self.reconnect)
             return
         proto = self.buildProtocol()
         proto._attach(connection)
@@ -808,7 +809,7 @@ class EventMatcher(object):
                 if request.instance and request.instance != self.count:
                     continue
                 if request.delay:
-                    reactor.callLater(request.delay, request.send, message)
+                    current_runtime().callLater(request.delay, request.send, message)
                 else:
                     response = request.send(message)
                     if response is False:
@@ -993,7 +994,7 @@ class ARIPluggableRequestModule(object):
             if request.instance and request.instance != self.count:
                 continue
             if request.delay:
-                reactor.callLater(request.delay, request.send, extra)
+                current_runtime().callLater(request.delay, request.send, extra)
             else:
                 result = request.send(extra)
                 if isinstance(result, bool) and not result:

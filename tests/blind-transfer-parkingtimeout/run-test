@@ -44,7 +44,7 @@ class BlindTransferTest:
     def get_result_b(self, agi):
         self.log_last_step("got AGI connection from userB -> test successful")
         self.passed = True
-        reactor.callLater(2, self.read_result)
+        current_runtime().callLater(2, self.read_result)
         return agi.finish()
 
     def read_result(self):
@@ -97,10 +97,10 @@ class BlindTransferTest:
         self.start_asterisk()
 
         # start test in 5 seconds
-        reactor.callLater(5, self.launch_test)
+        current_runtime().callLater(5, self.launch_test)
 
         # stop and read results after timeout
-        reactor.callLater(self.timeout, self.read_result)
+        current_runtime().callLater(self.timeout, self.read_result)
 
 
 def main():

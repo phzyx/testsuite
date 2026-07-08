@@ -13,7 +13,7 @@ import signal
 import subprocess
 import logging
 
-from asterisk.aio import reactor
+from asterisk.aio.runtime import current_runtime
 from asterisk.test_runner import run_test_object
 from starpy import fastagi
 
@@ -46,7 +46,7 @@ class ChanSpyMixMonitorTest(TestCase):
         sequence.append(agi.finish)
 
         self.set_passed(True)
-        reactor.callLater(1, self.read_result)
+        current_runtime().callLater(1, self.read_result)
 
         return sequence()
 
@@ -63,14 +63,14 @@ class ChanSpyMixMonitorTest(TestCase):
         self.received_spy_events += 1
         LOGGER.info("Received ChanSpyStart event for %s" % event["spyeechannel"])
         if event["spyeechannel"].count("end_a") > 0:
-            reactor.callLater(1, self.hangup_pjsua, self.pja, "A")
-            reactor.callLater(3, self.call_pjsua, self.pjb, "B")
+            current_runtime().callLater(1, self.hangup_pjsua, self.pja, "A")
+            current_runtime().callLater(3, self.call_pjsua, self.pjb, "B")
         if event["spyeechannel"].count("end_b") > 0:
-            reactor.callLater(1, self.hangup_pjsua, self.pjb, "B")
-            reactor.callLater(3, self.call_pjsua, self.pjc, "C")
+            current_runtime().callLater(1, self.hangup_pjsua, self.pjb, "B")
+            current_runtime().callLater(3, self.call_pjsua, self.pjc, "C")
         if event["spyeechannel"].count("end_c") > 0:
-            reactor.callLater(2, self.hangup_pjsua, self.pjc, "C")
-            reactor.callLater(3, self.hangup_chanspy)
+            current_runtime().callLater(2, self.hangup_pjsua, self.pjc, "C")
+            current_runtime().callLater(3, self.hangup_chanspy)
 
     def handle_newexten(self, ami, event):
         """Handler for the Newexten AMI event"""
@@ -89,8 +89,8 @@ class ChanSpyMixMonitorTest(TestCase):
         self.ami_instance.setVar(channel="", variable="TESTAUDIO1", value=self.audiofile1)
         self.ami_instance.setVar(channel="", variable="TALK_AUDIO", value=self.talkingaudio)
         self.start_processes()
-        reactor.callLater(1, self.call_chanspy)
-        reactor.callLater(2, self.call_pjsua, self.pja, "A")
+        current_runtime().callLater(1, self.call_chanspy)
+        current_runtime().callLater(2, self.call_pjsua, self.pja, "A")
 
     def call_pjsua(self, pjsua, name):
         """Have some PJSUA instance call into Asterisk
@@ -148,7 +148,7 @@ class ChanSpyMixMonitorTest(TestCase):
 
         LOGGER.info("Hangup ChanSpy channel %s." % self.chanspy_channel)
         self.ami_instance.hangup(channel=self.chanspy_channel)
-        reactor.callLater(2, self.verify_audio)
+        current_runtime().callLater(2, self.verify_audio)
 
     def verify_audio(self):
         """Verifies that audio was left appropriately from the last iteration"""

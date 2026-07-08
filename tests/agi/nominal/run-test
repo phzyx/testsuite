@@ -11,7 +11,7 @@ import os
 import sys
 import logging
 
-from asterisk.aio import reactor
+from asterisk.aio.runtime import current_runtime
 from asterisk.test_runner import run_test_object
 from shutil import copy
 
@@ -66,7 +66,7 @@ class AGITest(TestCase):
                           ).addErrback(self.handle_originate_failure)
 
         for call in range(TEST_CALLS):
-            reactor.callLater(call, originate, call)
+            current_runtime().callLater(call, originate, call)
 
     def user_event_handler(self, result, event):
         """

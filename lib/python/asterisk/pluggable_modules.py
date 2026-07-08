@@ -15,6 +15,7 @@ import re
 sys.path.append("lib/python")
 from .ami import AMIEventInstance
 from asterisk.aio import reactor
+from asterisk.aio.runtime import current_runtime
 from starpy import fastagi
 from .test_runner import load_and_parse_module
 from .sipp import SIPpActionModule, SIPpStartEventModule
@@ -198,7 +199,7 @@ class AMIChannelHangup(AMIEventInstance):
             return
         LOGGER.info("Hanging up channel %s", event['channel'])
         self.hungup_channel = True
-        reactor.callLater(self.delay, ami.hangup, event['channel'])
+        current_runtime().callLater(self.delay, ami.hangup, event['channel'])
         return (ami, event)
 
 
@@ -284,7 +285,7 @@ class ARIHangupMonitor(object):
             if (self.channels == 0):
                 LOGGER.info("All channels have hungup; stopping test after %d seconds",
                             self.delay)
-                reactor.callLater(self.delay, self.test_object.stop_reactor)
+                current_runtime().callLater(self.delay, self.test_object.stop_reactor)
 
 
 class HangupMonitor(object):
