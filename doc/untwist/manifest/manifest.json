@@ -13,7 +13,7 @@
     "maybeDeferred": 8,
     "succeed": 1
   },
-  "files_with_reactor_or_defer": 91,
+  "files_with_reactor_or_defer": 89,
   "lifecycle_owners": {
     "doc/untwist/test_ari_parity.py": {
       "counts": {
@@ -71,48 +71,6 @@
         "stop": 72
       },
       "is_run_test": false
-    },
-    "lib/python/asterisk/asterisk.py": {
-      "counts": {
-        "callWhenRunning": 1
-      },
-      "is_run_test": false
-    },
-    "lib/python/asterisk/test_case.py": {
-      "counts": {
-        "callWhenRunning": 1,
-        "running": 1,
-        "stop": 1
-      },
-      "is_run_test": false
-    },
-    "tests/blind-transfer-parkingtimeout/run-test": {
-      "counts": {
-        "callWhenRunning": 1,
-        "running": 1,
-        "stop": 1
-      },
-      "is_run_test": true
-    },
-    "tests/fastagi/wait-for-digit/run-test": {
-      "counts": {
-        "callWhenRunning": 1,
-        "running": 1,
-        "stop": 1
-      },
-      "is_run_test": true
-    },
-    "tests/funcs/func_presencestate/run-test": {
-      "counts": {
-        "stop": 1
-      },
-      "is_run_test": true
-    },
-    "tests/manager/mixmonitor/mixmonitor_id/run-test": {
-      "counts": {
-        "stop": 1
-      },
-      "is_run_test": true
     }
   },
   "parsed": 396,
@@ -250,7 +208,6 @@
       },
       "reactor": {
         "callLater": 8,
-        "callWhenRunning": 1,
         "spawnProcess": 1
       }
     },
@@ -398,10 +355,7 @@
       },
       "reactor": {
         "callLater": 3,
-        "callWhenRunning": 1,
-        "listenTCP": 1,
-        "running": 1,
-        "stop": 1
+        "listenTCP": 1
       }
     },
     "lib/python/asterisk/test_conditions.py": {
@@ -463,10 +417,7 @@
       "defer": {},
       "reactor": {
         "callLater": 3,
-        "callWhenRunning": 1,
-        "listenTCP": 1,
-        "running": 1,
-        "stop": 1
+        "listenTCP": 1
       }
     },
     "tests/channels/pjsip/keep_alive/keep_alive.py": {
@@ -595,16 +546,7 @@
       "defer": {},
       "reactor": {
         "callLater": 1,
-        "callWhenRunning": 1,
-        "listenTCP": 1,
-        "running": 1,
-        "stop": 1
-      }
-    },
-    "tests/funcs/func_presencestate/run-test": {
-      "defer": {},
-      "reactor": {
-        "stop": 1
+        "listenTCP": 1
       }
     },
     "tests/hep/hep_capture_node.py": {
@@ -624,12 +566,6 @@
         "defer.DeferredList": 1
       },
       "reactor": {}
-    },
-    "tests/manager/mixmonitor/mixmonitor_id/run-test": {
-      "defer": {},
-      "reactor": {
-        "stop": 1
-      }
     },
     "tests/manager/presence_state_list/ami_presence_state_list.py": {
       "defer": {
@@ -755,21 +691,21 @@
       }
     }
   },
-  "reactor_grand_total": 442,
+  "reactor_grand_total": 430,
   "reactor_totals": {
     "_ensure_loop": 6,
     "addAsyncCleanup": 2,
     "addStartupBind": 4,
     "callInThread": 5,
     "callLater": 153,
-    "callWhenRunning": 69,
+    "callWhenRunning": 65,
     "connectTCP": 5,
     "listenTCP": 29,
     "listenUDP": 14,
     "run": 41,
-    "running": 14,
+    "running": 11,
     "spawnProcess": 11,
-    "stop": 89
+    "stop": 84
   },
   "root": "/usr/src/phzyx/testsuite",
   "scanned": 396,

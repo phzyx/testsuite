@@ -9,6 +9,7 @@ the GNU General Public License Version 2.
 
 import sys
 from asterisk.aio import reactor
+from asterisk.aio.runtime import current_runtime
 from asterisk.test_runner import run_test_object
 from starpy import fastagi
 
@@ -27,7 +28,7 @@ class FastAGIWaitForDigitTest:
         # Listen for results from dialplan
         self.agi_factory = fastagi.FastAGIFactory(self.do_test)
         reactor.listenTCP(4573, self.agi_factory, self.timeout, '127.0.0.1')
-        reactor.callWhenRunning(self.run)
+        current_runtime().callWhenRunning(self.run)
 
         self.ast1 = Asterisk(base=workingdir)
         self.ast1.install_configs("%s/configs/ast1" % (testdir))
@@ -66,8 +67,7 @@ class FastAGIWaitForDigitTest:
     def stop_reactor(self):
         def __finish_stop(result):
             print("Stopping Reactor ...")
-            if reactor.running:
-                reactor.stop()
+            current_runtime().stop()
             return result
 
         df = self.ast1.stop()

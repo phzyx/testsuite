@@ -7,7 +7,7 @@ run-test files: 159   (python: 147, shell: 12, with reactor.run: 0)
 
 ## dimension totals (independent; a file may set several)
   custom_assertions  0
-  direct_lifecycle   4
+  direct_lifecycle   0
   helper_owned       0
   migrated           147
   multiple_objects   0
@@ -74,7 +74,7 @@ run-test files: 159   (python: 147, shell: 12, with reactor.run: 0)
   tests/apps/voicemail/polling/poll_same_mailbox/run-test
   tests/apps/voicemail/polling/poll_single_mailbox/run-test
   tests/apps/voicemail/polling/poll_sub_unsub/run-test
-  tests/blind-transfer-parkingtimeout/run-test   direct-lifecycle=callWhenRunning,running,stop
+  tests/blind-transfer-parkingtimeout/run-test
   tests/callparking/run-test
   tests/callparking_retrieval/run-test
   tests/cause_answered_elsewhere/run-test
@@ -109,7 +109,7 @@ run-test files: 159   (python: 147, shell: 12, with reactor.run: 0)
   tests/fastagi/say-phonetic/run-test
   tests/fastagi/say-time/run-test
   tests/fastagi/stream-file/run-test
-  tests/fastagi/wait-for-digit/run-test   direct-lifecycle=callWhenRunning,running,stop
+  tests/fastagi/wait-for-digit/run-test
   tests/fax/pjsip/gateway_g711_t38/run-test
   tests/fax/pjsip/gateway_native_t38/run-test
   tests/fax/pjsip/gateway_t38_g711_rx/run-test
@@ -123,7 +123,7 @@ run-test files: 159   (python: 147, shell: 12, with reactor.run: 0)
   tests/feature_blonde_transfer/run-test
   tests/feature_call_pickup/run-test
   tests/funcs/func_jitterbuffer/run-test
-  tests/funcs/func_presencestate/run-test   direct-lifecycle=stop
+  tests/funcs/func_presencestate/run-test
   tests/funcs/func_srv/run-test
   tests/hangup/handlers/run-test
   tests/hangup/handlers_endbeforehexten/run-test
@@ -133,7 +133,7 @@ run-test files: 159   (python: 147, shell: 12, with reactor.run: 0)
   tests/manager/danger/dangerous/run-test
   tests/manager/danger/safe/run-test
   tests/manager/login/run-test
-  tests/manager/mixmonitor/mixmonitor_id/run-test   direct-lifecycle=stop
+  tests/manager/mixmonitor/mixmonitor_id/run-test
   tests/masquerade/run-test
   tests/pbx/call-files/run-test
   tests/pbx/callerid_match/run-test

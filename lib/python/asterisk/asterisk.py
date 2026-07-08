@@ -28,6 +28,7 @@ from .config import ConfigFile
 from subprocess import PIPE, TimeoutExpired
 
 from asterisk.aio import reactor, defer, utils, error
+from asterisk.aio.runtime import current_runtime
 from asterisk.aio import Failure, ProcessProtocol
 
 REMOTE_ERROR = None
@@ -164,7 +165,7 @@ class AsteriskRemoteCliCommand(object):
                                % (self.exitcode, self.err))
                 deferred.errback(Failure(self))
 
-        reactor.callWhenRunning(lambda: asyncio.ensure_future(_run()))
+        current_runtime().callWhenRunning(lambda: asyncio.ensure_future(_run()))
         return deferred
 
 

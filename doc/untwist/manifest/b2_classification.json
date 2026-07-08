@@ -1096,12 +1096,8 @@
   {
    "ctor_count": 0,
    "custom_assertions": false,
-   "direct_lifecycle": true,
-   "direct_lifecycle_attrs": [
-    "callWhenRunning",
-    "running",
-    "stop"
-   ],
+   "direct_lifecycle": false,
+   "direct_lifecycle_attrs": [],
    "file": "tests/blind-transfer-parkingtimeout/run-test",
    "has_main": true,
    "has_reactor_run": false,
@@ -1786,12 +1782,8 @@
   {
    "ctor_count": 0,
    "custom_assertions": false,
-   "direct_lifecycle": true,
-   "direct_lifecycle_attrs": [
-    "callWhenRunning",
-    "running",
-    "stop"
-   ],
+   "direct_lifecycle": false,
+   "direct_lifecycle_attrs": [],
    "file": "tests/fastagi/wait-for-digit/run-test",
    "has_main": true,
    "has_reactor_run": false,
@@ -2056,10 +2048,8 @@
   {
    "ctor_count": 0,
    "custom_assertions": false,
-   "direct_lifecycle": true,
-   "direct_lifecycle_attrs": [
-    "stop"
-   ],
+   "direct_lifecycle": false,
+   "direct_lifecycle_attrs": [],
    "file": "tests/funcs/func_presencestate/run-test",
    "has_main": true,
    "has_reactor_run": false,
@@ -2269,10 +2259,8 @@
   {
    "ctor_count": 0,
    "custom_assertions": false,
-   "direct_lifecycle": true,
-   "direct_lifecycle_attrs": [
-    "stop"
-   ],
+   "direct_lifecycle": false,
+   "direct_lifecycle_attrs": [],
    "file": "tests/manager/mixmonitor/mixmonitor_id/run-test",
    "has_main": true,
    "has_reactor_run": false,
@@ -2894,7 +2882,7 @@
  "summary": {
   "dimension_totals": {
    "custom_assertions": 0,
-   "direct_lifecycle": 4,
+   "direct_lifecycle": 0,
    "helper_owned": 0,
    "migrated": 147,
    "multiple_objects": 0,

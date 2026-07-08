@@ -9,6 +9,7 @@ the GNU General Public License Version 2.
 
 import sys
 from asterisk.aio import reactor
+from asterisk.aio.runtime import current_runtime
 from asterisk.test_runner import run_test_object
 from starpy import fastagi
 
@@ -31,7 +32,7 @@ class BlindTransferTest:
         self.agi_b = fastagi.FastAGIFactory(self.get_result_b)
         reactor.listenTCP(4574, self.agi_b, self.timeout, '127.0.0.1')
 
-        reactor.callWhenRunning(self.run)
+        current_runtime().callWhenRunning(self.run)
 
         self.ast1 = Asterisk(base=workingdir)
         self.ast1.install_configs("%s/configs/ast1" % (testdir))
@@ -66,9 +67,8 @@ class BlindTransferTest:
             self.log_last_step("Test Failed... view result of "
              "'core show globals' in log for more detailed failure results.")
 
-        if reactor.running:
-            print("Stopping Reactor ...")
-            reactor.stop()
+        print("Stopping Reactor ...")
+        current_runtime().stop()
 
     # This is a blind transfer test with parkingtimeout.
     # 1.  A calls B

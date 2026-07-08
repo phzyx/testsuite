@@ -262,27 +262,32 @@ def main():
         "per_file": dict(sorted(per_file.items())),
     }
 
-    # Sanity: when scanning the testsuite repo, no module (non run-test) may own
-    # a reactor.run() lifecycle - stasisstatus/test_case.py was the last such
-    # owner and has been migrated to run_test_object.  (Skipped for other roots,
-    # e.g. the starpy fork.)
+    # Zero-lifecycle gate (end of Phase B step B2.5).  No lifecycle reactor.*
+    # reference -- run / stop / running / callWhenRunning -- may remain in ANY
+    # test entrypoint (run-test), per-test lifecycle helper, or the core library
+    # files test_case.py / asterisk.py.  Every such owner has been migrated:
+    # entrypoints route through run_test_object; test_case.py / asterisk.py and
+    # the four scripts that drove the loop directly now call the runtime through
+    # current_runtime() / self.stop_reactor() instead of the reactor facade.
+    #
+    # The ONLY files still permitted to touch the reactor lifecycle are the
+    # transitional shim's OWN unit / parity harnesses -- lib/python/asterisk/aio/
+    # (test_aio.py) and doc/untwist/ (the parity suites) -- which drive
+    # reactor.run()/stop() deliberately to exercise the runtime under test.
+    #
+    # Resource APIs the migrated files still use -- listenTCP / callLater /
+    # spawnProcess -- are NOT lifecycle and are removed later in B3, so they are
+    # intentionally NOT gated here.  (Skipped for other roots, e.g. the starpy
+    # fork.)
     owners = manifest["lifecycle_owners"]
     if root == REPO:
-        stasis = "tests/rest_api/applications/stasisstatus/test_case.py"
-        assert not (stasis in owners and "run" in owners[stasis]["counts"]), \
-            f"unexpected lingering reactor.run lifecycle owner: {stasis}"
-        # No test-scenario module (under tests/) may own a reactor.run()
-        # lifecycle.  The runtime's own parity/unit harnesses (doc/untwist,
-        # lib/python/asterisk/aio) legitimately drive reactor.run() and are
-        # excluded.
-        module_run_owners = [f for f, o in owners.items()
-                             if not o["is_run_test"] and "run" in o["counts"]
-                             and f.startswith("tests/")]
-        assert not module_run_owners, \
-            f"unexpected tests/ module reactor.run() owners: {module_run_owners}"
-        direct_stop = [f for f, o in owners.items()
-                       if o["is_run_test"] and ("stop" in o["counts"] or "running" in o["counts"])]
-        assert direct_stop, "expected >=1 run-test script calling reactor.stop()/running directly"
+        ALLOWED_PREFIXES = ("lib/python/asterisk/aio/", "doc/untwist/")
+        offenders = {f: o["counts"] for f, o in owners.items()
+                     if not f.startswith(ALLOWED_PREFIXES)}
+        assert not offenders, (
+            "zero-lifecycle gate: reactor.run/stop/running/callWhenRunning must "
+            "not remain outside the shim's own aio/ and doc/untwist/ harnesses; "
+            f"found: {offenders}")
 
     text = json.dumps(manifest, indent=2, sort_keys=True) + "\n"
 

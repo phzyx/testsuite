@@ -10,7 +10,6 @@ the GNU General Public License Version 2.
 import sys
 sys.path.append("lib/python")
 
-from asterisk.aio import reactor
 from asterisk.test_runner import run_test_object
 
 from asterisk.test_case import TestCase
@@ -37,7 +36,7 @@ class func_presencestate_test(TestCase):
 
         for result in self.passes:
             if result == "0":
-                reactor.stop()
+                self.stop_reactor()
                 return
 
         self.passed = True

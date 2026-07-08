@@ -16,6 +16,7 @@ import uuid
 from datetime import datetime
 from hashlib import md5
 from asterisk.aio import reactor, defer, error as aio_error
+from asterisk.aio.runtime import current_runtime
 from starpy import manager, fastagi
 
 from .asterisk import Asterisk
@@ -186,7 +187,7 @@ class TestCase(object):
         # logging; with the asyncio shim there is no separate log system to
         # bridge -- stdlib logging is already configured.
 
-        reactor.callWhenRunning(self._run)
+        current_runtime().callWhenRunning(self._run)
 
     def _set_test_log_directory(self):
         """Determine which logging directory we should use for this test run
@@ -529,9 +530,9 @@ class TestCase(object):
         def __stop_reactor(result):
             """Called when the Asterisk instances are stopped"""
             LOGGER.info("Stopping Reactor")
-            if reactor.running:
+            if current_runtime().running:
                 try:
-                    reactor.stop()
+                    current_runtime().stop()
                 except aio_error.ReactorNotRunning:
                     # The shim's stop() is idempotent and does not raise, but
                     # keep the guard for parity in case something stopped it

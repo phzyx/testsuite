@@ -1,20 +1,20 @@
 # reactor/defer manifest  (root=.)
-scanned=396 parsed=396 skipped_non_python=0 files_with_usage=91
+scanned=396 parsed=396 skipped_non_python=0 files_with_usage=89
 
-## reactor.* totals  (grand=442)
+## reactor.* totals  (grand=430)
   reactor._ensure_loop         6
   reactor.addAsyncCleanup      2
   reactor.addStartupBind       4
   reactor.callInThread         5
   reactor.callLater            153
-  reactor.callWhenRunning      69
+  reactor.callWhenRunning      65
   reactor.connectTCP           5
   reactor.listenTCP            29
   reactor.listenUDP            14
   reactor.run                  41
-  reactor.running              14
+  reactor.running              11
   reactor.spawnProcess         11
-  reactor.stop                 89
+  reactor.stop                 84
 
 ## defer totals  (grand=106)
   AlreadyCalledError         2
@@ -29,7 +29,7 @@ scanned=396 parsed=396 skipped_non_python=0 files_with_usage=91
   maybeDeferred              8
   succeed                    1
 
-## lifecycle owners (13)  [run/stop/running/callWhenRunning]
+## lifecycle owners (7)  [run/stop/running/callWhenRunning]
   [module  ] doc/untwist/test_ari_parity.py   callWhenRunning=1 run=1 stop=2
   [module  ] doc/untwist/test_core_runtime.py   callWhenRunning=1 run=1 stop=2
   [module  ] doc/untwist/test_dns_parity.py   callWhenRunning=1 run=1 stop=2
@@ -37,9 +37,3 @@ scanned=396 parsed=396 skipped_non_python=0 files_with_usage=91
   [module  ] doc/untwist/test_ssh_parity.py   callWhenRunning=1 run=1 stop=2
   [module  ] doc/untwist/test_ws_parity.py   callWhenRunning=1 run=1 stop=2
   [module  ] lib/python/asterisk/aio/test_aio.py   callWhenRunning=59 run=35 running=11 stop=72
-  [module  ] lib/python/asterisk/asterisk.py   callWhenRunning=1
-  [module  ] lib/python/asterisk/test_case.py   callWhenRunning=1 running=1 stop=1
-  [run-test] tests/blind-transfer-parkingtimeout/run-test   callWhenRunning=1 running=1 stop=1
-  [run-test] tests/fastagi/wait-for-digit/run-test   callWhenRunning=1 running=1 stop=1
-  [run-test] tests/funcs/func_presencestate/run-test   stop=1
-  [run-test] tests/manager/mixmonitor/mixmonitor_id/run-test   stop=1
