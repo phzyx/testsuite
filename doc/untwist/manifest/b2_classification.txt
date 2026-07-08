@@ -2,23 +2,22 @@
 run-test files: 159   (python: 147, shell: 12, with reactor.run: 0)
 
 ## migration strategies
-  helper-owned       1
-  migrated           146
+  migrated           147
   shell              12
 
 ## dimension totals (independent; a file may set several)
   custom_assertions  0
   direct_lifecycle   4
-  helper_owned       1
-  migrated           146
+  helper_owned       0
+  migrated           147
   multiple_objects   0
   post_run_cleanup   0
   pre_run            0
 
 ## non-run-test loop owners (reactor.run inside a def/ctor)
-  tests/rest_api/applications/stasisstatus/test_case.py  [StasisStatusTestCase.__init__]
+  (none)
 
-## migrated (146)
+## migrated (147)
   tests/agi/exit_status/run-test
   tests/agi/nominal/run-test
   tests/apps/bridge/bridge_transfer_callee/run-test
@@ -150,6 +149,7 @@ run-test files: 159   (python: 147, shell: 12, with reactor.run: 0)
   tests/rest_api/CORS/run-test
   tests/rest_api/applications/channel-subscriptions/originate_to_other_stasis_app/local_channels/run-test
   tests/rest_api/applications/channel-subscriptions/originate_to_other_stasis_app/non_local_channels/run-test
+  tests/rest_api/applications/stasisstatus/run-test
   tests/rest_api/authentication/run-test
   tests/rest_api/authentication_user_acl/run-test
   tests/rest_api/channels/redirect/nominal/run-test
@@ -165,9 +165,6 @@ run-test files: 159   (python: 147, shell: 12, with reactor.run: 0)
   tests/skeleton_test/run-test
   tests/udptl/run-test
   tests/udptl_v6/run-test
-
-## helper-owned (1)
-  tests/rest_api/applications/stasisstatus/run-test
 
 ## shell (12)
   tests/apps/queues/gosub_test/run-test

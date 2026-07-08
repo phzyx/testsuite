@@ -262,13 +262,24 @@ def main():
         "per_file": dict(sorted(per_file.items())),
     }
 
-    # Sanity: when scanning the testsuite repo, the two known lifecycle owners
-    # must be present.  (Skipped for other roots, e.g. the starpy fork.)
+    # Sanity: when scanning the testsuite repo, no module (non run-test) may own
+    # a reactor.run() lifecycle - stasisstatus/test_case.py was the last such
+    # owner and has been migrated to run_test_object.  (Skipped for other roots,
+    # e.g. the starpy fork.)
     owners = manifest["lifecycle_owners"]
     if root == REPO:
         stasis = "tests/rest_api/applications/stasisstatus/test_case.py"
-        assert stasis in owners and "run" in owners[stasis]["counts"], \
-            f"expected lifecycle owner missing: {stasis}"
+        assert not (stasis in owners and "run" in owners[stasis]["counts"]), \
+            f"unexpected lingering reactor.run lifecycle owner: {stasis}"
+        # No test-scenario module (under tests/) may own a reactor.run()
+        # lifecycle.  The runtime's own parity/unit harnesses (doc/untwist,
+        # lib/python/asterisk/aio) legitimately drive reactor.run() and are
+        # excluded.
+        module_run_owners = [f for f, o in owners.items()
+                             if not o["is_run_test"] and "run" in o["counts"]
+                             and f.startswith("tests/")]
+        assert not module_run_owners, \
+            f"unexpected tests/ module reactor.run() owners: {module_run_owners}"
         direct_stop = [f for f, o in owners.items()
                        if o["is_run_test"] and ("stop" in o["counts"] or "running" in o["counts"])]
         assert direct_stop, "expected >=1 run-test script calling reactor.stop()/running directly"

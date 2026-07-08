@@ -1,12 +1,5 @@
 {
- "non_run_test_loop_owners": [
-  {
-   "file": "tests/rest_api/applications/stasisstatus/test_case.py",
-   "owners": [
-    "StasisStatusTestCase.__init__"
-   ]
-  }
- ],
+ "non_run_test_loop_owners": [],
  "run_tests": [
   {
    "ctor_count": 0,
@@ -2601,16 +2594,16 @@
    "file": "tests/rest_api/applications/stasisstatus/run-test",
    "has_main": true,
    "has_reactor_run": false,
-   "helper_owned": true,
+   "helper_owned": false,
    "language": "python",
-   "migrated": false,
-   "migration_strategy": "helper-owned",
+   "migrated": true,
+   "migration_strategy": "migrated",
    "multiple_objects": false,
    "post_run_calls": [],
    "post_run_cleanup": false,
    "pre_run": false,
    "pre_run_calls": [],
-   "primary_bucket": "helper-owned"
+   "primary_bucket": "migrated"
   },
   {
    "ctor_count": 0,
@@ -2902,18 +2895,17 @@
   "dimension_totals": {
    "custom_assertions": 0,
    "direct_lifecycle": 4,
-   "helper_owned": 1,
-   "migrated": 146,
+   "helper_owned": 0,
+   "migrated": 147,
    "multiple_objects": 0,
    "post_run_cleanup": 0,
    "pre_run": 0
   },
-  "helper_loop_owners": 1,
+  "helper_loop_owners": 0,
   "python_entrypoints": 147,
   "shell_harnesses": 12,
   "strategies": {
-   "helper-owned": 1,
-   "migrated": 146,
+   "migrated": 147,
    "shell": 12
   },
   "total_run_tests": 159,

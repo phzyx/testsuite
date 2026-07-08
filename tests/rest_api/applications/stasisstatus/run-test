@@ -13,6 +13,7 @@ import logging
 sys.path.append("lib/python")
 sys.path.append("tests/rest_api/applications")
 
+from asterisk.test_runner import run_test_object
 from stasisstatus.ari_client import AriClient
 from stasisstatus.monitor import ChannelVariableMonitor
 from stasisstatus.test_case import StasisStatusTestCase
@@ -235,7 +236,7 @@ def main():
           0 if the test passed, 1 otherwise.
     """
 
-    test = StasisStatusTestCase(build_scenarios)
+    test = run_test_object(lambda: StasisStatusTestCase(build_scenarios))
 
     if test.passed:
         return 0

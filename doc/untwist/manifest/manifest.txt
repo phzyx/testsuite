@@ -1,7 +1,7 @@
 # reactor/defer manifest  (root=.)
 scanned=396 parsed=396 skipped_non_python=0 files_with_usage=91
 
-## reactor.* totals  (grand=443)
+## reactor.* totals  (grand=442)
   reactor._ensure_loop         6
   reactor.addAsyncCleanup      2
   reactor.addStartupBind       4
@@ -11,7 +11,7 @@ scanned=396 parsed=396 skipped_non_python=0 files_with_usage=91
   reactor.connectTCP           5
   reactor.listenTCP            29
   reactor.listenUDP            14
-  reactor.run                  42
+  reactor.run                  41
   reactor.running              14
   reactor.spawnProcess         11
   reactor.stop                 89
@@ -29,7 +29,7 @@ scanned=396 parsed=396 skipped_non_python=0 files_with_usage=91
   maybeDeferred              8
   succeed                    1
 
-## lifecycle owners (14)  [run/stop/running/callWhenRunning]
+## lifecycle owners (13)  [run/stop/running/callWhenRunning]
   [module  ] doc/untwist/test_ari_parity.py   callWhenRunning=1 run=1 stop=2
   [module  ] doc/untwist/test_core_runtime.py   callWhenRunning=1 run=1 stop=2
   [module  ] doc/untwist/test_dns_parity.py   callWhenRunning=1 run=1 stop=2
@@ -43,4 +43,3 @@ scanned=396 parsed=396 skipped_non_python=0 files_with_usage=91
   [run-test] tests/fastagi/wait-for-digit/run-test   callWhenRunning=1 running=1 stop=1
   [run-test] tests/funcs/func_presencestate/run-test   stop=1
   [run-test] tests/manager/mixmonitor/mixmonitor_id/run-test   stop=1
-  [module  ] tests/rest_api/applications/stasisstatus/test_case.py   run=1

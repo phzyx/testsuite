@@ -15,7 +15,7 @@ sys.path.append("lib/python")
 sys.path.append("tests/rest_api/applications")
 
 from asterisk.test_case import TestCase
-from asterisk.aio import reactor, defer
+from asterisk.aio import defer
 
 LOGGER = logging.getLogger(__name__)
 
@@ -47,7 +47,6 @@ class StasisStatusTestCase(TestCase):
         self.__iterator = None
         self.__builder = scenario_builder
 
-        reactor.run()
         return
 
     def __format__(self, format_spec):
