@@ -1,25 +1,35 @@
-"""asyncio replacements for the small slice of ``twisted.internet.utils`` used
+"""asyncio replacement for the small slice of ``twisted.internet.utils`` used
 by the testsuite.
 
 Only ``getProcessOutputAndValue`` is consumed (asterisk.py), so only that is
-implemented. The contract mirrors Twisted's:
+implemented. It is a native ``async def`` (Phase B step B5.1); awaiting it:
 
-* On a normal exit (including a non-zero exit code) the returned Deferred fires
-  its callback with ``(stdout_bytes, stderr_bytes, exit_code)``.
-* On termination by a signal the Deferred fires its errback with a Failure whose
-  ``.value`` is ``(stdout_bytes, stderr_bytes, signal_number)`` -- matching the
-  ``_ProcessOutputValueAndError`` shape Twisted hands back, so callers that do
-  ``out, err, code = result`` / ``result.value`` keep working unchanged.
+* returns ``(stdout_bytes, stderr_bytes, exit_code)`` on a normal exit
+  (including a non-zero exit code); and
+* raises ``ProcessSignaled`` -- whose ``.value`` is
+  ``(stdout_bytes, stderr_bytes, signal_number)`` -- when the child is
+  terminated by a signal, mirroring the ``(out, err, signal)`` tuple the old
+  Twisted-shaped errback exposed as ``Failure.value`` so callers reading
+  ``err.value`` keep working unchanged.
 """
 
 import asyncio
 import os
 import signal
 
-from .defer import Deferred
-from .failure import Failure
+__all__ = ['getProcessOutputAndValue', 'ProcessSignaled']
 
-__all__ = ['getProcessOutputAndValue']
+
+class ProcessSignaled(Exception):
+    """Raised when ``getProcessOutputAndValue``'s child dies from a signal.
+
+    ``.value`` carries ``(stdout_bytes, stderr_bytes, signal_number)`` to match
+    the tuple Twisted's signal-termination errback exposed as ``Failure.value``.
+    """
+
+    def __init__(self, out, err, signal_number):
+        super().__init__('process terminated by signal %d' % signal_number)
+        self.value = (out, err, signal_number)
 
 
 def _terminate_without_reaping(proc):
@@ -57,58 +67,33 @@ def _terminate_without_reaping(proc):
             os.close(pidfd)
 
 
-def getProcessOutputAndValue(executable, args=(), env=None, path=None):
+async def getProcessOutputAndValue(executable, args=(), env=None, path=None):
     """Run ``executable`` and collect stdout, stderr, and exit status.
 
-    Returns a Deferred; see module docstring for the firing contract. ``args``
-    follows the os-level convention (it does NOT include the program name, unlike
-    Twisted's ``spawnProcess`` ``args[0]``).
+    Returns ``(stdout_bytes, stderr_bytes, exit_code)`` on a normal exit and
+    raises ``ProcessSignaled`` on signal termination (see module docstring).
+    ``args`` follows the os-level convention (it does NOT include the program
+    name, unlike Twisted's ``spawnProcess`` ``args[0]``).
     """
-    d = Deferred()
-
-    async def _run():
-        proc = await asyncio.create_subprocess_exec(
-            executable, *tuple(args),
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
-            env=env, cwd=path)
-        try:
-            out, err = await proc.communicate()
-        except asyncio.CancelledError:
-            # Cancellation (e.g. reactor shutdown) must not leave the child
-            # running: terminate it and reap before propagating.
-            if proc.returncode is None:
-                _terminate_without_reaping(proc)
-                try:
-                    await proc.wait()
-                except asyncio.CancelledError:
-                    pass
-            raise
-        return out, err, proc.returncode
-
-    task = asyncio.ensure_future(_run())
-
-    def _done(fut):
-        if fut.cancelled():
-            d.errback(Failure(asyncio.CancelledError()))
-            return
-        exc = fut.exception()
-        if exc is not None:
+    proc = await asyncio.create_subprocess_exec(
+        executable, *tuple(args),
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+        env=env, cwd=path)
+    try:
+        out, err = await proc.communicate()
+    except asyncio.CancelledError:
+        # Cancellation (e.g. runtime shutdown) must not leave the child
+        # running: terminate it and reap before propagating.
+        if proc.returncode is None:
+            _terminate_without_reaping(proc)
             try:
-                raise exc
-            except Exception:
-                d.errback(Failure())
-            return
-        out, err, code = fut.result()
-        if code is not None and code < 0:
-            # Terminated by signal: errback with the (out, err, signal) tuple as
-            # the Failure value, mirroring Twisted's _UnexpectedErrorOutput path.
-            failure = Failure(RuntimeError(
-                'process %s terminated by signal %d' % (executable, -code)))
-            failure.value = (out, err, -code)
-            d.errback(failure)
-        else:
-            d.callback((out, err, code))
-
-    task.add_done_callback(_done)
-    return d
+                await proc.wait()
+            except asyncio.CancelledError:
+                pass
+        raise
+    code = proc.returncode
+    if code is not None and code < 0:
+        # Terminated by signal: surface (out, err, signal) like Twisted did.
+        raise ProcessSignaled(out, err, -code)
+    return out, err, code

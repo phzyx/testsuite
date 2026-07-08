@@ -19,7 +19,10 @@ classifies defer usage into these buckets:
                                      consumeErrors)
     * maybeDeferred / gatherResults / succeed / fail
     * LoopingCall(...)           -- polling primitive
-    * getProcessOutputAndValue() -- utils async-subprocess helper
+
+  (``getProcessOutputAndValue`` was a Deferred producer in Twisted but is now a
+  native ``async def`` in ``aio/utils.py`` (Phase B step B5.1), so it is no
+  longer counted as a construct.)
 
   chaining (method-name calls), split by attribution confidence:
     * high-confidence (counted always): addCallback / addCallbacks /
@@ -74,7 +77,7 @@ SKIP_DIRS = {".git", "__pycache__", "venv", ".venv", "env", ".tox",
 # Construction symbols resolved through import aliases (never bare words).
 CTOR_SYMBOLS = {
     "Deferred", "DeferredList", "maybeDeferred", "gatherResults",
-    "succeed", "fail", "LoopingCall", "getProcessOutputAndValue",
+    "succeed", "fail", "LoopingCall",
     "inlineCallbacks", "returnValue",
 }
 

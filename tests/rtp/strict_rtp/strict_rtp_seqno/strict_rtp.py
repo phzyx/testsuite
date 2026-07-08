@@ -11,12 +11,12 @@ Ben Ford <bford@digium.com>
 This program is free software, distributed under the terms of
 the GNU General Public License Version 2.
 """
+import asyncio
 import logging
 #from datetime import datetime
 
 from asterisk.aio import DatagramProtocol
 from asterisk.aio.runtime import current_runtime
-from asterisk.aio import LoopingCall
 
 LOGGER = logging.getLogger(__name__)
 
@@ -72,6 +72,22 @@ class StrictRtpTester(object):
             self.send_num = self.send_num + 1
             idx = idx + 1
 
+    async def _send_loop(self, protocol, num, interval):
+        """Send ``num`` packets every ``interval`` seconds until cancelled.
+
+        Replaces the old ``LoopingCall`` (start(now=True)): the first burst is
+        sent immediately, then repeated on ``interval`` until the task is
+        cancelled via ``stop()``.
+        """
+        try:
+            while True:
+                self.send_packets(protocol, num)
+                await asyncio.sleep(interval)
+        except asyncio.CancelledError:
+            raise
+        except Exception as exc:
+            LOGGER.error(exc)
+
     def ami_connect_cb(self, ami):
         """Callback called when AMI connects
 
@@ -94,7 +110,7 @@ class StrictRtpTester(object):
                 self.test_object.set_passed(False)
                 ami.hangup(self.channel)
                 return
-            self.send_task.stop()
+            self.send_task.cancel()
             protocol = StrictRtpTester.PacketSendProtocol(self.test_object)
             current_runtime().listenUDP(6001, protocol)
             self.send_packets(protocol, 1)
@@ -113,14 +129,10 @@ class StrictRtpTester(object):
         ami     The AMI protocol instance
         event   The Newexten event
         """
-        def errback(err):
-            LOGGER.error(err)
-
         if event['application'] != 'Echo':
             return
         self.channel = event['channel']
         protocol = StrictRtpTester.PacketSendProtocol(self.test_object)
         current_runtime().listenUDP(6000, protocol)
-        self.send_task = LoopingCall(self.send_packets, protocol, 20)
-        deferred = self.send_task.start(1.0)
-        deferred.addErrback(errback)
+        self.send_task = asyncio.ensure_future(
+            self._send_loop(protocol, 20, 1.0))

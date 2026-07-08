@@ -1,8 +1,8 @@
 {
-  "defer_grand_total": 106,
+  "defer_grand_total": 104,
   "defer_totals": {
     "AlreadyCalledError": 2,
-    "Deferred": 27,
+    "Deferred": 25,
     "DeferredList": 4,
     "TimeoutError": 1,
     "defer.AlreadyCalledError": 5,
@@ -13,7 +13,7 @@
     "maybeDeferred": 8,
     "succeed": 1
   },
-  "files_with_reactor_or_defer": 26,
+  "files_with_reactor_or_defer": 24,
   "lifecycle_owners": {},
   "parsed": 396,
   "per_file": {
@@ -21,12 +21,6 @@
       "defer": {
         "defer.AlreadyCalledError": 1,
         "defer.Deferred": 1
-      },
-      "reactor": {}
-    },
-    "lib/python/asterisk/aio/protocols.py": {
-      "defer": {
-        "Deferred": 1
       },
       "reactor": {}
     },
@@ -46,12 +40,6 @@
         "gatherResults": 1,
         "maybeDeferred": 8,
         "succeed": 1
-      },
-      "reactor": {}
-    },
-    "lib/python/asterisk/aio/utils.py": {
-      "defer": {
-        "Deferred": 1
       },
       "reactor": {}
     },

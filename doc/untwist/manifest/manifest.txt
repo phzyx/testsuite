@@ -1,11 +1,11 @@
 # reactor/defer manifest  (root=.)
-scanned=396 parsed=396 skipped_non_python=0 files_with_usage=26
+scanned=396 parsed=396 skipped_non_python=0 files_with_usage=24
 
 ## reactor.* totals  (grand=0)
 
-## defer totals  (grand=106)
+## defer totals  (grand=104)
   AlreadyCalledError         2
-  Deferred                   27
+  Deferred                   25
   DeferredList               4
   TimeoutError               1
   defer.AlreadyCalledError   5

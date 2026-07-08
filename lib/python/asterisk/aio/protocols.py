@@ -9,7 +9,6 @@ suite actually subclasses:
   * ``ProcessProtocol`` - mirrors ``twisted.internet.protocol.ProcessProtocol``
     (``connectionMade``/``outReceived``/``errReceived``/``processEnded``) on top
     of ``asyncio.SubprocessProtocol``.
-  * ``LoopingCall`` - mirrors ``twisted.internet.task.LoopingCall``.
   * ``ProcessDone`` / ``ProcessTerminated`` - the ``reason.value`` types handed to
     ``processEnded``.
 
@@ -23,7 +22,6 @@ import asyncio
 import os
 import signal as _signal
 
-from .defer import Deferred
 from .failure import Failure
 
 
@@ -491,65 +489,3 @@ class ProcessProtocol(asyncio.SubprocessProtocol):
 
         ``reason`` is a Failure wrapping ProcessDone or ProcessTerminated.
         """
-
-
-# ---------------------------------------------------------------------------- #
-# LoopingCall
-# ---------------------------------------------------------------------------- #
-class LoopingCall(object):
-    """Periodically call a function (twisted.internet.task.LoopingCall).
-
-    ``start(interval, now=True)`` returns a Deferred that fires when the loop is
-    stopped via ``stop()``. Exceptions raised by the function stop the loop and
-    errback the Deferred, matching Twisted.
-    """
-
-    def __init__(self, f, *args, **kw):
-        self.f = f
-        self.args = args
-        self.kw = kw
-        self.running = False
-        self.interval = None
-        self._deferred = None
-        self._handle = None
-        self._loop = None
-
-    def start(self, interval, now=True):
-        """Start calling the function every ``interval`` seconds."""
-        if self.running:
-            raise AssertionError("LoopingCall already running")
-        self.interval = interval
-        self.running = True
-        self._deferred = Deferred()
-        self._loop = asyncio.get_event_loop()
-        if now:
-            self._run()
-        else:
-            self._schedule()
-        return self._deferred
-
-    def stop(self):
-        """Stop the loop and fire the start() Deferred with this LoopingCall."""
-        self.running = False
-        if self._handle is not None:
-            self._handle.cancel()
-            self._handle = None
-        if self._deferred is not None and not self._deferred._called:
-            self._deferred.callback(self)
-
-    def _schedule(self):
-        if not self.running:
-            return
-        self._handle = self._loop.call_later(self.interval, self._run)
-
-    def _run(self):
-        if not self.running:
-            return
-        try:
-            self.f(*self.args, **self.kw)
-        except Exception:
-            self.running = False
-            if self._deferred is not None and not self._deferred._called:
-                self._deferred.errback(Failure())
-            return
-        self._schedule()

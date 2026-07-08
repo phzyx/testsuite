@@ -200,7 +200,7 @@ class AsteriskCliCommand(object):
         parameter to the deferred is this object.
         """
         def __cli_output_callback(result):
-            """Callback from getProcessOutputAndValue"""
+            """Handle a normal exit from getProcessOutputAndValue"""
             self._set_properties(result)
             LOGGER.debug("Asterisk CLI %s exited %d" %
                          (self.host, self.exitcode))
@@ -212,8 +212,11 @@ class AsteriskCliCommand(object):
                 self._deferred.callback(self)
 
         def __cli_error_callback(result):
-            """Errback from getProcessOutputAndValue"""
-            self._set_properties(result.value)
+            """Handle a signal-terminated getProcessOutputAndValue.
+
+            ``result`` is the ``(out, err, signal)`` tuple carried on
+            ``ProcessSignaled.value``."""
+            self._set_properties(result)
             LOGGER.warning("Asterisk CLI %s exited %d with error: %s" %
                            (self.host, self.exitcode, self.err))
             if self.err:
@@ -221,11 +224,29 @@ class AsteriskCliCommand(object):
             self._deferred.errback(self)
 
         self._deferred = defer.Deferred()
-        deferred = utils.getProcessOutputAndValue(self._cmd[0],
-                                                  self._cmd[1:],
-                                                  env=os.environ)
-        deferred.addCallbacks(callback=__cli_output_callback,
-                              errback=__cli_error_callback,)
+
+        async def _run():
+            try:
+                result = await utils.getProcessOutputAndValue(
+                    self._cmd[0], self._cmd[1:], env=os.environ)
+            except utils.ProcessSignaled as exc:
+                __cli_error_callback(exc.value)
+            except Exception as exc:
+                # A startup failure (bad executable, permissions, OSError from
+                # create_subprocess_exec) must errback the returned Deferred --
+                # not leave it unresolved with an unretrieved task exception.
+                # Matches the old Deferred helper, which errbacked on any task
+                # exception.
+                self.exitcode = -1
+                self.output = ''
+                self.err = str(exc)
+                LOGGER.warning("Asterisk CLI %s failed: %s", self.host, exc)
+                self._deferred.errback(self)
+            else:
+                __cli_output_callback(result)
+
+        current_runtime().callWhenRunning(
+            lambda: asyncio.ensure_future(_run()))
 
         return self._deferred
 

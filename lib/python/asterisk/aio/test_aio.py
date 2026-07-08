@@ -15,6 +15,7 @@ Run with:  python3 -m unittest asterisk.aio.test_aio
 """
 
 import asyncio
+import gc
 import logging
 import signal
 import sys
@@ -1076,15 +1077,18 @@ class MaybeDeferredAwaitableTests(_LoopTestCase):
 # --------------------------------------------------------------------------- #
 class GetProcessOutputAndValueTests(_LoopTestCase):
 
-    def test_clean_exit_callbacks_with_tuple(self):
+    def test_clean_exit_returns_tuple(self):
         from asterisk.aio import utils
         record = {}
         script = ("import sys; sys.stdout.write('hi'); "
                   "sys.stderr.write('eh'); sys.exit(2)")
 
         def run():
-            d = utils.getProcessOutputAndValue(sys.executable, ['-c', script])
-            d.addCallback(lambda r: record.__setitem__('r', r) or current_runtime().stop())
+            async def go():
+                record['r'] = await utils.getProcessOutputAndValue(
+                    sys.executable, ['-c', script])
+                current_runtime().stop()
+            asyncio.ensure_future(go())
             current_runtime().callLater(5.0, current_runtime().stop)
 
         current_runtime().callWhenRunning(run)
@@ -1094,23 +1098,93 @@ class GetProcessOutputAndValueTests(_LoopTestCase):
         self.assertEqual(err, b'eh')
         self.assertEqual(code, 2)
 
-    def test_signal_errbacks_with_value_tuple(self):
+    def test_signal_raises_with_value_tuple(self):
         from asterisk.aio import utils
         import signal
         record = {}
         script = "import os, signal; os.kill(os.getpid(), signal.SIGTERM)"
 
         def run():
-            d = utils.getProcessOutputAndValue(sys.executable, ['-c', script])
-            d.addErrback(lambda f: record.__setitem__('f', f) or current_runtime().stop())
+            async def go():
+                try:
+                    await utils.getProcessOutputAndValue(
+                        sys.executable, ['-c', script])
+                except utils.ProcessSignaled as exc:
+                    record['exc'] = exc
+                current_runtime().stop()
+            asyncio.ensure_future(go())
             current_runtime().callLater(5.0, current_runtime().stop)
 
         current_runtime().callWhenRunning(run)
         current_runtime().run()
-        f = record['f']
-        self.assertIsInstance(f, Failure)
-        out, err, sig = f.value
+        exc = record['exc']
+        self.assertIsInstance(exc, utils.ProcessSignaled)
+        out, err, sig = exc.value
         self.assertEqual(sig, int(signal.SIGTERM))
+
+
+# --------------------------------------------------------------------------- #
+# AsteriskCliCommand.execute() bridges getProcessOutputAndValue onto a Deferred
+# --------------------------------------------------------------------------- #
+class AsteriskCliCommandBridgeTests(_LoopTestCase):
+    """Regression: a subprocess *startup* failure must errback the returned
+    Deferred (not leave it unresolved with an unretrieved task exception).
+
+    getProcessOutputAndValue is now a native ``async def``; if execute()'s bridge
+    only caught ``ProcessSignaled``, a ``FileNotFoundError``/``OSError`` from
+    ``create_subprocess_exec`` would crash the task and never fire the Deferred.
+    """
+
+    def test_bad_executable_errbacks_returned_deferred(self):
+        from asterisk.asterisk import AsteriskCliCommand
+
+        # cmd[0] is a nonexistent binary; cmd[4] satisfies __init__'s cli_cmd.
+        cmd = ['/nonexistent/definitely-not-a-real-asterisk',
+               '-C', 'asterisk.conf', '-rx', 'core show version']
+        cli = AsteriskCliCommand('127.0.0.1', cmd)
+        record = {}
+
+        # Capture asyncio's "Task exception was never retrieved" warning, which
+        # is what the old (ProcessSignaled-only) bridge produced on this path.
+        task_warnings = []
+
+        class _WarningCapture(logging.Handler):
+            def emit(self, log_record):
+                if 'never retrieved' in log_record.getMessage():
+                    task_warnings.append(log_record.getMessage())
+
+        warning_capture = _WarningCapture()
+        asyncio_logger = logging.getLogger('asyncio')
+        asyncio_logger.addHandler(warning_capture)
+
+        def run():
+            d = cli.execute()
+            d.addErrback(lambda f: record.__setitem__('err', f)
+                         or current_runtime().stop())
+            current_runtime().callLater(5.0, current_runtime().stop)
+
+        try:
+            current_runtime().callWhenRunning(run)
+            current_runtime().run()
+            gc.collect()      # force any unretrieved-task-exception warning
+        finally:
+            asyncio_logger.removeHandler(warning_capture)
+
+        # The Deferred errbacked (did not hang unresolved) ...
+        self.assertIn('err', record)
+        self.assertTrue(_is_failure_like(record['err']))
+        # ... execute() recorded the failure state ...
+        self.assertEqual(cli.exitcode, -1)
+        self.assertTrue(cli.err)
+        # ... no task leaked and no unretrieved task exception was logged.
+        pending = [t for t in asyncio.all_tasks(self.loop) if not t.done()]
+        self.assertEqual(pending, [])
+        self.assertEqual(task_warnings, [])
+
+
+def _is_failure_like(obj):
+    """True for the aio Failure the errback chain delivers."""
+    return isinstance(obj, Failure) or hasattr(obj, 'value')
 
 
 # --------------------------------------------------------------------------- #
@@ -1155,9 +1229,14 @@ class ShutdownStrayTaskTests(_LoopTestCase):
         holder = {}
 
         def setup():
-            d = utils.getProcessOutputAndValue(sys.executable, ['-c', script])
-            d.addErrback(lambda f: holder.__setitem__(
-                'err', f.check(asyncio.CancelledError)))
+            async def go():
+                try:
+                    await utils.getProcessOutputAndValue(
+                        sys.executable, ['-c', script])
+                except asyncio.CancelledError:
+                    holder['err'] = asyncio.CancelledError
+                    raise
+            asyncio.ensure_future(go())
 
             def check_ready():
                 if os.path.getsize(pidfile) > 0:
@@ -1174,8 +1253,8 @@ class ShutdownStrayTaskTests(_LoopTestCase):
         finally:
             asyncio_logger.removeHandler(warning_capture)
 
-        # The Deferred errbacked with CancelledError, no task leaked, and the
-        # child was terminated (and reaped) rather than left running.
+        # The stray task was cancelled with CancelledError, no task leaked, and
+        # the child was terminated (and reaped) rather than left running.
         self.assertEqual(holder.get('err'), asyncio.CancelledError)
         pending = [t for t in asyncio.all_tasks(self.loop) if not t.done()]
         self.assertEqual(pending, [])
