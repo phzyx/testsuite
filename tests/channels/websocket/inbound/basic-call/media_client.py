@@ -17,7 +17,7 @@ import sys
 import logging
 import io
 import os
-from asterisk.aio import reactor
+from asterisk.aio.runtime import current_runtime
 
 sys.path.append("lib/python")
 from asterisk.test_case import TestCase
@@ -159,7 +159,7 @@ class ChanWebSocketTest(object):
                 """
                 Don't tie up the reactor main thread with file I/O.
                 """
-                reactor.callInThread(self.protocol.sendFile,
+                current_runtime().callInThread(self.protocol.sendFile,
                                      f"{TEST_DIR}/test.ulaw",
                                      sent_buffer=self.sent_buffer)
             if "MEDIA_BUFFERING_COMPLETED" in msg:

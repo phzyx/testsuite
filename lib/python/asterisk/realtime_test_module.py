@@ -23,7 +23,7 @@ import re
 
 from aiohttp import web
 
-from asterisk.aio import reactor
+from asterisk.aio.runtime import current_runtime
 
 LOGGER = logging.getLogger(__name__)
 
@@ -469,7 +469,7 @@ class RealtimeTestModule(object):
         a bind failure surfaces out of run(), and the AppRunner is registered for
         async cleanup at shutdown.
         """
-        reactor.addStartupBind(self._start, label='realtime-http:46821')
+        current_runtime().addStartupBind(self._start, label='realtime-http:46821')
 
     async def _start(self):
         app = web.Application()
@@ -478,7 +478,7 @@ class RealtimeTestModule(object):
         await self._runner.setup()
         site = web.TCPSite(self._runner, '0.0.0.0', 46821)
         await site.start()
-        reactor.addAsyncCleanup(self._runner.cleanup)
+        current_runtime().addAsyncCleanup(self._runner.cleanup)
         LOGGER.info("Started realtime HTTP server on port 46821")
 
     async def _dispatch(self, request):

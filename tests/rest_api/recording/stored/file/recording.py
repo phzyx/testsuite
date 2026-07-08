@@ -11,7 +11,6 @@ import logging
 import requests
 import os
 
-from asterisk.aio import reactor
 
 LOGGER = logging.getLogger(__name__)
 

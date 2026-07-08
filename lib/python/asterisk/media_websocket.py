@@ -35,7 +35,6 @@ from websockets.frames import Opcode
 from websockets.http11 import Request
 from websockets.server import ServerProtocol
 
-from asterisk.aio import reactor
 from asterisk.aio.runtime import current_runtime
 
 LOGGER = logging.getLogger(__name__)
@@ -163,7 +162,7 @@ class MediaWebSocketClientFactory:
             raise Exception(
                 f"Failed to connect after {self.timeout_secs} seconds")
         asyncio.ensure_future(self._connect_async(),
-                              loop=reactor._ensure_loop())
+                              loop=current_runtime()._ensure_loop())
 
     async def _connect_async(self):
         try:
@@ -183,7 +182,7 @@ class MediaWebSocketClientProtocol(MediaWebSocketMixin):
     def __init__(self, receiver, factory):
         self.receiver = receiver
         self.factory = factory
-        self._loop = reactor._ensure_loop()
+        self._loop = current_runtime()._ensure_loop()
         self._auto_fragment_size = factory.auto_fragment_size
         self._connection = None
 
@@ -302,7 +301,7 @@ class _SansIOServerProtocol(object):
     def __init__(self, receiver, factory):
         self.receiver = receiver
         self.factory = factory
-        self._loop = reactor._ensure_loop()
+        self._loop = current_runtime()._ensure_loop()
         self._auto_fragment_size = factory.auto_fragment_size
         self.transport = None
         self.peer = None

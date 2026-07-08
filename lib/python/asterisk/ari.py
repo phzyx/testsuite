@@ -26,7 +26,6 @@ from .test_runner import load_and_parse_module
 from .pluggable_registry import PLUGGABLE_EVENT_REGISTRY,\
     PLUGGABLE_ACTION_REGISTRY, var_replace
 from .test_suite_utils import all_match
-from asterisk.aio import reactor
 from asterisk.aio.runtime import current_runtime
 # asyncio port (design doc Section 6.2): the autobahn ARI WebSocket client is
 # reimplemented on the ``websockets`` library over the ``asterisk.aio`` reactor
@@ -395,7 +394,7 @@ class AriClientFactory(object):
                             self.timeout_secs)
 
         asyncio.ensure_future(self._connect_async(),
-                              loop=reactor._ensure_loop())
+                              loop=current_runtime()._ensure_loop())
 
     async def _connect_async(self):
         try:
@@ -437,7 +436,7 @@ class AriClientProtocol(object):
         LOGGER.debug("Made me a client protocol!")
         self.receiver = receiver
         self.factory = factory
-        self._loop = reactor._ensure_loop()
+        self._loop = current_runtime()._ensure_loop()
         self._connection = None
         # Twisted/autobahn exposed the protocol's transport with a
         # loseConnection() method; fixtures (e.g. ari_client.py) call

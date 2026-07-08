@@ -14,7 +14,6 @@ import sys
 import logging
 import io
 import os
-from asterisk.aio import reactor
 from asterisk.aio.runtime import current_runtime
 
 sys.path.append("lib/python")
@@ -99,7 +98,7 @@ class ChanWebSocketTest(TestCase):
                 """
                 Don't tie up the reactor main thread with file I/O.
                 """
-                reactor.callInThread(self.protocol.sendFile,
+                current_runtime().callInThread(self.protocol.sendFile,
                                      f"{TEST_DIR}/zombies.ulaw")
             if "MEDIA_XOFF" in msg:
                 self.received_xoff = True

@@ -13,7 +13,7 @@
     "maybeDeferred": 8,
     "succeed": 1
   },
-  "files_with_reactor_or_defer": 38,
+  "files_with_reactor_or_defer": 31,
   "lifecycle_owners": {
     "doc/untwist/test_ari_parity.py": {
       "counts": {
@@ -186,12 +186,6 @@
       },
       "reactor": {}
     },
-    "lib/python/asterisk/ari.py": {
-      "defer": {},
-      "reactor": {
-        "_ensure_loop": 2
-      }
-    },
     "lib/python/asterisk/asterisk.py": {
       "defer": {
         "defer.AlreadyCalledError": 3,
@@ -213,13 +207,6 @@
       },
       "reactor": {}
     },
-    "lib/python/asterisk/http_static_server.py": {
-      "defer": {},
-      "reactor": {
-        "addAsyncCleanup": 1,
-        "addStartupBind": 1
-      }
-    },
     "lib/python/asterisk/lock_test_condition.py": {
       "defer": {
         "defer.Deferred": 1,
@@ -227,25 +214,12 @@
       },
       "reactor": {}
     },
-    "lib/python/asterisk/media_websocket.py": {
-      "defer": {},
-      "reactor": {
-        "_ensure_loop": 3
-      }
-    },
     "lib/python/asterisk/pjsip_channel_test_condition.py": {
       "defer": {
         "defer.Deferred": 1,
         "defer.DeferredList": 1
       },
       "reactor": {}
-    },
-    "lib/python/asterisk/realtime_test_module.py": {
-      "defer": {},
-      "reactor": {
-        "addAsyncCleanup": 1,
-        "addStartupBind": 1
-      }
     },
     "lib/python/asterisk/self_test/harness_shared.py": {
       "defer": {
@@ -302,24 +276,6 @@
       },
       "reactor": {}
     },
-    "tests/channels/websocket/inbound/basic-call/media_client.py": {
-      "defer": {},
-      "reactor": {
-        "callInThread": 1
-      }
-    },
-    "tests/channels/websocket/outbound/basic-call/media_server.py": {
-      "defer": {},
-      "reactor": {
-        "callInThread": 1
-      }
-    },
-    "tests/channels/websocket/outbound/flow-control/media_server.py": {
-      "defer": {},
-      "reactor": {
-        "callInThread": 1
-      }
-    },
     "tests/manager/device_state_list/ami_device_state_list.py": {
       "defer": {
         "defer.DeferredList": 1
@@ -363,12 +319,12 @@
       "reactor": {}
     }
   },
-  "reactor_grand_total": 288,
+  "reactor_consumer_importers": [],
+  "reactor_grand_total": 276,
   "reactor_totals": {
-    "_ensure_loop": 6,
-    "addAsyncCleanup": 2,
-    "addStartupBind": 4,
-    "callInThread": 5,
+    "_ensure_loop": 1,
+    "addStartupBind": 2,
+    "callInThread": 2,
     "callLater": 49,
     "callWhenRunning": 65,
     "connectTCP": 4,

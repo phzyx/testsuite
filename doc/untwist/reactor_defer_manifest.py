@@ -66,6 +66,12 @@ DEFER_SYMBOLS = {
 
 LIFECYCLE_ATTRS = ("run", "stop", "running", "callWhenRunning")
 
+# Files permitted to import the reactor facade and/or drive its lifecycle: the
+# transitional shim's own code + unit tests (lib/python/asterisk/aio/) and the
+# doc/untwist/ parity harnesses.  Everything else is a "consumer" and must be
+# free of the reactor facade by the end of Phase B step B3.
+ALLOWED_REACTOR_PREFIXES = ("lib/python/asterisk/aio/", "doc/untwist/")
+
 
 def dotted(node):
     """Flatten an attribute/name chain to a dotted string, or None."""
@@ -215,6 +221,7 @@ def main():
     reactor_totals = {}
     defer_totals = {}
     lifecycle_owners = {}
+    reactor_importers = []
     parsed = skipped = 0
     scanned = 0
 
@@ -230,6 +237,12 @@ def main():
         parsed += 1
         v = FileVisitor()
         v.visit(tree)
+        # Record any file that IMPORTS the reactor facade, in any form -- even if
+        # it never calls reactor.<attr>.  A bare, unused import still binds the
+        # facade and would break B4's deletion of reactor.py, so it must be
+        # gated.  Captured before the usage-based skip below.
+        if v.reactor_name_aliases or ("asterisk.aio.reactor" in v.imports):
+            reactor_importers.append(rel)
         if not v.reactor_attrs and not v.defer_uses:
             continue
         entry = {
@@ -259,6 +272,9 @@ def main():
         "reactor_grand_total": sum(reactor_totals.values()),
         "defer_grand_total": sum(defer_totals.values()),
         "lifecycle_owners": dict(sorted(lifecycle_owners.items())),
+        "reactor_consumer_importers": sorted(
+            f for f in reactor_importers
+            if not f.startswith(ALLOWED_REACTOR_PREFIXES)),
         "per_file": dict(sorted(per_file.items())),
     }
 
@@ -281,13 +297,25 @@ def main():
     # fork.)
     owners = manifest["lifecycle_owners"]
     if root == REPO:
-        ALLOWED_PREFIXES = ("lib/python/asterisk/aio/", "doc/untwist/")
         offenders = {f: o["counts"] for f, o in owners.items()
-                     if not f.startswith(ALLOWED_PREFIXES)}
+                     if not f.startswith(ALLOWED_REACTOR_PREFIXES)}
         assert not offenders, (
             "zero-lifecycle gate: reactor.run/stop/running/callWhenRunning must "
             "not remain outside the shim's own aio/ and doc/untwist/ harnesses; "
             f"found: {offenders}")
+
+    # Zero-import gate (end of Phase B step B3).  Beyond the reactor.<attr> call
+    # scan, no CONSUMER file (outside the shim's aio/ and the doc/untwist/
+    # harnesses) may even IMPORT the reactor facade.  A stale, unused
+    # `from asterisk.aio import reactor` does not show up in the call totals but
+    # still binds the facade and would break B4 when reactor.py is deleted, so it
+    # is rejected here as a hard failure.
+    if root == REPO:
+        importer_offenders = manifest["reactor_consumer_importers"]
+        assert not importer_offenders, (
+            "zero-import gate: the reactor facade must not be imported outside "
+            "the shim's aio/ and doc/untwist/ harnesses; stale importers: "
+            f"{importer_offenders}")
 
     text = json.dumps(manifest, indent=2, sort_keys=True) + "\n"
 
@@ -324,6 +352,12 @@ def main():
         tag = "run-test" if o["is_run_test"] else "module"
         cs = " ".join(f"{a}={c}" for a, c in o["counts"].items())
         lines.append(f"  [{tag:8}] {f}   {cs}")
+    lines.append("")
+    ci = manifest["reactor_consumer_importers"]
+    lines.append(f"## consumer reactor-facade importers ({len(ci)})  "
+                 "[must be 0 outside aio/ + doc/untwist/]")
+    for f in ci:
+        lines.append(f"  {f}")
     with open(os.path.join(args.out, "manifest.txt"), "w") as fh:
         fh.write("\n".join(lines) + "\n")
 

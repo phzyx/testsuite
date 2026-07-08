@@ -18,7 +18,7 @@ import os
 
 from aiohttp import web
 
-from asterisk.aio import reactor
+from asterisk.aio.runtime import current_runtime
 
 LOGGER = logging.getLogger(__name__)
 
@@ -39,7 +39,7 @@ class HTTPStaticServer(object):
         # Bind through the reactor's awaited startup path so a failure to claim
         # the port surfaces out of run() (matching twisted's synchronous
         # listenTCP), and register async cleanup of the AppRunner at shutdown.
-        reactor.addStartupBind(self._start,
+        current_runtime().addStartupBind(self._start,
                                label='http-static:%d' % self._port)
 
     async def _start(self):
@@ -60,6 +60,6 @@ class HTTPStaticServer(object):
         await self._runner.setup()
         site = web.TCPSite(self._runner, '0.0.0.0', self._port)
         await site.start()
-        reactor.addAsyncCleanup(self._runner.cleanup)
+        current_runtime().addAsyncCleanup(self._runner.cleanup)
         LOGGER.info("Started static HTTP server on port %d serving %s",
                     self._port, self._root)
