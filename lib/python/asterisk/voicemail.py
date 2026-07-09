@@ -23,6 +23,7 @@ import random
 from .config import ConfigFile
 from .test_case import TestCase
 from .test_state import TestState, TestStateController, FailureTestState
+from asterisk.aio.runtime import current_runtime
 
 sys.path.append("lib/python")
 
@@ -74,8 +75,23 @@ def handle_redirect_failure(reason):
     """Generic AMI redirect failure handler"""
 
     LOGGER.warn("Error sending redirect - test may or may not fail:")
-    LOGGER.warn(reason.getTraceback())
+    if hasattr(reason, 'getTraceback'):
+        LOGGER.warn(reason.getTraceback())
+    else:
+        LOGGER.warn(reason)
     return reason
+
+
+async def _do_redirect(ami, *args):
+    """Await an AMI redirect, routing any failure to handle_redirect_failure.
+
+    Replaces the old ``ami.redirect(...).addErrback(...)`` chain now that
+    starpy AMI calls are awaited directly.
+    """
+    try:
+        await ami.redirect(*args)
+    except Exception as reason:
+        handle_redirect_failure(reason)
 
 
 class VoiceMailTest(TestCase):
@@ -121,11 +137,9 @@ class VoiceMailTest(TestCase):
             self.test_state_controller.change_state(failure)
             return
 
-        deferred = self.ami_sender.redirect(self.sender_channel,
-                                            "voicemailCaller",
-                                            "hangup",
-                                            1)
-        deferred.addErrback(handle_redirect_failure)
+        current_runtime().create_task(
+            _do_redirect(self.ami_sender, self.sender_channel,
+                         "voicemailCaller", "hangup", 1))
 
     def send_dtmf(self, dtmf_to_send):
         """Send a DTMF signal to the voicemail server
@@ -147,11 +161,9 @@ class VoiceMailTest(TestCase):
 
         # Redirect to the DTMF extension - note that we assume that we only have
         # one channel to the other asterisk instance
-        deferred = self.ami_sender.redirect(self.sender_channel,
-                                            "voicemailCaller",
-                                            "sendDTMF",
-                                            1)
-        deferred.addErrback(handle_redirect_failure)
+        current_runtime().create_task(
+            _do_redirect(self.ami_sender, self.sender_channel,
+                         "voicemailCaller", "sendDTMF", 1))
 
     def send_sound_file(self, audio_file):
         """Send a sound file to the voicemail server
@@ -174,11 +186,9 @@ class VoiceMailTest(TestCase):
 
         # Redirect to the send sound file extension - note that we assume that
         # we only have one channel to the other asterisk instance
-        deferred = self.ami_sender.redirect(self.sender_channel,
-                                            "voicemailCaller",
-                                            "sendAudio",
-                                            1)
-        deferred.addErrback(handle_redirect_failure)
+        current_runtime().create_task(
+            _do_redirect(self.ami_sender, self.sender_channel,
+                         "voicemailCaller", "sendAudio", 1))
 
     def send_sound_file_with_dtmf(self, audio_file, dtmf_to_send):
         """Send a sound file to the voicemail server, then send a DTMF signal
@@ -209,11 +219,9 @@ class VoiceMailTest(TestCase):
 
         # Redirect to the appropriate extension - note that we assume that
         # we only have one channel to the other asterisk instance
-        deferred = self.ami_sender.redirect(self.sender_channel,
-                                            "voicemailCaller",
-                                            "sendAudioWithDTMF",
-                                            1)
-        deferred.addErrback(handle_redirect_failure)
+        current_runtime().create_task(
+            _do_redirect(self.ami_sender, self.sender_channel,
+                         "voicemailCaller", "sendAudioWithDTMF", 1))
 
     def add_test_condition(self, condition_name, condition):
         """Add a new test condition to track

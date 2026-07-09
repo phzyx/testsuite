@@ -107,8 +107,22 @@ class ConfbridgeTestState(TestState):
         """Handle a redirect failure from Asterisk"""
 
         LOGGER.warn("Error sending redirect - test may or may not fail:")
-        LOGGER.warn(reason.getTraceback())
+        if hasattr(reason, 'getTraceback'):
+            LOGGER.warn(reason.getTraceback())
+        else:
+            LOGGER.warn(reason)
         return reason
+
+    async def _do_redirect(self, ami, *args):
+        """Await an AMI redirect, routing any failure to the handler.
+
+        Replaces the old ``ami.redirect(...).addErrback(...)`` chain now
+        that starpy AMI calls are awaited directly.
+        """
+        try:
+            await ami.redirect(*args)
+        except Exception as reason:
+            self._handle_redirect_failure(reason)
 
     def hangup(self, call_id):
         """Hangs up the current call
@@ -120,8 +134,8 @@ class ConfbridgeTestState(TestState):
         if call_id in self.calls:
             chan = self.calls[call_id].caller_channel
             ami = self.calls[call_id].caller_ami
-            deferred = ami.redirect(chan, "caller", "hangup", 1)
-            deferred.addErrback(self._handle_redirect_failure)
+            current_runtime().create_task(
+                self._do_redirect(ami, chan, "caller", "hangup", 1))
         else:
             LOGGER.warn("Unknown call ID %s" % call_id)
 
@@ -144,9 +158,9 @@ class ConfbridgeTestState(TestState):
 
             # Redirect to the DTMF extension - note that we assume that we only
             # have one channel to the other asterisk instance
-            deferred = ami.redirect(self.calls[call_id].caller_channel,
-                                    "caller", "sendDTMF", 1)
-            deferred.addErrback(self._handle_redirect_failure)
+            current_runtime().create_task(
+                self._do_redirect(ami, self.calls[call_id].caller_channel,
+                                  "caller", "sendDTMF", 1))
         else:
             LOGGER.warn("Unknown call ID %s" % call_id)
 
@@ -170,9 +184,9 @@ class ConfbridgeTestState(TestState):
 
             # Redirect to the send sound file extension - note that we assume
             # that we only have one channel to the other asterisk instance
-            deferred = ami.redirect(self.calls[call_id].caller_channel,
-                                    "caller", "sendAudio", 1)
-            deferred.addErrback(self._handle_redirect_failure)
+            current_runtime().create_task(
+                self._do_redirect(ami, self.calls[call_id].caller_channel,
+                                  "caller", "sendAudio", 1))
         else:
             LOGGER.warn("Unknown call ID %s" % call_id)
 
@@ -207,9 +221,9 @@ class ConfbridgeTestState(TestState):
             # Redirect to the send sound file extension - note that we assume
             # that we only have one channel to the other asterisk instance
 
-            deferred = ami.redirect(self.calls[call_id].caller_channel,
-                                    "caller", "sendAudioWithDTMF", 1)
-            deferred.addErrback(self._handle_redirect_failure)
+            current_runtime().create_task(
+                self._do_redirect(ami, self.calls[call_id].caller_channel,
+                                  "caller", "sendAudioWithDTMF", 1))
         else:
             LOGGER.warn("Unknown call ID %s" % call_id)
 

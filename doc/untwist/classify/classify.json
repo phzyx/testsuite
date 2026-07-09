@@ -8,7 +8,7 @@
     "core": {
       "addCallback": 57,
       "addCallbacks": 6,
-      "addErrback": 17,
+      "addErrback": 9,
       "callback": 29,
       "errback": 7
     },
@@ -44,7 +44,7 @@
     "addBoth": 4,
     "addCallback": 301,
     "addCallbacks": 60,
-    "addErrback": 178,
+    "addErrback": 170,
     "callback": 64,
     "errback": 27
   },
@@ -90,13 +90,13 @@
     "fireOnOneErrback": 2
   },
   "files_by_role": {
-    "core": 19,
+    "core": 17,
     "fixture": 111,
     "other": 2,
     "shim": 3,
     "starpy": 20
   },
-  "files_with_defer": 155,
+  "files_with_defer": 153,
   "inline_callbacks_files": [],
   "per_file": {
     "[starpy] examples/amicommand.py": {
@@ -502,16 +502,6 @@
       "inline_callbacks_decorators": 0,
       "role": "core"
     },
-    "lib/python/asterisk/confbridge.py": {
-      "ambiguous": {},
-      "chain": {
-        "addErrback": 4
-      },
-      "ctor": {},
-      "deferredlist_flags": {},
-      "inline_callbacks_decorators": 0,
-      "role": "core"
-    },
     "lib/python/asterisk/fd_test_condition.py": {
       "ambiguous": {},
       "chain": {
@@ -679,16 +669,6 @@
         "Deferred": 2,
         "DeferredList": 2
       },
-      "deferredlist_flags": {},
-      "inline_callbacks_decorators": 0,
-      "role": "core"
-    },
-    "lib/python/asterisk/voicemail.py": {
-      "ambiguous": {},
-      "chain": {
-        "addErrback": 4
-      },
-      "ctor": {},
       "deferredlist_flags": {},
       "inline_callbacks_decorators": 0,
       "role": "core"
