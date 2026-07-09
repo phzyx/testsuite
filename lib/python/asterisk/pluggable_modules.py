@@ -117,25 +117,31 @@ class Originator(object):
         """Originate the call"""
         LOGGER.info("Originating call")
 
-        defer = None
         if len(self.config['context']) > 0:
-            defer = self.ami.originate(channel=self.config['channel'],
-                                       context=self.config['context'],
-                                       exten=self.config['exten'],
-                                       priority=self.config['priority'],
-                                       timeout=self.config['timeout'],
-                                       account=self.config['account'],
-                                       codecs=self.config['codecs'],
-                                       nowait=self.config['async'])
+            originate = self.ami.originate(channel=self.config['channel'],
+                                           context=self.config['context'],
+                                           exten=self.config['exten'],
+                                           priority=self.config['priority'],
+                                           timeout=self.config['timeout'],
+                                           account=self.config['account'],
+                                           codecs=self.config['codecs'],
+                                           nowait=self.config['async'])
         else:
-            defer = self.ami.originate(channel=self.config['channel'],
-                                       application=self.config['application'],
-                                       data=self.config['data'],
-                                       timeout=self.config['timeout'],
-                                       account=self.config['account'],
-                                       codecs=self.config['codecs'],
-                                       nowait=self.config['async'])
-        defer.addErrback(self.failure)
+            originate = self.ami.originate(channel=self.config['channel'],
+                                           application=self.config['application'],
+                                           data=self.config['data'],
+                                           timeout=self.config['timeout'],
+                                           account=self.config['account'],
+                                           codecs=self.config['codecs'],
+                                           nowait=self.config['async'])
+
+        async def _await_originate():
+            try:
+                await originate
+            except Exception as result:
+                self.failure(result)
+
+        current_runtime().create_task(_await_originate())
 
     def scenario_started(self, result):
         """Handle origination on scenario start if configured to do so."""
@@ -232,15 +238,18 @@ class AMIChannelHangupAll(AMIEventInstance):
 
     def event_callback(self, ami, event):
         """Override of the event callback"""
-        def __hangup_ignore(result):
-            """Ignore hangup errors"""
-            # Ignore hangup errors - if the channel is gone, we don't care
-            return result
+        async def __hangup(channel):
+            """Hang up a channel, ignoring errors if it is already gone."""
+            try:
+                await ami.hangup(channel)
+            except Exception:
+                # Ignore hangup errors - if the channel is gone, we don't care
+                pass
 
         objects = [x for x in self.channels if x['id'] == ami.id]
         for obj in objects:
             LOGGER.info("Hanging up channel %s", obj['channel'])
-            ami.hangup(obj['channel']).addErrback(__hangup_ignore)
+            current_runtime().create_task(__hangup(obj['channel']))
             self.channels.remove(obj)
 
 
@@ -498,8 +507,14 @@ class SoundChecker(object):
         action.pop('type')
         action['variable'] = {'SOUNDFILE': energyfile}
         ami.registerEvent("UserEvent", self.verify_presence)
-        dfr = ami.originate(**action)
-        dfr.addErrback(self.test_object.handle_originate_failure)
+
+        async def _await_originate():
+            try:
+                await ami.originate(**action)
+            except Exception as reason:
+                self.test_object.handle_originate_failure(reason)
+
+        current_runtime().create_task(_await_originate())
 
     def sound_check_actions(self, ami):
         """The second, usually larger part of the sound check.
@@ -712,7 +727,10 @@ class FastAGIModule(object):
         """Failure handler for executing commands"""
         LOGGER.error('Could not execute command %s: %s',
                      idx, self.commands[idx])
-        LOGGER.error(reason.getTraceback())
+        if hasattr(reason, 'getTraceback'):
+            LOGGER.error(reason.getTraceback())
+        else:
+            LOGGER.error(reason)
         agi.finish()
 
     def on_command_success(self, result, agi, idx):
@@ -729,9 +747,15 @@ class FastAGIModule(object):
             agi.finish()
             return
 
-        agi.sendCommand(self.commands[idx])\
-            .addCallback(self.on_command_success, agi, idx)\
-            .addErrback(self.on_command_failure, agi, idx)
+        async def _run_command():
+            try:
+                result = await agi.sendCommand(self.commands[idx])
+            except Exception as reason:
+                self.on_command_failure(reason, agi, idx)
+            else:
+                self.on_command_success(result, agi, idx)
+
+        current_runtime().create_task(_run_command())
 
 
 class EventActionModule(object):

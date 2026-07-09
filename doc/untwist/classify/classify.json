@@ -1,14 +1,14 @@
 {
   "ambiguous_totals": {
-    "callback": 17,
+    "callback": 16,
     "cancel": 23,
     "errback": 7
   },
   "chain_by_role": {
     "core": {
-      "addCallback": 53,
+      "addCallback": 52,
       "addCallbacks": 4,
-      "addErrback": 9,
+      "addErrback": 5,
       "callback": 29,
       "errback": 7
     },
@@ -42,9 +42,9 @@
   },
   "chain_totals": {
     "addBoth": 4,
-    "addCallback": 297,
+    "addCallback": 296,
     "addCallbacks": 58,
-    "addErrback": 170,
+    "addErrback": 166,
     "callback": 64,
     "errback": 27
   },
@@ -90,13 +90,13 @@
     "fireOnOneErrback": 2
   },
   "files_by_role": {
-    "core": 15,
+    "core": 14,
     "fixture": 111,
     "other": 2,
     "shim": 3,
     "starpy": 20
   },
-  "files_with_defer": 151,
+  "files_with_defer": 150,
   "inline_callbacks_files": [],
   "per_file": {
     "[starpy] examples/amicommand.py": {
@@ -520,19 +520,6 @@
         "Deferred": 1,
         "DeferredList": 1
       },
-      "deferredlist_flags": {},
-      "inline_callbacks_decorators": 0,
-      "role": "core"
-    },
-    "lib/python/asterisk/pluggable_modules.py": {
-      "ambiguous": {
-        "callback": 1
-      },
-      "chain": {
-        "addCallback": 1,
-        "addErrback": 4
-      },
-      "ctor": {},
       "deferredlist_flags": {},
       "inline_callbacks_decorators": 0,
       "role": "core"
