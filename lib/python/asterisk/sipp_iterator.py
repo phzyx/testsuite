@@ -214,8 +214,16 @@ class singleIterator(object):
                                       '-p': scenario['port']},
                                       scenario.get('ordered-args') or [],
                                      target=scenario['target'])
-        exiter = self.activescenario.run(self.test_object)
-        exiter.addCallback(self.run)
+        async def _await_exit():
+            try:
+                result = await self.activescenario.run(self.test_object)
+            except Exception as exc:
+                LOGGER.error("SIPp scenario %s failed: %s",
+                             scenario['Name'], exc)
+                return
+            self.run(result)
+
+        current_runtime().create_task(_await_exit())
 
     def __sendMessage(self, message, delay=2):
         if message['Action'] != 'none':

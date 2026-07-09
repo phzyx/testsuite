@@ -258,8 +258,13 @@ class AriTestObject(AriBaseTestObject):
         if not self.ami[0]:
             LOGGER.warning("Error creating channel - no ami available")
             return
-        deferred = self.ami[0].originate(**channel_def)
-        deferred.addErrback(self.handle_originate_failure)
+        async def _do_originate():
+            try:
+                await self.ami[0].originate(**channel_def)
+            except Exception as failure:
+                self.handle_originate_failure(failure)
+
+        current_runtime().create_task(_do_originate())
 
 
 class AriOriginateTestObject(AriTestObject):

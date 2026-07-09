@@ -1,14 +1,14 @@
 {
   "ambiguous_totals": {
-    "callback": 18,
+    "callback": 17,
     "cancel": 23,
     "errback": 7
   },
   "chain_by_role": {
     "core": {
-      "addCallback": 58,
-      "addCallbacks": 7,
-      "addErrback": 19,
+      "addCallback": 57,
+      "addCallbacks": 6,
+      "addErrback": 17,
       "callback": 29,
       "errback": 7
     },
@@ -42,9 +42,9 @@
   },
   "chain_totals": {
     "addBoth": 4,
-    "addCallback": 302,
-    "addCallbacks": 61,
-    "addErrback": 180,
+    "addCallback": 301,
+    "addCallbacks": 60,
+    "addErrback": 178,
     "callback": 64,
     "errback": 27
   },
@@ -90,13 +90,13 @@
     "fireOnOneErrback": 2
   },
   "files_by_role": {
-    "core": 23,
+    "core": 19,
     "fixture": 111,
     "other": 2,
     "shim": 3,
     "starpy": 20
   },
-  "files_with_defer": 159,
+  "files_with_defer": 155,
   "inline_callbacks_files": [],
   "per_file": {
     "[starpy] examples/amicommand.py": {
@@ -461,18 +461,6 @@
       "inline_callbacks_decorators": 0,
       "role": "core"
     },
-    "lib/python/asterisk/ari.py": {
-      "ambiguous": {
-        "callback": 1
-      },
-      "chain": {
-        "addErrback": 1
-      },
-      "ctor": {},
-      "deferredlist_flags": {},
-      "inline_callbacks_decorators": 0,
-      "role": "core"
-    },
     "lib/python/asterisk/asterisk.py": {
       "ambiguous": {
         "cancel": 1
@@ -538,16 +526,6 @@
       "inline_callbacks_decorators": 0,
       "role": "core"
     },
-    "lib/python/asterisk/linkedid_check.py": {
-      "ambiguous": {},
-      "chain": {
-        "addCallbacks": 1
-      },
-      "ctor": {},
-      "deferredlist_flags": {},
-      "inline_callbacks_decorators": 0,
-      "role": "core"
-    },
     "lib/python/asterisk/lock_test_condition.py": {
       "ambiguous": {},
       "chain": {
@@ -558,16 +536,6 @@
         "Deferred": 1,
         "DeferredList": 1
       },
-      "deferredlist_flags": {},
-      "inline_callbacks_decorators": 0,
-      "role": "core"
-    },
-    "lib/python/asterisk/originate.py": {
-      "ambiguous": {},
-      "chain": {
-        "addErrback": 1
-      },
-      "ctor": {},
       "deferredlist_flags": {},
       "inline_callbacks_decorators": 0,
       "role": "core"
@@ -651,16 +619,6 @@
         "Deferred": 5,
         "DeferredList": 2
       },
-      "deferredlist_flags": {},
-      "inline_callbacks_decorators": 0,
-      "role": "core"
-    },
-    "lib/python/asterisk/sipp_iterator.py": {
-      "ambiguous": {},
-      "chain": {
-        "addCallback": 1
-      },
-      "ctor": {},
       "deferredlist_flags": {},
       "inline_callbacks_decorators": 0,
       "role": "core"

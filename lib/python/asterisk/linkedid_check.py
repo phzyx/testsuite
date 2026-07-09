@@ -29,6 +29,8 @@ bridge events first before the test makes changes.
 
 import logging
 
+from asterisk.aio.runtime import current_runtime
+
 LOGGER = logging.getLogger(__name__)
 
 
@@ -113,8 +115,15 @@ class LinkedIdChannel(object):
         Keyword Arguments:
         ami     - The ami manager object
         """
-        ami.getVar(self.uniqueid, 'CHANNEL(linkedid)'
-                   ).addCallbacks(self.getvar_callback, self.getvar_failback)
+        async def _query():
+            try:
+                result = await ami.getVar(self.uniqueid, 'CHANNEL(linkedid)')
+            except Exception as reason:
+                self.getvar_failback(reason)
+            else:
+                self.getvar_callback(result)
+
+        current_runtime().create_task(_query())
 
 
 class LinkedIdCheck(object):

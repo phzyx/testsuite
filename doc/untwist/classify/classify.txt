@@ -1,5 +1,5 @@
 # Deferred/defer classification  (B5.0)
-files_with_defer=159  roles={'core': 23, 'fixture': 111, 'other': 2, 'shim': 3, 'starpy': 20}
+files_with_defer=155  roles={'core': 19, 'fixture': 111, 'other': 2, 'shim': 3, 'starpy': 20}
 
 ## construction totals
   Deferred                   78
@@ -11,14 +11,14 @@ files_with_defer=159  roles={'core': 23, 'fixture': 111, 'other': 2, 'shim': 3, 
 
 ## chaining totals (Deferred-attributed method calls)
   addBoth                    4
-  addCallback                302
-  addCallbacks               61
-  addErrback                 180
+  addCallback                301
+  addCallbacks               60
+  addErrback                 178
   callback                   64
   errback                    27
 
 ## ambiguous defer-shaped calls  (callback/errback/cancel/pause on non-Deferred or unresolved receivers -- NOT migration sites)
-  callback                   18
+  callback                   17
   cancel                     23
   errback                    7
 
@@ -35,7 +35,7 @@ files_with_defer=159  roles={'core': 23, 'fixture': 111, 'other': 2, 'shim': 3, 
   [starpy] {'Deferred': 13, 'DeferredList': 1, 'fail': 2, 'maybeDeferred': 1, 'succeed': 1}
 
 ## chaining by role
-  [core] {'addCallback': 58, 'addCallbacks': 7, 'addErrback': 19, 'callback': 29, 'errback': 7}
+  [core] {'addCallback': 57, 'addCallbacks': 6, 'addErrback': 17, 'callback': 29, 'errback': 7}
   [fixture] {'addCallback': 70, 'addCallbacks': 18, 'addErrback': 137, 'callback': 3}
   [other] {'addBoth': 1, 'addCallback': 1, 'callback': 1}
   [shim] {'addBoth': 1, 'addCallback': 28, 'addCallbacks': 6, 'addErrback': 7, 'callback': 20, 'errback': 9}
@@ -98,8 +98,6 @@ files_with_defer=159  roles={'core': 23, 'fixture': 111, 'other': 2, 'shim': 3, 
              chain=addCallbacks:2
   [core    ] lib/python/asterisk/apptest.py
              ctor=Deferred:6  chain=addCallback:5,addErrback:2,callback:2  amb=callback:4
-  [core    ] lib/python/asterisk/ari.py
-             chain=addErrback:1  amb=callback:1
   [core    ] lib/python/asterisk/asterisk.py
              ctor=Deferred:4  chain=addCallback:1,addCallbacks:1,callback:7,errback:7  amb=cancel:1
   [core    ] lib/python/asterisk/bridge_test_case.py
@@ -110,12 +108,8 @@ files_with_defer=159  roles={'core': 23, 'fixture': 111, 'other': 2, 'shim': 3, 
              chain=addErrback:4
   [core    ] lib/python/asterisk/fd_test_condition.py
              ctor=Deferred:2,DeferredList:2  chain=addCallback:3,callback:2
-  [core    ] lib/python/asterisk/linkedid_check.py
-             chain=addCallbacks:1
   [core    ] lib/python/asterisk/lock_test_condition.py
              ctor=Deferred:1,DeferredList:1  chain=addCallback:2,callback:1
-  [core    ] lib/python/asterisk/originate.py
-             chain=addErrback:1
   [core    ] lib/python/asterisk/pjsip_channel_test_condition.py
              ctor=Deferred:1,DeferredList:1  chain=addCallback:2,callback:1
   [core    ] lib/python/asterisk/pluggable_modules.py
@@ -128,8 +122,6 @@ files_with_defer=159  roles={'core': 23, 'fixture': 111, 'other': 2, 'shim': 3, 
              ctor=Deferred:3,DeferredList:1  chain=addCallback:6,callback:4
   [core    ] lib/python/asterisk/sipp.py
              ctor=Deferred:5,DeferredList:2  chain=addCallback:14,callback:2  amb=callback:3
-  [core    ] lib/python/asterisk/sipp_iterator.py
-             chain=addCallback:1
   [core    ] lib/python/asterisk/taskprocessor_test_condition.py
              ctor=Deferred:2,DeferredList:2  chain=addCallback:3,callback:2
   [core    ] lib/python/asterisk/test_case.py

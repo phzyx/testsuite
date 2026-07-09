@@ -658,8 +658,11 @@ class TestCase(object):
         Keyword arguments:
         reason The reason the originate failed
         """
-        LOGGER.error("Error sending originate: %s" % reason.getErrorMessage())
-        LOGGER.error(reason.getTraceback())
+        message = (reason.getErrorMessage()
+                   if hasattr(reason, 'getErrorMessage') else str(reason))
+        LOGGER.error("Error sending originate: %s" % message)
+        if hasattr(reason, 'getTraceback'):
+            LOGGER.error(reason.getTraceback())
         self.stop_reactor()
         return reason
 

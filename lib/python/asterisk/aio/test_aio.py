@@ -3183,5 +3183,57 @@ class RunTestObjectTests(unittest.TestCase):
         self.assertIsNone(get_current_runtime())
 
 
+class HandleOriginateFailureTests(unittest.TestCase):
+    """Regression for B5.2a-1.
+
+    After the ari.py await conversion, TestCase.handle_originate_failure()
+    is called with a raw exception (the object re-raised by ``await`` on a
+    starpy Deferred) rather than a Twisted-style Failure. It must degrade
+    gracefully -- log, stop the test, and NOT raise AttributeError on the
+    Failure-only methods getErrorMessage()/getTraceback().
+    """
+
+    def setUp(self):
+        from asterisk import test_case as _tc
+        self._tc = _tc
+        # test_case.LOGGER is None until a live run assigns it; give the
+        # error handler a real logger so it can format its messages.
+        self._saved_logger = _tc.LOGGER
+        _tc.LOGGER = logging.getLogger('test_case_handle_originate_regression')
+
+    def tearDown(self):
+        self._tc.LOGGER = self._saved_logger
+
+    @staticmethod
+    def _stub():
+        class _Stub(object):
+            def __init__(self):
+                self.stopped = False
+
+            def stop_reactor(self):
+                self.stopped = True
+        return _Stub()
+
+    def test_raw_exception_stops_test_without_raising(self):
+        stub = self._stub()
+        ret = self._tc.TestCase.handle_originate_failure(
+            stub, RuntimeError('boom'))
+        self.assertTrue(stub.stopped)
+        self.assertIsInstance(ret, RuntimeError)
+
+    def test_failure_like_object_still_supported(self):
+        class _FakeFailure(object):
+            def getErrorMessage(self):
+                return 'fail-message'
+
+            def getTraceback(self):
+                return 'fake-traceback'
+        stub = self._stub()
+        failure = _FakeFailure()
+        ret = self._tc.TestCase.handle_originate_failure(stub, failure)
+        self.assertTrue(stub.stopped)
+        self.assertIs(ret, failure)
+
+
 if __name__ == '__main__':
     unittest.main()

@@ -114,7 +114,13 @@ class Originator(object):
 
     def _originate_deferred(self, obj):
         """Originate calls that return a deferred object."""
-        self.originate(obj, **self.params).addErrback(self._failure)
+        async def _do_originate():
+            try:
+                await self.originate(obj, **self.params)
+            except Exception as result:
+                self._failure(result)
+
+        current_runtime().create_task(_do_originate())
         self._originate_again(obj, self._originate_deferred)
 
     def _originate(self, obj):
