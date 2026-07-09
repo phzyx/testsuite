@@ -6,8 +6,8 @@
   },
   "chain_by_role": {
     "core": {
-      "addCallback": 57,
-      "addCallbacks": 6,
+      "addCallback": 53,
+      "addCallbacks": 4,
       "addErrback": 9,
       "callback": 29,
       "errback": 7
@@ -42,8 +42,8 @@
   },
   "chain_totals": {
     "addBoth": 4,
-    "addCallback": 301,
-    "addCallbacks": 60,
+    "addCallback": 297,
+    "addCallbacks": 58,
     "addErrback": 170,
     "callback": 64,
     "errback": 27
@@ -90,13 +90,13 @@
     "fireOnOneErrback": 2
   },
   "files_by_role": {
-    "core": 17,
+    "core": 15,
     "fixture": 111,
     "other": 2,
     "shim": 3,
     "starpy": 20
   },
-  "files_with_defer": 153,
+  "files_with_defer": 151,
   "inline_callbacks_files": [],
   "per_file": {
     "[starpy] examples/amicommand.py": {
@@ -435,16 +435,6 @@
       "inline_callbacks_decorators": 0,
       "role": "shim"
     },
-    "lib/python/asterisk/ami.py": {
-      "ambiguous": {},
-      "chain": {
-        "addCallbacks": 2
-      },
-      "ctor": {},
-      "deferredlist_flags": {},
-      "inline_callbacks_decorators": 0,
-      "role": "core"
-    },
     "lib/python/asterisk/apptest.py": {
       "ambiguous": {
         "callback": 4
@@ -474,16 +464,6 @@
       "ctor": {
         "Deferred": 4
       },
-      "deferredlist_flags": {},
-      "inline_callbacks_decorators": 0,
-      "role": "core"
-    },
-    "lib/python/asterisk/bridge_test_case.py": {
-      "ambiguous": {},
-      "chain": {
-        "addCallback": 4
-      },
-      "ctor": {},
       "deferredlist_flags": {},
       "inline_callbacks_decorators": 0,
       "role": "core"

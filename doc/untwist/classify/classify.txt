@@ -1,5 +1,5 @@
 # Deferred/defer classification  (B5.0)
-files_with_defer=153  roles={'core': 17, 'fixture': 111, 'other': 2, 'shim': 3, 'starpy': 20}
+files_with_defer=151  roles={'core': 15, 'fixture': 111, 'other': 2, 'shim': 3, 'starpy': 20}
 
 ## construction totals
   Deferred                   78
@@ -11,8 +11,8 @@ files_with_defer=153  roles={'core': 17, 'fixture': 111, 'other': 2, 'shim': 3, 
 
 ## chaining totals (Deferred-attributed method calls)
   addBoth                    4
-  addCallback                301
-  addCallbacks               60
+  addCallback                297
+  addCallbacks               58
   addErrback                 170
   callback                   64
   errback                    27
@@ -35,7 +35,7 @@ files_with_defer=153  roles={'core': 17, 'fixture': 111, 'other': 2, 'shim': 3, 
   [starpy] {'Deferred': 13, 'DeferredList': 1, 'fail': 2, 'maybeDeferred': 1, 'succeed': 1}
 
 ## chaining by role
-  [core] {'addCallback': 57, 'addCallbacks': 6, 'addErrback': 9, 'callback': 29, 'errback': 7}
+  [core] {'addCallback': 53, 'addCallbacks': 4, 'addErrback': 9, 'callback': 29, 'errback': 7}
   [fixture] {'addCallback': 70, 'addCallbacks': 18, 'addErrback': 137, 'callback': 3}
   [other] {'addBoth': 1, 'addCallback': 1, 'callback': 1}
   [shim] {'addBoth': 1, 'addCallback': 28, 'addCallbacks': 6, 'addErrback': 7, 'callback': 20, 'errback': 9}
@@ -94,14 +94,10 @@ files_with_defer=153  roles={'core': 17, 'fixture': 111, 'other': 2, 'shim': 3, 
              ctor=Deferred:1  chain=callback:1,errback:2  amb=cancel:8
   [shim    ] lib/python/asterisk/aio/test_aio.py
              ctor=Deferred:24,DeferredList:4,fail:1,gatherResults:1,maybeDeferred:8,succeed:1  chain=addCallback:28,addErrback:7,callback:14,errback:3  amb=callback:7,cancel:8,errback:2  dl=consumeErrors:1,fireOnOneCallback:1
-  [core    ] lib/python/asterisk/ami.py
-             chain=addCallbacks:2
   [core    ] lib/python/asterisk/apptest.py
              ctor=Deferred:6  chain=addCallback:5,addErrback:2,callback:2  amb=callback:4
   [core    ] lib/python/asterisk/asterisk.py
              ctor=Deferred:4  chain=addCallback:1,addCallbacks:1,callback:7,errback:7  amb=cancel:1
-  [core    ] lib/python/asterisk/bridge_test_case.py
-             chain=addCallback:4
   [core    ] lib/python/asterisk/channel_test_condition.py
              ctor=Deferred:1,DeferredList:1  chain=addCallback:2,callback:1
   [core    ] lib/python/asterisk/fd_test_condition.py

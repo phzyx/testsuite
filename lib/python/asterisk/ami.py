@@ -643,13 +643,30 @@ class AMI(object):
         LOGGER.debug("AMI Login attempt #%d", self._attempts)
         if not self._start:
             self._start = datetime.datetime.now()
-        deferred = self.ami_factory.login(self.host, self.port)
-        deferred.addCallbacks(self.on_login_success, self.on_login_error)
+
+        async def _do_login():
+            try:
+                ami = await self.ami_factory.login(self.host, self.port)
+            except Exception as reason:
+                self.on_login_error(reason)
+            else:
+                self.on_login_success(ami)
+
+        current_runtime().create_task(_do_login())
 
     def on_reconnect(self, login_deferred):
         """Called when an AMI instance reconnects"""
         LOGGER.debug('AMI client reconnecting...')
-        login_deferred.addCallbacks(self.on_login_success, self.on_login_error)
+
+        async def _await_reconnect():
+            try:
+                ami = await login_deferred
+            except Exception as reason:
+                self.on_login_error(reason)
+            else:
+                self.on_login_success(ami)
+
+        current_runtime().create_task(_await_reconnect())
 
     def on_login_success(self, ami):
         """Deferred callback when login succeeds
@@ -673,8 +690,10 @@ class AMI(object):
         """
         runtime = (datetime.datetime.now() - self._start).seconds
         if runtime >= self.login_timeout:
+            message = (reason.getErrorMessage()
+                       if hasattr(reason, 'getErrorMessage') else str(reason))
             LOGGER.error("AMI login failed after %d second timeout: %s",
-                         self.login_timeout, reason.getErrorMessage())
+                         self.login_timeout, message)
             return self.on_error()
         delay = 2 ** self._attempts
         if delay + runtime >= self.login_timeout:

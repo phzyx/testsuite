@@ -13,6 +13,7 @@ import os
 from time import sleep
 
 sys.path.append("lib/python")
+from asterisk.aio.runtime import current_runtime
 from .test_case import TestCase
 
 LOGGER = logging.getLogger(__name__)
@@ -379,24 +380,36 @@ class BridgeTestCase(TestCase):
                 self.set_passed(False)
             self.execute_features()
 
+        async def _get_and_check(channel, varname, handler, expected):
+            """Await a channel variable, then run its handler.
+
+            Replaces the old ``getVar(...).addCallback(handler, expected)``
+            chain now that starpy AMI calls are awaited directly.
+            """
+            try:
+                value = await self.ami_uut.getVar(channel, varname)
+            except Exception as reason:
+                LOGGER.warning("getVar %s on %s failed: %s",
+                               varname, channel, reason)
+                return
+            handler(value, expected)
+
         if alice_connected_line is not None:
-            self.ami_uut.getVar(
-                self.uut_alice_channel,
-                'CONNECTEDLINE(all)').addCallback(alice_connected,
-                                                  alice_connected_line)
+            current_runtime().create_task(_get_and_check(
+                self.uut_alice_channel, 'CONNECTEDLINE(all)',
+                alice_connected, alice_connected_line))
         if bob_connected_line is not None:
-            self.ami_uut.getVar(
-                self.uut_bob_channel,
-                'CONNECTEDLINE(all)').addCallback(bob_connected,
-                                                  bob_connected_line)
+            current_runtime().create_task(_get_and_check(
+                self.uut_bob_channel, 'CONNECTEDLINE(all)',
+                bob_connected, bob_connected_line))
         if alice_bridge_peer is not None:
-            self.ami_uut.getVar(
-                self.uut_alice_channel,
-                'BRIDGEPEER').addCallback(alice_bridgepeer, alice_bridge_peer)
+            current_runtime().create_task(_get_and_check(
+                self.uut_alice_channel, 'BRIDGEPEER',
+                alice_bridgepeer, alice_bridge_peer))
         if bob_bridge_peer is not None:
-            self.ami_uut.getVar(
-                self.uut_bob_channel,
-                'BRIDGEPEER').addCallback(bob_bridgepeer, bob_bridge_peer)
+            current_runtime().create_task(_get_and_check(
+                self.uut_bob_channel, 'BRIDGEPEER',
+                bob_bridgepeer, bob_bridge_peer))
 
     def execute_features(self):
         """Execute the next feature for this test"""
