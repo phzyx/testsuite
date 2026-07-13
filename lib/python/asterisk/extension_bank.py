@@ -39,6 +39,7 @@ import logging
 from sys import path
 
 from asterisk.sipp import SIPpScenario
+from asterisk.aio.runtime import current_runtime
 
 LOGGER = logging.getLogger(__name__)
 
@@ -51,7 +52,7 @@ def pattern_simple_scenario(test_object, scenario, port, target_host='127.0.0.1'
                                  '-sleep': delay},
                                 target=target_host)
 
-    sipp_pattern.run(test_object)
+    current_runtime().create_task(sipp_pattern.run(test_object))
 
     return True
 
@@ -65,7 +66,7 @@ def pattern_repeating_scenario(test_object, scenario, port, target_host='127.0.0
                                  '-l': calls},
                                 target=target_host)
 
-    sipp_pattern.run(test_object)
+    current_runtime().create_task(sipp_pattern.run(test_object))
 
     return True
 
@@ -78,7 +79,7 @@ def pattern_ooscf_scenario(test_object, scenario, port, oocsf_file, target_host=
                                  '-sleep': delay},
                                 target=target_host)
 
-    sipp_pattern.run(test_object)
+    current_runtime().create_task(sipp_pattern.run(test_object))
 
     return True
 
@@ -86,7 +87,7 @@ def pattern_attended_transfer(test_object, referer_scenario, referer_port,
                                             referee_scenario, referee_port, delay = 3):
 
     def _start_referer_scenario(referer, test_object):
-        referer.run(test_object)
+        current_runtime().create_task(referer.run(test_object))
 
     sipp_referer = SIPpScenario(test_object.test_name,
                                 {'scenario': referer_scenario,
@@ -99,13 +100,12 @@ def pattern_attended_transfer(test_object, referer_scenario, referer_port,
                                  '-3pcc': '127.0.0.1:5064'},
                                 target='127.0.0.1')
 
-    sipp_referee.run(test_object)
+    current_runtime().create_task(sipp_referee.run(test_object))
 
     # The 3pcc scenario that first uses sendCmd (sipp_referer) will establish
     # a TCP socket with the other scenario (sipp_referee). This _must_ start
     # after sipp_referee - give it a few seconds to get the process off the
     # ground.
-    from asterisk.aio.runtime import current_runtime
     current_runtime().callLater(delay, _start_referer_scenario, sipp_referer, test_object)
 
     return True

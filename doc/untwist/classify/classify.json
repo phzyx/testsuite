@@ -1,19 +1,19 @@
 {
   "ambiguous_totals": {
-    "callback": 16,
+    "callback": 13,
     "cancel": 23,
     "errback": 7
   },
   "chain_by_role": {
     "core": {
-      "addCallback": 27,
+      "addCallback": 15,
       "addCallbacks": 4,
       "addErrback": 4,
-      "callback": 12,
+      "callback": 10,
       "errback": 7
     },
     "fixture": {
-      "addCallback": 70,
+      "addCallback": 68,
       "addCallbacks": 18,
       "addErrback": 137,
       "callback": 3
@@ -42,21 +42,21 @@
   },
   "chain_totals": {
     "addBoth": 4,
-    "addCallback": 271,
+    "addCallback": 257,
     "addCallbacks": 58,
     "addErrback": 165,
-    "callback": 47,
+    "callback": 45,
     "errback": 27
   },
   "ctor_by_role": {
     "core": {
-      "Deferred": 16,
-      "DeferredList": 4,
+      "Deferred": 11,
+      "DeferredList": 2,
       "maybeDeferred": 1
     },
     "fixture": {
       "Deferred": 3,
-      "DeferredList": 5
+      "DeferredList": 4
     },
     "other": {
       "Deferred": 1
@@ -78,8 +78,8 @@
     }
   },
   "ctor_totals": {
-    "Deferred": 62,
-    "DeferredList": 15,
+    "Deferred": 57,
+    "DeferredList": 12,
     "fail": 5,
     "gatherResults": 1,
     "maybeDeferred": 10,
@@ -92,12 +92,12 @@
   },
   "files_by_role": {
     "core": 4,
-    "fixture": 111,
+    "fixture": 110,
     "other": 2,
     "shim": 3,
     "starpy": 20
   },
-  "files_with_defer": 140,
+  "files_with_defer": 139,
   "inline_callbacks_files": [],
   "per_file": {
     "[starpy] examples/amicommand.py": {
@@ -470,17 +470,11 @@
       "role": "core"
     },
     "lib/python/asterisk/sipp.py": {
-      "ambiguous": {
-        "callback": 3
-      },
+      "ambiguous": {},
       "chain": {
-        "addCallback": 14,
-        "callback": 2
+        "addCallback": 2
       },
-      "ctor": {
-        "Deferred": 5,
-        "DeferredList": 2
-      },
+      "ctor": {},
       "deferredlist_flags": {},
       "inline_callbacks_decorators": 0,
       "role": "core"
@@ -1629,18 +1623,6 @@
       },
       "ctor": {
         "Deferred": 1
-      },
-      "deferredlist_flags": {},
-      "inline_callbacks_decorators": 0,
-      "role": "fixture"
-    },
-    "tests/rest_api/message/message_modules.py": {
-      "ambiguous": {},
-      "chain": {
-        "addCallback": 2
-      },
-      "ctor": {
-        "DeferredList": 1
       },
       "deferredlist_flags": {},
       "inline_callbacks_decorators": 0,

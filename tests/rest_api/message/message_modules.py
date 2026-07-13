@@ -7,11 +7,12 @@ This program is free software, distributed under the terms of
 the GNU General Public License Version 2.
 """
 
+import asyncio
 import logging
 import json
 import requests
 
-from asterisk.aio import defer
+from asterisk.aio.runtime import current_runtime
 
 from asterisk.sipp import SIPpScenario
 
@@ -198,30 +199,31 @@ class SIPMessageRunner(object):
         ami  Our AMI protocol wrapper
         """
 
-        def _check_result(scenario):
-            """Append the result of the test to our list of results"""
-            self.scenarios.remove(scenario)
-            return scenario
+        async def _run_one(scenario):
+            """Run a single scenario, then drop it from our tracking list"""
+            result = await scenario.run(self.test_object)
+            self.scenarios.remove(result)
+            return result
 
-        def _set_pass_fail(result):
-            """Check if all tests have passed
+        async def _run_scenarios():
+            """Run all scenarios in parallel and set the pass/fail status"""
+            scenarios = []
+            for scenario_def in self.module_config.get('sipp'):
+                scenario = SIPpScenario(self.test_object.test_name,
+                                        scenario_def)
+                self.scenarios.append(scenario)
+                scenarios.append(scenario)
 
-            If any have failed, set our passed status to False"""
+            # DeferredList in the original waited for every child regardless of
+            # errors; return_exceptions=True preserves that (no fail-fast).
+            results = await asyncio.gather(
+                *[_run_one(s) for s in scenarios], return_exceptions=True)
+            result = [(not isinstance(r, BaseException), r) for r in results]
+
             passed = all(r[0] for r in result)
             self.test_object.set_passed(passed)
 
             if (self.module_config.get('end-on-success', False) and passed):
                 self.test_object.stop_reactor()
-            return result
 
-        deferds = []
-        for scenario_def in self.module_config.get('sipp'):
-            scenario = SIPpScenario(self.test_object.test_name, scenario_def)
-
-            deferred = scenario.run(self.test_object)
-            deferred.addCallback(_check_result)
-            deferds.append(deferred)
-
-            self.scenarios.append(scenario)
-
-        defer.DeferredList(deferds).addCallback(_set_pass_fail)
+        current_runtime().create_task(_run_scenarios())

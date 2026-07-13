@@ -301,7 +301,7 @@ class multiIterator(object):
             self.activescenarios.append(sipp_scenario)
 
         sipp_sequence.register_scenario_stop_callback(self.run)
-        sipp_sequence.execute()
+        current_runtime().create_task(sipp_sequence.execute())
 
     def __sendMessages(self, messages, delay = 2):
         testami = self.test_object.ami[0]

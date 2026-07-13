@@ -9,11 +9,12 @@ This program is free software, distributed under the terms of
 the GNU General Public License Version 2.
 """
 
+import asyncio
 import logging
 from . import test_suite_utils
 
 from abc import ABCMeta, abstractmethod
-from asterisk.aio import defer, error
+from asterisk.aio import error
 from asterisk.aio.runtime import current_runtime
 from asterisk.aio import ProcessProtocol
 from .test_case import TestCase
@@ -237,17 +238,13 @@ class SIPpTestCase(TestCase):
     def _execute_test(self):
         """Execute the next test"""
 
-        def _final_deferred_callback(result):
-            """Call the final observers"""
+        def _final_callback(sequence):
+            """Call the final observers, then optionally stop the reactor"""
             for observer in self._final_observers:
                 observer(self._current_test, self)
-            return result
-
-        def _finish_test(result):
-            """Stop the reactor due to the test finishing"""
-            LOGGER.info("All SIPp Scenarios executed; stopping reactor")
-            self.stop_reactor()
-            return result
+            if self._stop_after_scenarios:
+                LOGGER.info("All SIPp Scenarios executed; stopping reactor")
+                self.stop_reactor()
 
         for defined_scenario_set in self.scenario_generator.generator():
             scenario_set = defined_scenario_set['scenarios']
@@ -274,19 +271,15 @@ class SIPpTestCase(TestCase):
             self.stop_reactor()
             return
 
-        final_deferred = defer.Deferred()
-        final_deferred.addCallback(_final_deferred_callback)
-        if self._stop_after_scenarios:
-            final_deferred.addCallback(_finish_test)
         sipp_sequence = SIPpScenarioSequence(self,
                                              self.scenarios,
                                              self._fail_on_any,
                                              self._intermediate_callback_fn,
-                                             final_deferred,
+                                             _final_callback,
                                              self._stop_after_scenarios)
         sipp_sequence.register_scenario_start_callback(self._scenario_start_callback_fn)
         sipp_sequence.register_scenario_stop_callback(self._scenario_stop_callback_fn)
-        sipp_sequence.execute()
+        current_runtime().create_task(sipp_sequence.execute())
 
     def _intermediate_callback_fn(self, result):
         """Notify observers between SIPp iterations"""
@@ -398,7 +391,7 @@ class SIPpScenarioSequence(object):
     def __init__(self, test_case, sipp_scenarios=None,
                  fail_on_any=False,
                  intermediate_cb_fn=None,
-                 final_deferred=None,
+                 final_callback=None,
                  stop_on_done=True):
         """Create a new sequence of scenarios
 
@@ -410,16 +403,14 @@ class SIPpScenarioSequence(object):
                             parallel
         fail_on_any         If any scenario fails, stop the reactor and kill the
                             test.
-        intermediate_cb_fn  A callback function suitable as a DeferredList
-                            callback that will be added to each SIPpScenario.
-                            What is received will be a list of (success, result)
-                            tuples for each scenario that was executed, where
-                            the result object is the SIPpScenario. This will be
-                            called for each set of SIPpScenario objects.
-        final_deferred      A deferred object that will be called when all tests
-                            have executed, but before the reactor is stopped.
-                            The parameter passed to the deferred callback
-                            function will be this object.
+        intermediate_cb_fn  A callback function invoked with a list of
+                            (success, result) tuples for each scenario that was
+                            executed, where the result object is the
+                            SIPpScenario. This will be called for each set of
+                            SIPpScenario objects.
+        final_callback      A callable invoked with this object when all
+                            scenarios have executed, but before the reactor is
+                            stopped.
         stop_on_done        Stop the test_case object when all scenarios have
                             executed. Defaults to True.
         """
@@ -428,7 +419,7 @@ class SIPpScenarioSequence(object):
         self._fail_on_any = fail_on_any
         self._test_counter = 0
         self._intermediate_cb_fn = intermediate_cb_fn
-        self._final_deferred = final_deferred
+        self._final_callback = final_callback
         self._scenario_start_fn = None
         self._scenario_stop_fn = None
         self._stop_on_done = stop_on_done
@@ -463,75 +454,93 @@ class SIPpScenarioSequence(object):
         """
         self._sipp_scenarios.append(sipp_scenario)
 
-    def execute(self):
+    async def __run_scenario(self, coro):
+        """Await a single scenario, then apply the stop callback to its result.
+
+        This preserves the original ordering where the stop callback was added
+        to each scenario's Deferred (firing when the scenario stops).
+        """
+        result = await coro
+        if self._scenario_stop_fn:
+            result = self._scenario_stop_fn(result)
+        return result
+
+    async def execute(self):
         """Execute the tests in sequence"""
 
-        def __execute_next(result):
-            """Execute the next SIPp scenario in the sequence"""
+        while self._test_counter < len(self._sipp_scenarios):
+            scenarios = self._sipp_scenarios[self._test_counter]
+            # Turn the scenario into a list if all we got was a single scenario
+            # to execute
+            if type(scenarios) is not list:
+                scenarios = [scenarios]
+
+            awaitables = []
+            for scenario in scenarios:
+                # If we fail on any, let the SIPp scenario handle it by passing
+                # it the TestCase object
+                if self._fail_on_any:
+                    coro = scenario.run(self._test_case)
+                else:
+                    coro = scenario.run(None)
+                # Order here is slightly important.  Wire up the stop callback
+                # (fires when the scenario stops) before notifying start
+                # observers that we're started.
+                awaitables.append(self.__run_scenario(coro))
+                if self._scenario_start_fn:
+                    self._scenario_start_fn(scenario)
+
+            # DeferredList in the original waited for every child regardless of
+            # errors; return_exceptions=True preserves that (no fail-fast).
+            results = await asyncio.gather(*awaitables, return_exceptions=True)
+            result = [(not isinstance(r, BaseException), r) for r in results]
+
+            if self._intermediate_cb_fn:
+                self._intermediate_cb_fn(result)
+
             # Only evaluate for failure if we're responsible for failing the
             # test case - otherwise the SIPpScenario will do it for us
-            for (success, scenario) in result:
-                if (not self._fail_on_any and (not scenario.passed or
-                                               not success)):
-                    LOGGER.warning("SIPp Scenario %s Failed" % scenario.name)
+            for (success, scenario_or_exc) in result:
+                if self._fail_on_any:
+                    continue
+                # On the error path (return_exceptions=True) scenario_or_exc is
+                # the raised exception, not a SIPpScenario -- do not touch its
+                # attributes.
+                if not success:
+                    LOGGER.warning("SIPp Scenario failed: %s" % scenario_or_exc)
+                    self._test_case.set_passed(False)
+                elif not scenario_or_exc.passed:
+                    LOGGER.warning("SIPp Scenario %s Failed" %
+                                   scenario_or_exc.name)
                     self._test_case.set_passed(False)
             self._test_counter += 1
-            if self._test_counter < len(self._sipp_scenarios):
-                self.execute()
-            else:
-                if self._final_deferred:
-                    self._final_deferred.callback(self)
-                if self._stop_on_done:
-                    self._test_case.stop_reactor()
-            return result
 
-        scenarios = self._sipp_scenarios[self._test_counter]
-        # Turn the scenario into a list if all we got was a single scenario to
-        # execute
-        if type(scenarios) is not list:
-            scenarios = [scenarios]
-
-        deferds = []
-        for scenario in scenarios:
-            # If we fail on any, let the SIPp scenario handle it by passing it
-            # the TestCase object
-            if self._fail_on_any:
-                deferred = scenario.run(self._test_case)
-            else:
-                deferred = scenario.run(None)
-            # Order here is slightly important.  Add all the callbacks to the
-            # scenario's deferred object first, then add it to the list.
-            # Afterwards, notify start observers that we're started.
-            if self._scenario_stop_fn:
-                deferred.addCallback(self._scenario_stop_fn)
-            if self._scenario_start_fn:
-                self._scenario_start_fn(scenario)
-            deferds.append(deferred)
-
-        deferred_list = defer.DeferredList(deferds)
-        if self._intermediate_cb_fn:
-            deferred_list.addCallback(self._intermediate_cb_fn)
-        deferred_list.addCallback(__execute_next)
+        if self._final_callback:
+            self._final_callback(self)
+        if self._stop_on_done:
+            self._test_case.stop_reactor()
 
 
 class SIPpProtocol(ProcessProtocol):
     """Class that manages a single SIPp instance"""
 
-    def __init__(self, name, stop_deferred, start_deferred=None):
+    def __init__(self, name, stop_future, start_future=None):
         """Create a SIPp process
 
         Keyword Arguments:
         name            The name of the scenario
-        stop_deferred   A twisted Deferred object that will be called when the
+        stop_future     An asyncio Future that will be resolved when the
                         process has exited
+        start_future    An asyncio Future that will be resolved when the
+                        process connection is made
         """
         self._name = name
         self.output = ""
         self.exitcode = 0
         self.exited = False
         self.stderr = []
-        self._stop_deferred = stop_deferred
-        self._start_deferred = start_deferred
+        self._stop_future = stop_future
+        self._start_future = start_future
 
     def kill(self):
         """Kill the SIPp scenario"""
@@ -551,8 +560,8 @@ class SIPpProtocol(ProcessProtocol):
     def connectionMade(self):
         """Override of ProcessProtocol.connectionMade"""
         LOGGER.debug("Connection made to SIPp scenario %s" % (self._name))
-        if self._start_deferred:
-            self._start_deferred.callback(self)
+        if self._start_future and not self._start_future.done():
+            self._start_future.set_result(self)
 
     def errReceived(self, data):
         """Override of ProcessProtocol.errReceived"""
@@ -575,11 +584,8 @@ class SIPpProtocol(ProcessProtocol):
                 LOGGER.warn(msg)
         else:
             message = "SIPp scenario %s ended" % self._name
-        try:
-            if not self._stop_deferred.called:
-                self._stop_deferred.callback(self)
-        except defer.AlreadyCalledError:
-            pass
+        if not self._stop_future.done():
+            self._stop_future.set_result(self)
         LOGGER.info(message)
         return reason
 
@@ -639,7 +645,6 @@ class SIPpScenario(object):
         self.result = None
         self._process = None
         self.target = target
-        self._our_exit_deferred = None
         self._test_case = None
         if not self.sipp:
             raise ValueError("SIPpTestObject requires that sipp is installed")
@@ -650,45 +655,22 @@ class SIPpScenario(object):
             self._process.kill()
         return
 
-    def run(self, test_case=None, start_deferred=None):
+    async def run(self, test_case=None, start_future=None):
         """Execute a SIPp scenario
 
         Execute the SIPp scenario that was passed to this object
 
         Keyword Arguments:
-        _test_case  If not None, the scenario will automatically evaluate its
+        test_case   If not None, the scenario will automatically evaluate its
                     pass/fail status at the end of the run. In the event of a
                     failure, it will fail the test case scenario and call
                     stop_reactor.
+        start_future An optional asyncio Future resolved when the SIPp process
+                    connection is made.
 
         Returns:
-        A deferred that can be used to determine when the SIPp Scenario
-        has exited.
+        This SIPpScenario, once the SIPp process has exited.
         """
-
-        def __scenario_callback(result):
-            """Callback called when a scenario completes"""
-            self.exited = True
-            self.result = result
-            if (result.exitcode == 0):
-                self.passed = True
-                LOGGER.info("SIPp Scenario %s Exited" %
-                            (self.scenario['scenario']))
-            else:
-                LOGGER.warning("SIPp Scenario %s Failed [%d]" %
-                               (self.scenario['scenario'], result.exitcode))
-            self._our_exit_deferred.callback(self)
-            return result
-
-        def __evaluate_scenario_results(result):
-            """Convenience function. If the test case is injected into this
-            method, then auto-fail the test if the scenario fails. """
-            if not self.passed:
-                LOGGER.warning("SIPp Scenario %s Failed" %
-                               self.scenario['scenario'])
-                self._test_case.passed = False
-                self._test_case.stop_reactor()
-            return result
 
         self.result = None
         sipp_args = [
@@ -747,23 +729,42 @@ class SIPpScenario(object):
         LOGGER.info("Executing SIPp scenario: %s" % self.scenario['scenario'])
         LOGGER.debug(sipp_args)
 
-        self._our_exit_deferred = defer.Deferred()
+        stop_future = asyncio.get_event_loop().create_future()
 
-        exit_deferred = defer.Deferred()
-        exit_deferred.addCallback(__scenario_callback)
-        if test_case:
-            self._test_case = test_case
-            exit_deferred.addCallback(__evaluate_scenario_results)
-
-        self._process = SIPpProtocol(self.scenario['scenario'], exit_deferred,
-                                     start_deferred)
+        self._process = SIPpProtocol(self.scenario['scenario'], stop_future,
+                                     start_future)
         current_runtime().spawnProcess(self._process,
                              sipp_args[0],
                              sipp_args,
                              {"TERM": "vt100", },
                              None,
                              None)
-        return self._our_exit_deferred
+
+        # Wait for the process to exit
+        result = await stop_future
+
+        # Bookkeeping formerly done in __scenario_callback
+        self.exited = True
+        self.result = result
+        if (result.exitcode == 0):
+            self.passed = True
+            LOGGER.info("SIPp Scenario %s Exited" %
+                        (self.scenario['scenario']))
+        else:
+            LOGGER.warning("SIPp Scenario %s Failed [%d]" %
+                           (self.scenario['scenario'], result.exitcode))
+
+        # If a test case was injected, auto-fail it on scenario failure
+        # (formerly __evaluate_scenario_results)
+        if test_case:
+            self._test_case = test_case
+            if not self.passed:
+                LOGGER.warning("SIPp Scenario %s Failed" %
+                               self.scenario['scenario'])
+                self._test_case.passed = False
+                self._test_case.stop_reactor()
+
+        return self
 
 
 class CoordinatedScenario(object):
@@ -822,7 +823,7 @@ class CoordinatedScenario(object):
         self.receiver.kill()
         return
 
-    def run(self, test_case=None):
+    async def run(self, test_case=None):
         """Execute a coordinated SIPp scenario
 
         Execute the set of SIPp scenarios passed to this object
@@ -834,46 +835,36 @@ class CoordinatedScenario(object):
                    stop_reactor.
 
         Returns:
-        A deferred that can be used to determine when the SIPp Scenario
-        has exited.
+        This CoordinatedScenario, once both scenarios have exited.
         """
-
-        def __scenario_callback(result, exit_deferred):
-            """Callback called when a scenario completes"""
-            if self.sender.exited and self.receiver.exited:
-                self.exited = True
-                if self.sender.passed and self.receiver.passed:
-                    self.passed = True
-
-                if self.passed:
-                    LOGGER.info("Coordinated SIPp Scenario %d Exited" %
-                                (self.coordination_port))
-                else:
-                    LOGGER.warning("Coordinated SIPp Scenario %d Failed" %
-                                   (self.coordination_port))
-                exit_deferred.callback(self)
-            return result
-
-        def __receiver_start_callback(result):
-            """Callback for receiver start"""
-            sender_deferred = self.sender.run(test_case)
-            sender_deferred.addCallback(__scenario_callback, exit_deferred)
-            return result
 
         LOGGER.info("Executing coordinated SIPp scenario %d" %
                     (self.coordination_port))
 
-        # setup callback for the receiver scenario start
-        receiver_start_deferred = defer.Deferred()
-        receiver_start_deferred.addCallback(__receiver_start_callback)
+        # The sender must not be started until the receiver has come up and
+        # opened its 3PCC port. Start the receiver, wait for its connection to
+        # be made, then start the sender and wait for both to finish.
+        receiver_start_future = asyncio.get_event_loop().create_future()
+        receiver_task = asyncio.ensure_future(
+            self.receiver.run(test_case, receiver_start_future))
+        await receiver_start_future
 
-        # setup callback for receiver completion
-        exit_deferred = defer.Deferred()
-        receiver_deferred = self.receiver.run(test_case,
-                                              receiver_start_deferred)
-        receiver_deferred.addCallback(__scenario_callback, exit_deferred)
+        sender_task = asyncio.ensure_future(self.sender.run(test_case))
+        await asyncio.gather(receiver_task, sender_task)
 
-        return exit_deferred
+        # Bookkeeping formerly done in __scenario_callback
+        if self.sender.exited and self.receiver.exited:
+            self.exited = True
+            if self.sender.passed and self.receiver.passed:
+                self.passed = True
+
+            if self.passed:
+                LOGGER.info("Coordinated SIPp Scenario %d Exited" %
+                            (self.coordination_port))
+            else:
+                LOGGER.warning("Coordinated SIPp Scenario %d Failed" %
+                               (self.coordination_port))
+        return self
 
 
 class SIPpTest(TestCase):
@@ -936,23 +927,10 @@ class SIPpTest(TestCase):
 
         Returns 0 for success, 1 for failure.
         """
-        def __check_result(result):
-            """Append the result of the test to our list of results"""
-            self.result.append(result.passed)
-            return result
-
-        def __set_pass_fail(result):
-            """Check if all tests have passed
-
-            If any have failed, set our passed status to False"""
-            self.passed = (self.result.count(False) == 0)
-            self.stop_reactor()
-            return result
-
         super(SIPpTest, self).run()
 
         i = 0
-        deferds = []
+        scenarios = []
         for scenario_def in self.scenarios:
             default_port = 5060 + i + 1
             i += 1
@@ -960,11 +938,22 @@ class SIPpTest(TestCase):
                 scenario_def['-p'] = str(default_port)
             scenario = SIPpScenario(self.test_dir, scenario_def)
             self._scenario_objects.append(scenario)
-            deferred = scenario.run(self)
-            deferred.addCallback(__check_result)
-            deferds.append(deferred)
+            scenarios.append(scenario)
 
-        defer.DeferredList(deferds).addCallback(__set_pass_fail)
+        current_runtime().create_task(self.__evaluate_scenarios(scenarios))
+
+    async def __evaluate_scenarios(self, scenarios):
+        """Run all scenarios and set the aggregate pass/fail status"""
+        # DeferredList in the original waited for every child regardless of
+        # errors; return_exceptions=True preserves that (no fail-fast).
+        results = await asyncio.gather(
+            *[scenario.run(self) for scenario in scenarios],
+            return_exceptions=True)
+        for result in results:
+            if not isinstance(result, BaseException):
+                self.result.append(result.passed)
+        self.passed = (self.result.count(False) == 0)
+        self.stop_reactor()
 
 
 class SIPpStartEventModule(object):
@@ -1038,7 +1027,7 @@ class SIPpActionModule(object):
     def run(self, triggered_by, source, extra):
         """Execute specified SIPp scenarios"""
 
-        self.sequence.execute()
+        current_runtime().create_task(self.sequence.execute())
 
 
 PLUGGABLE_ACTION_REGISTRY.register("sipp", SIPpActionModule)

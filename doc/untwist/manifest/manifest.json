@@ -1,22 +1,22 @@
 {
-  "defer_grand_total": 78,
+  "defer_grand_total": 69,
   "defer_totals": {
     "AlreadyCalledError": 2,
     "Deferred": 25,
     "DeferredList": 4,
     "TimeoutError": 1,
-    "defer.AlreadyCalledError": 5,
-    "defer.Deferred": 20,
-    "defer.DeferredList": 9,
+    "defer.AlreadyCalledError": 4,
+    "defer.Deferred": 15,
+    "defer.DeferredList": 6,
     "defer.maybeDeferred": 1,
     "fail": 1,
     "gatherResults": 1,
     "maybeDeferred": 8,
     "succeed": 1
   },
-  "files_with_reactor_or_defer": 14,
+  "files_with_reactor_or_defer": 12,
   "lifecycle_owners": {},
-  "parsed": 397,
+  "parsed": 398,
   "per_file": {
     "doc/untwist/test_core_runtime.py": {
       "defer": {
@@ -54,14 +54,6 @@
       "defer": {
         "defer.AlreadyCalledError": 3,
         "defer.Deferred": 4
-      },
-      "reactor": {}
-    },
-    "lib/python/asterisk/sipp.py": {
-      "defer": {
-        "defer.AlreadyCalledError": 1,
-        "defer.Deferred": 5,
-        "defer.DeferredList": 2
       },
       "reactor": {}
     },
@@ -108,12 +100,6 @@
         "defer.Deferred": 1
       },
       "reactor": {}
-    },
-    "tests/rest_api/message/message_modules.py": {
-      "defer": {
-        "defer.DeferredList": 1
-      },
-      "reactor": {}
     }
   },
   "reactor_all_importers": [],
@@ -121,6 +107,6 @@
   "reactor_grand_total": 0,
   "reactor_totals": {},
   "root": "/usr/src/phzyx/testsuite",
-  "scanned": 397,
+  "scanned": 398,
   "skipped_non_python": 0
 }
