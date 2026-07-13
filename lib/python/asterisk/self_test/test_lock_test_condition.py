@@ -8,7 +8,7 @@ This program is free software, distributed under the terms of
 the GNU General Public License Version 2.
 """
 
-from harness_shared import AstMockOutput, ReadTestFile, main
+from harness_shared import AstMockOutput, ReadTestFile, main, run_coroutine
 import unittest
 from asterisk.lock_test_condition import LockSequence, LockObject, LockTestCondition
 
@@ -54,7 +54,7 @@ class LockTestConditionUnitTest(unittest.TestCase):
         ast = AstMockObjectFailure()
         obj = LockTestCondition(TestConfig())
         obj.register_asterisk_instance(ast)
-        obj.evaluate()
+        run_coroutine(obj.evaluate())
         self.assertEqual(obj.get_status(), 'Failed')
 
     def test_evaluate_pass(self):
@@ -62,7 +62,7 @@ class LockTestConditionUnitTest(unittest.TestCase):
         ast = AstMockObjectPassed()
         obj = LockTestCondition(TestConfig())
         obj.register_asterisk_instance(ast)
-        obj.evaluate()
+        run_coroutine(obj.evaluate())
         self.assertEqual(obj.get_status(), 'Passed')
 
     def test_evaluate_multiple(self):
@@ -72,7 +72,7 @@ class LockTestConditionUnitTest(unittest.TestCase):
         obj = LockTestCondition(TestConfig())
         obj.register_asterisk_instance(ast1)
         obj.register_asterisk_instance(ast2)
-        obj.evaluate()
+        run_coroutine(obj.evaluate())
         self.assertEqual(obj.get_status(), 'Failed')
 
 

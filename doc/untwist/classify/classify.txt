@@ -1,20 +1,20 @@
 # Deferred/defer classification  (B5.0)
-files_with_defer=150  roles={'core': 14, 'fixture': 111, 'other': 2, 'shim': 3, 'starpy': 20}
+files_with_defer=140  roles={'core': 4, 'fixture': 111, 'other': 2, 'shim': 3, 'starpy': 20}
 
 ## construction totals
-  Deferred                   78
-  DeferredList               26
+  Deferred                   62
+  DeferredList               15
   fail                       5
   gatherResults              1
-  maybeDeferred              9
+  maybeDeferred              10
   succeed                    3
 
 ## chaining totals (Deferred-attributed method calls)
   addBoth                    4
-  addCallback                296
+  addCallback                271
   addCallbacks               58
-  addErrback                 166
-  callback                   64
+  addErrback                 165
+  callback                   47
   errback                    27
 
 ## ambiguous defer-shaped calls  (callback/errback/cancel/pause on non-Deferred or unresolved receivers -- NOT migration sites)
@@ -28,14 +28,14 @@ files_with_defer=150  roles={'core': 14, 'fixture': 111, 'other': 2, 'shim': 3, 
   fireOnOneErrback           2
 
 ## construction by role
-  [core] {'Deferred': 32, 'DeferredList': 15}
+  [core] {'Deferred': 16, 'DeferredList': 4, 'maybeDeferred': 1}
   [fixture] {'Deferred': 3, 'DeferredList': 5}
   [other] {'Deferred': 1}
   [shim] {'Deferred': 29, 'DeferredList': 5, 'fail': 3, 'gatherResults': 1, 'maybeDeferred': 8, 'succeed': 2}
   [starpy] {'Deferred': 13, 'DeferredList': 1, 'fail': 2, 'maybeDeferred': 1, 'succeed': 1}
 
 ## chaining by role
-  [core] {'addCallback': 52, 'addCallbacks': 4, 'addErrback': 5, 'callback': 29, 'errback': 7}
+  [core] {'addCallback': 27, 'addCallbacks': 4, 'addErrback': 4, 'callback': 12, 'errback': 7}
   [fixture] {'addCallback': 70, 'addCallbacks': 18, 'addErrback': 137, 'callback': 3}
   [other] {'addBoth': 1, 'addCallback': 1, 'callback': 1}
   [shim] {'addBoth': 1, 'addCallback': 28, 'addCallbacks': 6, 'addErrback': 7, 'callback': 20, 'errback': 9}
@@ -98,30 +98,10 @@ files_with_defer=150  roles={'core': 14, 'fixture': 111, 'other': 2, 'shim': 3, 
              ctor=Deferred:6  chain=addCallback:5,addErrback:2,callback:2  amb=callback:4
   [core    ] lib/python/asterisk/asterisk.py
              ctor=Deferred:4  chain=addCallback:1,addCallbacks:1,callback:7,errback:7  amb=cancel:1
-  [core    ] lib/python/asterisk/channel_test_condition.py
-             ctor=Deferred:1,DeferredList:1  chain=addCallback:2,callback:1
-  [core    ] lib/python/asterisk/fd_test_condition.py
-             ctor=Deferred:2,DeferredList:2  chain=addCallback:3,callback:2
-  [core    ] lib/python/asterisk/lock_test_condition.py
-             ctor=Deferred:1,DeferredList:1  chain=addCallback:2,callback:1
-  [core    ] lib/python/asterisk/pjsip_channel_test_condition.py
-             ctor=Deferred:1,DeferredList:1  chain=addCallback:2,callback:1
-  [core    ] lib/python/asterisk/self_test/harness_shared.py
-             ctor=Deferred:1  chain=callback:1
-  [core    ] lib/python/asterisk/sip_channel_test_condition.py
-             ctor=Deferred:1,DeferredList:1  chain=addCallback:2,callback:1
-  [core    ] lib/python/asterisk/sip_dialog_test_condition.py
-             ctor=Deferred:3,DeferredList:1  chain=addCallback:6,callback:4
   [core    ] lib/python/asterisk/sipp.py
              ctor=Deferred:5,DeferredList:2  chain=addCallback:14,callback:2  amb=callback:3
-  [core    ] lib/python/asterisk/taskprocessor_test_condition.py
-             ctor=Deferred:2,DeferredList:2  chain=addCallback:3,callback:2
   [core    ] lib/python/asterisk/test_case.py
-             ctor=Deferred:1,DeferredList:2  chain=addCallback:7,addCallbacks:3,addErrback:2,callback:1  dl=consumeErrors:1
-  [core    ] lib/python/asterisk/test_conditions.py
-             ctor=Deferred:2  chain=addCallback:1,addErrback:1,callback:1
-  [core    ] lib/python/asterisk/thread_test_condition.py
-             ctor=Deferred:2,DeferredList:2  chain=addCallback:4,callback:3
+             ctor=Deferred:1,DeferredList:2,maybeDeferred:1  chain=addCallback:7,addCallbacks:3,addErrback:2,callback:1  dl=consumeErrors:1
   [fixture ] tests/agi/exit_status/run-test
              chain=addErrback:8
   [fixture ] tests/agi/nominal/run-test

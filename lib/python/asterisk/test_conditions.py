@@ -20,7 +20,6 @@ import logging
 import logging.config
 
 from .buildoptions import AsteriskBuildOptions
-from asterisk.aio import defer
 
 LOGGER = logging.getLogger(__name__)
 
@@ -148,76 +147,58 @@ class TestConditionController(object):
         Evaluate the pre-test conditions
 
         Returns:
-        A deferred that will be raised when all pre-checks have finished,
+        A coroutine that completes when all pre-checks have finished,
         or None if no pre-checks exist
         """
         if (not self._prechecks):
             return None
 
         LOGGER.debug("Evaluating pre checks")
-        finished_deferred = defer.Deferred()
-        self.__evaluate_check(self._prechecks, 0, finished_deferred)
-        return finished_deferred
+        return self.__evaluate_checks(self._prechecks)
 
     def evaluate_post_checks(self):
         """
         Evaluate the post-test conditions
 
         Returns:
-        A deferred that will be raised when all post-checks have finished,
+        A coroutine that completes when all post-checks have finished,
         or None if no post-checks exist
         """
         if (not self._postchecks):
             return None
 
         LOGGER.debug("Evaluating post checks")
-        finished_deferred = defer.Deferred()
-        self.__evaluate_check(self._postchecks, 0, finished_deferred)
-        return finished_deferred
+        return self.__evaluate_checks(self._postchecks)
 
-    def __evaluate_check(self, check_list, counter, finished_deferred):
-        """ Register the instances of Asterisk and evaluate """
-
-        def __evaluate_callback(result, params):
-            """Called when a test condition finished successfully"""
-            check_list, counter, finished_deferred = params
-            self.__check_observers(result)
-            counter += 1
-            self.__evaluate_check(check_list, counter, finished_deferred)
-            return result
-
-        def __evaluate_errback(result, params):
-            """Called when an error occurred in processing a test condition"""
-            check_list, counter, finished_deferred = params
-            LOGGER.warning("Failed to evaluate condition check %s" %
-                           str(result))
-            self.__check_observers(result)
-            counter += 1
-            self.__evaluate_check(check_list, counter, finished_deferred)
-            return result
-
-        if (counter >= len(check_list)):
-            # All done - raise the finished deferred
-            finished_deferred.callback(self)
-            return
+    async def __evaluate_checks(self, check_list):
+        """ Register the instances of Asterisk and evaluate each check in turn """
 
         # A check object is a tuple of a pre/post condition check, and either
         # a matching check object used in the evaluation, or None
-        condition, related_condition = check_list[counter]
+        for condition, related_condition in check_list:
+            # Skip the check if the build does not support it
+            if not (condition.check_build_options()):
+                continue
 
-        # Check to see if the build supports this condition check
-        if not (condition.check_build_options()):
-            counter += 1
-            self.__evaluate_check(check_list, counter, finished_deferred)
+            for ast in self._ast:
+                condition.register_asterisk_instance(ast)
+            if not condition.get_enabled():
+                continue
 
-        for ast in self._ast:
-            condition.register_asterisk_instance(ast)
-        if (condition.get_enabled()):
             LOGGER.debug("Evaluating %s" % condition.get_name())
-            defrd = condition.evaluate(related_test_condition=related_condition)
-            params = check_list, counter, finished_deferred
-            defrd.addCallback(__evaluate_callback, params=params)
-            defrd.addErrback(__evaluate_errback, params=params)
+            try:
+                result = await condition.evaluate(
+                    related_test_condition=related_condition)
+            except Exception as reason:
+                LOGGER.warning("Failed to evaluate condition check %s" %
+                               str(reason))
+                # Mark the condition itself as failed and notify observers with
+                # the TestCondition object -- observers call get_status() on it,
+                # so we must never hand them a raw exception.
+                condition.fail_check(str(reason))
+                self.__check_observers(condition)
+            else:
+                self.__check_observers(result)
 
     def __check_observers(self, test_condition):
         """Notify observers that a test condition finished"""
@@ -323,18 +304,14 @@ class TestCondition(object):
         """
         self.ast.append(ast)
 
-    def evaluate(self, related_test_condition=None):
+    async def evaluate(self, related_test_condition=None):
         """Evaluate the test condition
 
-        Derived classes must implement this method and check their test
+        Derived classes must implement this coroutine and check their test
         condition here. If the test condition passes they should call
         pass_check, otherwise they should call fail_check.  Each test condition
-        must return a twisted deferred, and raise a callback on the deferred
-        when the condition is finished being evaluated.
-
-        They may raise an errback if a serious error occurs in the evaluation.
-
-        In either case, the should pass themselves to the callback/errback.
+        awaits any CLI/AMI work it needs and returns itself when the condition
+        is finished being evaluated.
 
         Keyword arguments:
         related_test_condition  A test condition object that is related to this
@@ -342,7 +319,7 @@ class TestCondition(object):
                                 condition is registered to the test condition
                                 controller.
         Returns:
-        A twisted deferred object
+        The test condition object itself
         """
         pass
 

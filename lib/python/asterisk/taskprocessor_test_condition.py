@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
+import asyncio
 import logging
 
-from asterisk.aio import defer
 from .test_conditions import TestCondition
 
 LOGGER = logging.getLogger(__name__)
@@ -62,90 +62,80 @@ class TaskprocessorTestCondition(TestCondition):
 
         return False
 
-    def get_task_processors(self, ast):
+    async def get_task_processors(self, ast):
         """Get the task processors from some instance of Asterisk"""
 
-        def __show_taskprocessors_callback(result):
-            """Callback when CLI command has finished"""
+        result = await ast.cli_exec("core show taskprocessors")
 
-            lines = result.output
-            if 'No such command' in lines:
-                return result
-            if 'Unable to connect to remote asterisk' in lines:
-                return result
+        lines = result.output
+        if 'No such command' in lines:
+            return
+        if 'Unable to connect to remote asterisk' in lines:
+            return
 
-            line_tokens = lines.split('\n')
-            task_processors = []
+        line_tokens = lines.split('\n')
+        task_processors = []
 
-            for line in line_tokens:
-                task_processor = Taskprocessor(line)
-                if task_processor.processor != '' and not self.is_taskprocessor_ignored(task_processor.processor):
-                    LOGGER.debug("Tracking %s", task_processor.processor)
-                    task_processors.append(task_processor)
+        for line in line_tokens:
+            task_processor = Taskprocessor(line)
+            if task_processor.processor != '' and not self.is_taskprocessor_ignored(task_processor.processor):
+                LOGGER.debug("Tracking %s", task_processor.processor)
+                task_processors.append(task_processor)
 
-            self.task_processors[result.host] = task_processors
-
-        return ast.cli_exec("core show taskprocessors").addCallback(__show_taskprocessors_callback)
+        self.task_processors[result.host] = task_processors
 
 
 class TaskprocessorPreTestCondition(TaskprocessorTestCondition):
     """The Task Processor Pre-TestCondition object"""
 
-    def evaluate(self, related_test_condition=None):
+    async def evaluate(self, related_test_condition=None):
         """Evaluate the test condition"""
-
-        def __raise_finished(result, finish_deferred):
-            """Called when all CLI commands have finished"""
-            finished_deferred.callback(self)
-            return result
 
         # Automatically pass the pre-test condition - whatever task processors
         # are currently open are needed by Asterisk and merely expected to exist
         # when the test is finished
         super(TaskprocessorPreTestCondition, self).pass_check()
 
-        finished_deferred = defer.Deferred()
-        exec_list = [super(TaskprocessorPreTestCondition, self).get_task_processors(ast)
-                     for ast in self.ast]
-        defer.DeferredList(exec_list).addCallback(__raise_finished, finished_deferred)
+        # DeferredList in the original waited for every child regardless of
+        # errors; return_exceptions=True preserves that (no fail-fast).
+        await asyncio.gather(*[
+            super(TaskprocessorPreTestCondition, self).get_task_processors(ast)
+            for ast in self.ast], return_exceptions=True)
 
-        return finished_deferred
+        return self
 
 
 class TaskprocessorPostTestCondition(TaskprocessorTestCondition):
     """The Task Processor Post-TestCondition object"""
 
-    def evaluate(self, related_test_condition=None):
+    async def evaluate(self, related_test_condition=None):
         """Evaluate the test condition"""
-
-        def __task_processors_obtained(result, finished_deferred):
-            """Callback when all CLI commands have finished"""
-            for ast_host in related_test_condition.task_processors.keys():
-                if not ast_host in self.task_processors:
-                    super(TaskprocessorPostTestCondition, self).fail_check(
-                        "Asterisk host in pre-test check [%s]"
-                        " not found in post-test check" % ast_host)
-                else:
-                    # Find all task processors in post-check not in pre-check
-                    for task_processor in self.task_processors[ast_host]:
-                        if (len([
-                                t for t
-                                in related_test_condition.task_processors[ast_host]
-                                if task_processor.processor == t.processor]) == 0):
-                            super(TaskprocessorPostTestCondition, self).fail_check(
-                                "Failed to find task processor %s in "
-                                "pre-test check" % (task_processor.processor))
-            super(TaskprocessorPostTestCondition, self).pass_check()
-            finished_deferred.callback(self)
-            return result
 
         if related_test_condition is None:
             msg = "No pre-test condition object provided"
             super(TaskprocessorPostTestCondition, self).fail_check(msg)
             return
 
-        finished_deferred = defer.Deferred()
-        exec_list = [super(TaskprocessorPostTestCondition, self).get_task_processors(ast)
-                     for ast in self.ast]
-        defer.DeferredList(exec_list).addCallback(__task_processors_obtained, finished_deferred)
-        return finished_deferred
+        # DeferredList in the original waited for every child regardless of
+        # errors; return_exceptions=True preserves that (no fail-fast).
+        await asyncio.gather(*[
+            super(TaskprocessorPostTestCondition, self).get_task_processors(ast)
+            for ast in self.ast], return_exceptions=True)
+
+        for ast_host in related_test_condition.task_processors.keys():
+            if not ast_host in self.task_processors:
+                super(TaskprocessorPostTestCondition, self).fail_check(
+                    "Asterisk host in pre-test check [%s]"
+                    " not found in post-test check" % ast_host)
+            else:
+                # Find all task processors in post-check not in pre-check
+                for task_processor in self.task_processors[ast_host]:
+                    if (len([
+                            t for t
+                            in related_test_condition.task_processors[ast_host]
+                            if task_processor.processor == t.processor]) == 0):
+                        super(TaskprocessorPostTestCondition, self).fail_check(
+                            "Failed to find task processor %s in "
+                            "pre-test check" % (task_processor.processor))
+        super(TaskprocessorPostTestCondition, self).pass_check()
+        return self

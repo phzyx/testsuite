@@ -517,11 +517,11 @@ class TestCase(object):
             return result
 
         self._stop_deferred = defer.Deferred()
-        deferred = self.condition_controller.evaluate_post_checks()
-        if deferred:
-            deferred.addCallback(__stop_instances)
-        else:
-            __stop_instances(None)
+        # evaluate_post_checks() now returns a coroutine (or None); maybeDeferred
+        # adapts either into a Deferred so the existing stop chain is preserved.
+        deferred = defer.maybeDeferred(
+            self.condition_controller.evaluate_post_checks)
+        deferred.addCallback(__stop_instances)
         return self._stop_deferred
 
     def stop_reactor(self):

@@ -8,9 +8,9 @@ This program is free software, distributed under the terms of
 the GNU General Public License Version 2.
 """
 
+import asyncio
 import logging
 from .test_conditions import TestCondition
-from asterisk.aio import defer
 
 LOGGER = logging.getLogger(__name__)
 
@@ -83,33 +83,27 @@ class ThreadPreTestCondition(ThreadTestCondition):
         """Constructor"""
         super(ThreadPreTestCondition, self).__init__(test_config)
 
-    def evaluate(self, related_test_condition=None):
+    async def evaluate(self, related_test_condition=None):
         """Override of TestCondition.evaluate"""
 
-        def __show_threads_callback(result, ast):
-            """ Callback from core show threads """
-            threads = result.output
-            self.parse_threads(ast, threads)
-            return result
+        async def __show_threads(ast):
+            """Gather the threads from 'core show threads'"""
+            result = await ast.cli_exec("core show threads")
+            self.parse_threads(ast, result.output)
 
-        def __threads_gathered(result, finished_deferred):
-            """Check the results once all threads are gathered"""
-            if len(self.ast_threads) > 0:
-                # All the pre-test cares about is that we saw threads, not what
-                # they are
-                super(ThreadPreTestCondition, self).pass_check()
-            else:
-                msg = "No threads found"
-                super(ThreadPreTestCondition, self).fail_check(msg)
-            finished_deferred.callback(self)
-            return result
+        # DeferredList in the original waited for every child regardless of
+        # errors; return_exceptions=True preserves that (no fail-fast).
+        await asyncio.gather(*[__show_threads(ast) for ast in self.ast],
+                             return_exceptions=True)
 
-        finished_deferred = defer.Deferred()
-        defer_list = defer.DeferredList([
-            ast.cli_exec("core show threads").addCallback(__show_threads_callback, ast)
-            for ast in self.ast])
-        defer_list.addCallback(__threads_gathered, finished_deferred)
-        return finished_deferred
+        if len(self.ast_threads) > 0:
+            # All the pre-test cares about is that we saw threads, not what
+            # they are
+            super(ThreadPreTestCondition, self).pass_check()
+        else:
+            msg = "No threads found"
+            super(ThreadPreTestCondition, self).fail_check(msg)
+        return self
 
 
 class ThreadPostTestCondition(ThreadTestCondition):
@@ -125,7 +119,7 @@ class ThreadPostTestCondition(ThreadTestCondition):
         """Constructor"""
         super(ThreadPostTestCondition, self).__init__(test_config)
 
-    def evaluate(self, related_test_condition=None):
+    async def evaluate(self, related_test_condition=None):
         """Override of TestCondition.evaluate"""
 
         def __evaluate_thread_obj_in_list(thread_obj, thread_list):
@@ -138,68 +132,61 @@ class ThreadPostTestCondition(ThreadTestCondition):
                     return True
             return False
 
-        def __show_threads_callback(result, ast):
-            """Callback from core show threads"""
-            threads = result.output
-            self.parse_threads(ast, threads)
-            return result
-
-        def __threads_gathered(result, finished_deferred):
-            """Called after all core show threads are finished"""
-            if not self.ast_threads:
-                # No threads found
-                super(ThreadPostTestCondition,
-                      self).fail_check("No threads found")
-                finished_deferred.callback(self)
-                return result
-
-            for ast in self.ast_threads:
-                # Make sure that for every instance of Asterisk we check in the
-                # post-test, an equivalent instance of Asterisk was checked in
-                # the pre-test
-                ast_match_found = False
-                for pre_ast in related_test_condition.ast_threads:
-                    if (ast[0] != pre_ast[0]):
-                        continue
-                    ast_match_found = True
-                    # Create a list of each thread in the post check not in the
-                    # pre check and vice versa
-                    bad_post_threads = [
-                        thread_obj for thread_obj in ast[1]
-                        if not __evaluate_thread_obj_in_list(thread_obj, pre_ast[1])]
-                    bad_pre_threads = [
-                        thread_obj for thread_obj in pre_ast[1]
-                        if not __evaluate_thread_obj_in_list(thread_obj, ast[1])]
-                    if (bad_post_threads):
-                        for thread_obj in bad_post_threads:
-                            msg = ("Failed to find thread %s[%s] on Asterisk "
-                                   "instance %s in pre-test check" %
-                                   (thread_obj[1], thread_obj[0], ast[0]))
-                            super(ThreadPostTestCondition, self).fail_check(msg)
-                    if (bad_pre_threads):
-                        for thread_obj in bad_pre_threads:
-                            msg = ("Failed to find thread %s[%s] on Asterisk "
-                                   "instance %s in post-test check" %
-                                   (thread_obj[1], thread_obj[0], ast[0]))
-                            super(ThreadPostTestCondition, self).fail_check(msg)
-                    if (len(bad_post_threads) == 0 and len(bad_pre_threads) == 0):
-                        super(ThreadPostTestCondition, self).pass_check()
-                if not ast_match_found:
-                    msg = ("Unable to find Asterisk instance %s in pre-test "
-                           "condition check" % ast[0])
-                    super(ThreadPostTestCondition, self).fail_check(msg)
-            finished_deferred.callback(self)
-            return result
-
         # This must have a related_test_condition value passed in
         if (related_test_condition is None):
             msg = "No pre-test condition provided"
             super(ThreadPostTestCondition, self).fail_check(msg)
             return
 
-        finished_deferred = defer.Deferred()
-        defer_list = defer.DeferredList([
-            ast.cli_exec("core show threads").addCallback(__show_threads_callback, ast)
-            for ast in self.ast])
-        defer_list.addCallback(__threads_gathered, finished_deferred)
-        return finished_deferred
+        async def __show_threads(ast):
+            """Gather the threads from 'core show threads'"""
+            result = await ast.cli_exec("core show threads")
+            self.parse_threads(ast, result.output)
+
+        # DeferredList in the original waited for every child regardless of
+        # errors; return_exceptions=True preserves that (no fail-fast).
+        await asyncio.gather(*[__show_threads(ast) for ast in self.ast],
+                             return_exceptions=True)
+
+        if not self.ast_threads:
+            # No threads found
+            super(ThreadPostTestCondition,
+                  self).fail_check("No threads found")
+            return self
+
+        for ast in self.ast_threads:
+            # Make sure that for every instance of Asterisk we check in the
+            # post-test, an equivalent instance of Asterisk was checked in
+            # the pre-test
+            ast_match_found = False
+            for pre_ast in related_test_condition.ast_threads:
+                if (ast[0] != pre_ast[0]):
+                    continue
+                ast_match_found = True
+                # Create a list of each thread in the post check not in the
+                # pre check and vice versa
+                bad_post_threads = [
+                    thread_obj for thread_obj in ast[1]
+                    if not __evaluate_thread_obj_in_list(thread_obj, pre_ast[1])]
+                bad_pre_threads = [
+                    thread_obj for thread_obj in pre_ast[1]
+                    if not __evaluate_thread_obj_in_list(thread_obj, ast[1])]
+                if (bad_post_threads):
+                    for thread_obj in bad_post_threads:
+                        msg = ("Failed to find thread %s[%s] on Asterisk "
+                               "instance %s in pre-test check" %
+                               (thread_obj[1], thread_obj[0], ast[0]))
+                        super(ThreadPostTestCondition, self).fail_check(msg)
+                if (bad_pre_threads):
+                    for thread_obj in bad_pre_threads:
+                        msg = ("Failed to find thread %s[%s] on Asterisk "
+                               "instance %s in post-test check" %
+                               (thread_obj[1], thread_obj[0], ast[0]))
+                        super(ThreadPostTestCondition, self).fail_check(msg)
+                if (len(bad_post_threads) == 0 and len(bad_pre_threads) == 0):
+                    super(ThreadPostTestCondition, self).pass_check()
+            if not ast_match_found:
+                msg = ("Unable to find Asterisk instance %s in pre-test "
+                       "condition check" % ast[0])
+                super(ThreadPostTestCondition, self).fail_check(msg)
+        return self

@@ -7,7 +7,8 @@ This program is free software, distributed under the terms of
 the GNU General Public License Version 2.
 """
 
-from asterisk.aio import defer
+import asyncio
+
 from .test_conditions import TestCondition
 import re
 
@@ -32,7 +33,7 @@ class ChannelTestCondition(TestCondition):
         if ('allowedchannels' in test_config.config):
             self.allowed_channels = test_config.config['allowedchannels']
 
-    def evaluate(self, related_test_condition=None):
+    async def evaluate(self, related_test_condition=None):
         """Evaluate this test condition
 
         Keyword Argument:
@@ -40,7 +41,7 @@ class ChannelTestCondition(TestCondition):
                                 related to
 
         Returns:
-        A deferred that will be called when evaluation is complete
+        This test condition once evaluation is complete
         """
         def __channel_callback(result):
             """Callback called from core show channels"""
@@ -69,17 +70,15 @@ class ChannelTestCondition(TestCondition):
                 super(ChannelTestCondition, self).fail_check(msg)
             return result
 
-        def _raise_finished(result, finish_deferred):
-            """Raise the deferred callback"""
-            finish_deferred.callback(self)
-            return result
-
-        finish_deferred = defer.Deferred()
         # Set to pass and let a failure override
         super(ChannelTestCondition, self).pass_check()
 
-        exec_list = [ast.cli_exec('core show channels').
-                     addCallback(__channel_callback) for ast in self.ast]
-        defer.DeferredList(exec_list).addCallback(_raise_finished,
-                                                  finish_deferred)
-        return finish_deferred
+        async def __check(ast):
+            """Run 'core show channels' on an instance and inspect it"""
+            __channel_callback(await ast.cli_exec('core show channels'))
+
+        # DeferredList in the original waited for every child regardless of
+        # errors; return_exceptions=True preserves that (no fail-fast).
+        await asyncio.gather(*[__check(ast) for ast in self.ast],
+                             return_exceptions=True)
+        return self

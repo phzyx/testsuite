@@ -6,10 +6,10 @@
   },
   "chain_by_role": {
     "core": {
-      "addCallback": 52,
+      "addCallback": 27,
       "addCallbacks": 4,
-      "addErrback": 5,
-      "callback": 29,
+      "addErrback": 4,
+      "callback": 12,
       "errback": 7
     },
     "fixture": {
@@ -42,16 +42,17 @@
   },
   "chain_totals": {
     "addBoth": 4,
-    "addCallback": 296,
+    "addCallback": 271,
     "addCallbacks": 58,
-    "addErrback": 166,
-    "callback": 64,
+    "addErrback": 165,
+    "callback": 47,
     "errback": 27
   },
   "ctor_by_role": {
     "core": {
-      "Deferred": 32,
-      "DeferredList": 15
+      "Deferred": 16,
+      "DeferredList": 4,
+      "maybeDeferred": 1
     },
     "fixture": {
       "Deferred": 3,
@@ -77,11 +78,11 @@
     }
   },
   "ctor_totals": {
-    "Deferred": 78,
-    "DeferredList": 26,
+    "Deferred": 62,
+    "DeferredList": 15,
     "fail": 5,
     "gatherResults": 1,
-    "maybeDeferred": 9,
+    "maybeDeferred": 10,
     "succeed": 3
   },
   "deferredlist_flag_totals": {
@@ -90,13 +91,13 @@
     "fireOnOneErrback": 2
   },
   "files_by_role": {
-    "core": 14,
+    "core": 4,
     "fixture": 111,
     "other": 2,
     "shim": 3,
     "starpy": 20
   },
-  "files_with_defer": 150,
+  "files_with_defer": 140,
   "inline_callbacks_files": [],
   "per_file": {
     "[starpy] examples/amicommand.py": {
@@ -468,102 +469,6 @@
       "inline_callbacks_decorators": 0,
       "role": "core"
     },
-    "lib/python/asterisk/channel_test_condition.py": {
-      "ambiguous": {},
-      "chain": {
-        "addCallback": 2,
-        "callback": 1
-      },
-      "ctor": {
-        "Deferred": 1,
-        "DeferredList": 1
-      },
-      "deferredlist_flags": {},
-      "inline_callbacks_decorators": 0,
-      "role": "core"
-    },
-    "lib/python/asterisk/fd_test_condition.py": {
-      "ambiguous": {},
-      "chain": {
-        "addCallback": 3,
-        "callback": 2
-      },
-      "ctor": {
-        "Deferred": 2,
-        "DeferredList": 2
-      },
-      "deferredlist_flags": {},
-      "inline_callbacks_decorators": 0,
-      "role": "core"
-    },
-    "lib/python/asterisk/lock_test_condition.py": {
-      "ambiguous": {},
-      "chain": {
-        "addCallback": 2,
-        "callback": 1
-      },
-      "ctor": {
-        "Deferred": 1,
-        "DeferredList": 1
-      },
-      "deferredlist_flags": {},
-      "inline_callbacks_decorators": 0,
-      "role": "core"
-    },
-    "lib/python/asterisk/pjsip_channel_test_condition.py": {
-      "ambiguous": {},
-      "chain": {
-        "addCallback": 2,
-        "callback": 1
-      },
-      "ctor": {
-        "Deferred": 1,
-        "DeferredList": 1
-      },
-      "deferredlist_flags": {},
-      "inline_callbacks_decorators": 0,
-      "role": "core"
-    },
-    "lib/python/asterisk/self_test/harness_shared.py": {
-      "ambiguous": {},
-      "chain": {
-        "callback": 1
-      },
-      "ctor": {
-        "Deferred": 1
-      },
-      "deferredlist_flags": {},
-      "inline_callbacks_decorators": 0,
-      "role": "core"
-    },
-    "lib/python/asterisk/sip_channel_test_condition.py": {
-      "ambiguous": {},
-      "chain": {
-        "addCallback": 2,
-        "callback": 1
-      },
-      "ctor": {
-        "Deferred": 1,
-        "DeferredList": 1
-      },
-      "deferredlist_flags": {},
-      "inline_callbacks_decorators": 0,
-      "role": "core"
-    },
-    "lib/python/asterisk/sip_dialog_test_condition.py": {
-      "ambiguous": {},
-      "chain": {
-        "addCallback": 6,
-        "callback": 4
-      },
-      "ctor": {
-        "Deferred": 3,
-        "DeferredList": 1
-      },
-      "deferredlist_flags": {},
-      "inline_callbacks_decorators": 0,
-      "role": "core"
-    },
     "lib/python/asterisk/sipp.py": {
       "ambiguous": {
         "callback": 3
@@ -580,20 +485,6 @@
       "inline_callbacks_decorators": 0,
       "role": "core"
     },
-    "lib/python/asterisk/taskprocessor_test_condition.py": {
-      "ambiguous": {},
-      "chain": {
-        "addCallback": 3,
-        "callback": 2
-      },
-      "ctor": {
-        "Deferred": 2,
-        "DeferredList": 2
-      },
-      "deferredlist_flags": {},
-      "inline_callbacks_decorators": 0,
-      "role": "core"
-    },
     "lib/python/asterisk/test_case.py": {
       "ambiguous": {},
       "chain": {
@@ -604,39 +495,12 @@
       },
       "ctor": {
         "Deferred": 1,
-        "DeferredList": 2
+        "DeferredList": 2,
+        "maybeDeferred": 1
       },
       "deferredlist_flags": {
         "consumeErrors": 1
       },
-      "inline_callbacks_decorators": 0,
-      "role": "core"
-    },
-    "lib/python/asterisk/test_conditions.py": {
-      "ambiguous": {},
-      "chain": {
-        "addCallback": 1,
-        "addErrback": 1,
-        "callback": 1
-      },
-      "ctor": {
-        "Deferred": 2
-      },
-      "deferredlist_flags": {},
-      "inline_callbacks_decorators": 0,
-      "role": "core"
-    },
-    "lib/python/asterisk/thread_test_condition.py": {
-      "ambiguous": {},
-      "chain": {
-        "addCallback": 4,
-        "callback": 3
-      },
-      "ctor": {
-        "Deferred": 2,
-        "DeferredList": 2
-      },
-      "deferredlist_flags": {},
       "inline_callbacks_decorators": 0,
       "role": "core"
     },

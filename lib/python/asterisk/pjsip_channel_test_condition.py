@@ -8,7 +8,8 @@ This program is free software, distributed under the terms of
 the GNU General Public License Version 2.
 '''
 
-from asterisk.aio import defer
+import asyncio
+
 from test_conditions import TestCondition
 
 
@@ -29,7 +30,7 @@ class PJSipChannelTestCondition(TestCondition):
         if ('allowedchannels' in test_config.config):
             self.allowed_channels = test_config.config['allowedchannels']
 
-    def evaluate(self, related_test_condition=None):
+    async def evaluate(self, related_test_condition=None):
         """Evaluate the test condition"""
 
         def __channel_callback(result):
@@ -47,17 +48,15 @@ class PJSipChannelTestCondition(TestCondition):
                      (active_channels, self.allowed_channels, result.host)))
             return result
 
-        def __raise_finished(finished_deferred):
-            """Let things know when we're done"""
-            finished_deferred.callback(self)
-            return finished_deferred
-
-        finished_deferred = defer.Deferred()
         # Set to pass and let a failure override
         super(PJSipChannelTestCondition, self).pass_check()
 
-        exec_list = [ast.cli_exec('pjsip show channels').addCallback(
-            __channel_callback) for ast in self.ast]
-        defer.DeferredList(exec_list).addCallback(__raise_finished,
-                                                  finished_deferred)
-        return finished_deferred
+        async def __check(ast):
+            """Run 'pjsip show channels' on an instance and inspect it"""
+            __channel_callback(await ast.cli_exec('pjsip show channels'))
+
+        # DeferredList in the original waited for every child regardless of
+        # errors; return_exceptions=True preserves that (no fail-fast).
+        await asyncio.gather(*[__check(ast) for ast in self.ast],
+                             return_exceptions=True)
+        return self

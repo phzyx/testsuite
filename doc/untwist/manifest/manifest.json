@@ -1,21 +1,22 @@
 {
-  "defer_grand_total": 104,
+  "defer_grand_total": 78,
   "defer_totals": {
     "AlreadyCalledError": 2,
     "Deferred": 25,
     "DeferredList": 4,
     "TimeoutError": 1,
     "defer.AlreadyCalledError": 5,
-    "defer.Deferred": 36,
-    "defer.DeferredList": 20,
+    "defer.Deferred": 20,
+    "defer.DeferredList": 9,
+    "defer.maybeDeferred": 1,
     "fail": 1,
     "gatherResults": 1,
     "maybeDeferred": 8,
     "succeed": 1
   },
-  "files_with_reactor_or_defer": 24,
+  "files_with_reactor_or_defer": 14,
   "lifecycle_owners": {},
-  "parsed": 396,
+  "parsed": 397,
   "per_file": {
     "doc/untwist/test_core_runtime.py": {
       "defer": {
@@ -56,54 +57,6 @@
       },
       "reactor": {}
     },
-    "lib/python/asterisk/channel_test_condition.py": {
-      "defer": {
-        "defer.Deferred": 1,
-        "defer.DeferredList": 1
-      },
-      "reactor": {}
-    },
-    "lib/python/asterisk/fd_test_condition.py": {
-      "defer": {
-        "defer.Deferred": 2,
-        "defer.DeferredList": 2
-      },
-      "reactor": {}
-    },
-    "lib/python/asterisk/lock_test_condition.py": {
-      "defer": {
-        "defer.Deferred": 1,
-        "defer.DeferredList": 1
-      },
-      "reactor": {}
-    },
-    "lib/python/asterisk/pjsip_channel_test_condition.py": {
-      "defer": {
-        "defer.Deferred": 1,
-        "defer.DeferredList": 1
-      },
-      "reactor": {}
-    },
-    "lib/python/asterisk/self_test/harness_shared.py": {
-      "defer": {
-        "defer.Deferred": 1
-      },
-      "reactor": {}
-    },
-    "lib/python/asterisk/sip_channel_test_condition.py": {
-      "defer": {
-        "defer.Deferred": 1,
-        "defer.DeferredList": 1
-      },
-      "reactor": {}
-    },
-    "lib/python/asterisk/sip_dialog_test_condition.py": {
-      "defer": {
-        "defer.Deferred": 3,
-        "defer.DeferredList": 1
-      },
-      "reactor": {}
-    },
     "lib/python/asterisk/sipp.py": {
       "defer": {
         "defer.AlreadyCalledError": 1,
@@ -112,30 +65,11 @@
       },
       "reactor": {}
     },
-    "lib/python/asterisk/taskprocessor_test_condition.py": {
-      "defer": {
-        "defer.Deferred": 2,
-        "defer.DeferredList": 2
-      },
-      "reactor": {}
-    },
     "lib/python/asterisk/test_case.py": {
       "defer": {
         "defer.Deferred": 1,
-        "defer.DeferredList": 2
-      },
-      "reactor": {}
-    },
-    "lib/python/asterisk/test_conditions.py": {
-      "defer": {
-        "defer.Deferred": 2
-      },
-      "reactor": {}
-    },
-    "lib/python/asterisk/thread_test_condition.py": {
-      "defer": {
-        "defer.Deferred": 2,
-        "defer.DeferredList": 2
+        "defer.DeferredList": 2,
+        "defer.maybeDeferred": 1
       },
       "reactor": {}
     },
@@ -187,6 +121,6 @@
   "reactor_grand_total": 0,
   "reactor_totals": {},
   "root": "/usr/src/phzyx/testsuite",
-  "scanned": 396,
+  "scanned": 397,
   "skipped_non_python": 0
 }

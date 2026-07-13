@@ -7,10 +7,10 @@ This program is free software, distributed under the terms of
 the GNU General Public License Version 2.
 """
 
+import asyncio
 import logging
 import logging.config
 
-from asterisk.aio import defer
 from .test_conditions import TestCondition
 
 LOGGER = logging.getLogger(__name__)
@@ -164,66 +164,52 @@ class LockTestCondition(TestCondition):
         # core show locks is dependent on DEBUG_THREADS
         self.add_build_option("DEBUG_THREADS", "1")
 
-    def __get_locks(self, ast):
-        """Build the locks for an instance of Asterisk
+    async def __get_locks(self, ast):
+        """Build the locks for an instance of Asterisk"""
+        result = await ast.cli_exec("core show locks")
+        locks = result.output
+        # The first 6 lines are header information - look for a return thread ID
+        if "=== Thread ID:" in locks:
+            locks = locks[locks.find("=== Thread ID:"):]
 
-        Returns:
-        A deferred for when the locks are built for a given instance
-        """
-        def __show_locks_callback(result):
-            """Callback when 'core show locks' has finished"""
-            locks = result.output
-            # The first 6 lines are header information - look for a return thread ID
-            if "=== Thread ID:" in locks:
-                locks = locks[locks.find("=== Thread ID:"):]
+            lock_tokens = locks.split("=== -------------------------------------------------------------------")
+            for token in lock_tokens:
+                if "Thread ID" in token:
+                    try:
+                        obj = LockSequence()
+                        obj.parse_lock_sequence(token)
+                        self.locks.append((result.host, obj))
+                    except:
+                        msg = ("Unable to parse lock information into a "
+                               "manageable object:\n%s" % token)
+                        LOGGER.warning(msg)
 
-                lock_tokens = locks.split("=== -------------------------------------------------------------------")
-                for token in lock_tokens:
-                    if "Thread ID" in token:
-                        try:
-                            obj = LockSequence()
-                            obj.parse_lock_sequence(token)
-                            self.locks.append((result.host, obj))
-                        except:
-                            msg = ("Unable to parse lock information into a "
-                                   "manageable object:\n%s" % token)
-                            LOGGER.warning(msg)
-            return result
-
-        deferred = ast.cli_exec("core show locks")
-        deferred.addCallback(__show_locks_callback)
-        return deferred
-
-    def evaluate(self, related_test_condition=None):
+    async def evaluate(self, related_test_condition=None):
         """Evaluate the condition"""
 
-        def __lock_info_obtained(lst, finished_deferred):
-            """Callback when lock information has been obtained"""
-            if (len(self.locks) > 0):
-                #Sometimes, a lock will be held at the end of a test run
-                # (typically a logger RDLCK). Only report a held lock as a
-                # failure if the thread is waiting for another lock - that would
-                # indicate that we may be in a deadlock situation.  Since that
-                # shouldnt happen either before or after a test run, treat that
-                # as an error.
-                for lock_pair in self.locks:
-                    LOGGER.info("Detected locks on Asterisk instance: %s" %
-                                lock_pair[0])
-                    LOGGER.info("Lock trace: %s" % str(lock_pair[1]))
-                    for lock in lock_pair[1].locks:
-                        if not lock.held:
-                            msg = "Lock detected in a waiting state"
-                            super(LockTestCondition, self).fail_check(msg)
+        # Build up the locks for each instance of asterisk. DeferredList in the
+        # original waited for every child regardless of errors;
+        # return_exceptions=True preserves that (no fail-fast).
+        await asyncio.gather(*[self.__get_locks(ast) for ast in self.ast],
+                             return_exceptions=True)
 
-            if super(LockTestCondition, self).get_status() == 'Inconclusive':
-                super(LockTestCondition, self).pass_check()
-            finished_deferred.callback(self)
-            return finished_deferred
+        if (len(self.locks) > 0):
+            #Sometimes, a lock will be held at the end of a test run
+            # (typically a logger RDLCK). Only report a held lock as a
+            # failure if the thread is waiting for another lock - that would
+            # indicate that we may be in a deadlock situation.  Since that
+            # shouldnt happen either before or after a test run, treat that
+            # as an error.
+            for lock_pair in self.locks:
+                LOGGER.info("Detected locks on Asterisk instance: %s" %
+                            lock_pair[0])
+                LOGGER.info("Lock trace: %s" % str(lock_pair[1]))
+                for lock in lock_pair[1].locks:
+                    if not lock.held:
+                        msg = "Lock detected in a waiting state"
+                        super(LockTestCondition, self).fail_check(msg)
 
-        # Build up the locks for each instance of asterisk
-        finished_deferred = defer.Deferred()
-        defer.DeferredList([self.__get_locks(ast) for ast in self.ast]
-                           ).addCallback(__lock_info_obtained,
-                                         finished_deferred)
-        return finished_deferred
+        if super(LockTestCondition, self).get_status() == 'Inconclusive':
+            super(LockTestCondition, self).pass_check()
+        return self
 

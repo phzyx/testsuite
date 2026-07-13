@@ -9,10 +9,10 @@ This program is free software, distributed under the terms of
 the GNU General Public License Version 2.
 """
 
+import asyncio
 import logging
 import os
 import sys
-from asterisk.aio import defer
 import unittest
 
 # Add directory where the modules to test can be found
@@ -26,6 +26,20 @@ def ReadTestFile(filename, basepath="lib/python/asterisk/self_test"):
     return output
 
 
+def run_coroutine(coro):
+    """Drive an async condition ``evaluate`` coroutine to completion.
+
+    The production condition modules now expose ``evaluate`` as a coroutine.
+    The unit tests still call it synchronously, so this helper runs it on a
+    throwaway event loop and returns its result.
+    """
+    loop = asyncio.new_event_loop()
+    try:
+        return loop.run_until_complete(coro)
+    finally:
+        loop.close()
+
+
 class AstMockOutput(object):
     """mock cli output base class"""
 
@@ -36,12 +50,10 @@ class AstMockOutput(object):
     def MockDeferFile(self, filename):
         return self.MockDefer(ReadTestFile(filename))
 
-    def MockDefer(self, output):
-        """use real defer to mock deferred output"""
+    async def MockDefer(self, output):
+        """use a native coroutine to mock deferred CLI output"""
         self.output = output
-        deferred = defer.Deferred()
-        deferred.callback(self)
-        return deferred
+        return self
 
 
 def main():
