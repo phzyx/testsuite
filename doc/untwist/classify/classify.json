@@ -7,15 +7,15 @@
   "chain_by_role": {
     "core": {
       "addCallback": 15,
-      "addCallbacks": 4,
+      "addCallbacks": 3,
       "addErrback": 4,
-      "callback": 10,
-      "errback": 7
+      "callback": 8,
+      "errback": 1
     },
     "fixture": {
-      "addCallback": 68,
-      "addCallbacks": 18,
-      "addErrback": 137,
+      "addCallback": 58,
+      "addCallbacks": 17,
+      "addErrback": 130,
       "callback": 3
     },
     "other": {
@@ -27,7 +27,7 @@
       "addBoth": 1,
       "addCallback": 28,
       "addCallbacks": 6,
-      "addErrback": 7,
+      "addErrback": 6,
       "callback": 20,
       "errback": 9
     },
@@ -42,15 +42,15 @@
   },
   "chain_totals": {
     "addBoth": 4,
-    "addCallback": 257,
-    "addCallbacks": 58,
-    "addErrback": 165,
-    "callback": 45,
-    "errback": 27
+    "addCallback": 247,
+    "addCallbacks": 56,
+    "addErrback": 157,
+    "callback": 43,
+    "errback": 21
   },
   "ctor_by_role": {
     "core": {
-      "Deferred": 11,
+      "Deferred": 9,
       "DeferredList": 2,
       "maybeDeferred": 1
     },
@@ -78,7 +78,7 @@
     }
   },
   "ctor_totals": {
-    "Deferred": 57,
+    "Deferred": 55,
     "DeferredList": 12,
     "fail": 5,
     "gatherResults": 1,
@@ -92,12 +92,12 @@
   },
   "files_by_role": {
     "core": 4,
-    "fixture": 110,
+    "fixture": 107,
     "other": 2,
     "shim": 3,
     "starpy": 20
   },
-  "files_with_defer": 139,
+  "files_with_defer": 136,
   "inline_callbacks_files": [],
   "per_file": {
     "[starpy] examples/amicommand.py": {
@@ -417,7 +417,7 @@
       },
       "chain": {
         "addCallback": 28,
-        "addErrback": 7,
+        "addErrback": 6,
         "callback": 14,
         "errback": 3
       },
@@ -458,12 +458,11 @@
       },
       "chain": {
         "addCallback": 1,
-        "addCallbacks": 1,
-        "callback": 7,
-        "errback": 7
+        "callback": 5,
+        "errback": 1
       },
       "ctor": {
-        "Deferred": 4
+        "Deferred": 2
       },
       "deferredlist_flags": {},
       "inline_callbacks_decorators": 0,
@@ -742,7 +741,6 @@
     "tests/apps/voicemail/check_voicemail_forward_with_prepend/run-test": {
       "ambiguous": {},
       "chain": {
-        "addCallback": 1,
         "addErrback": 1
       },
       "ctor": {},
@@ -1035,16 +1033,6 @@
       "chain": {
         "addCallback": 2,
         "addErrback": 2
-      },
-      "ctor": {},
-      "deferredlist_flags": {},
-      "inline_callbacks_decorators": 0,
-      "role": "fixture"
-    },
-    "tests/channels/pjsip/configuration/test_scenario.py": {
-      "ambiguous": {},
-      "chain": {
-        "addCallback": 2
       },
       "ctor": {},
       "deferredlist_flags": {},
@@ -1510,30 +1498,7 @@
     "tests/masquerade/run-test": {
       "ambiguous": {},
       "chain": {
-        "addCallbacks": 1,
         "addErrback": 2
-      },
-      "ctor": {},
-      "deferredlist_flags": {},
-      "inline_callbacks_decorators": 0,
-      "role": "fixture"
-    },
-    "tests/pbx/dialplan_reload/run-test": {
-      "ambiguous": {},
-      "chain": {
-        "addCallback": 3,
-        "addErrback": 3
-      },
-      "ctor": {},
-      "deferredlist_flags": {},
-      "inline_callbacks_decorators": 0,
-      "role": "fixture"
-    },
-    "tests/pbx/dialplan_save/run-test": {
-      "ambiguous": {},
-      "chain": {
-        "addCallback": 4,
-        "addErrback": 4
       },
       "ctor": {},
       "deferredlist_flags": {},

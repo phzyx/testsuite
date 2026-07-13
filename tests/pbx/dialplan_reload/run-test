@@ -14,6 +14,7 @@ from asterisk.test_runner import run_test_object
 
 sys.path.append("lib/python")
 from asterisk.test_case import TestCase
+from asterisk.asterisk import AsteriskCliCommandError
 LOGGER = logging.getLogger(__name__)
 
 # How many times to do the restart cycle
@@ -51,9 +52,14 @@ class DialplanReloadTest(TestCase):
             self.failure()
 
         # log the trouble context just to be sure it was loaded
-        df = self.ast[0].cli_exec("dialplan show incoming_1")
-        df.addCallback(callback)
-        df.addErrback(errback)
+        async def _run():
+            try:
+                cli_command = await self.ast[0].cli_exec("dialplan show incoming_1")
+            except AsteriskCliCommandError:
+                errback(None)
+            else:
+                callback(cli_command)
+        current_runtime().create_task(_run())
 
     def reload(self):
 
@@ -71,9 +77,15 @@ class DialplanReloadTest(TestCase):
 
             def fullybooted_run():
                 self.reset_timeout()
-                waitfullybooted = self.ast[0].cli_exec("core waitfullybooted")
-                waitfullybooted.addCallback(fullybooted_success)
-                waitfullybooted.addErrback(fullybooted_failure)
+
+                async def _run():
+                    try:
+                        cli_command = await self.ast[0].cli_exec("core waitfullybooted")
+                    except AsteriskCliCommandError:
+                        fullybooted_failure(None)
+                    else:
+                        fullybooted_success(cli_command)
+                current_runtime().create_task(_run())
 
             LOGGER.info("Restarted #%d" % self.count)
             self.count += 1
@@ -83,9 +95,14 @@ class DialplanReloadTest(TestCase):
             LOGGER.error("CLI restart failed")
             self.failure()
 
-        df = self.ast[0].cli_exec("core restart gracefully")
-        df.addCallback(callback)
-        df.addErrback(errback)
+        async def _run():
+            try:
+                cli_command = await self.ast[0].cli_exec("core restart gracefully")
+            except AsteriskCliCommandError:
+                errback(None)
+            else:
+                callback(cli_command)
+        current_runtime().create_task(_run())
 
         LOGGER.info("Restarting #%d" % self.count)
 

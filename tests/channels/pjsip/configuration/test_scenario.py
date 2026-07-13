@@ -14,6 +14,9 @@ import re
 sys.path.append("lib/python")
 sys.path.append("tests/channels/pjsip/configuration")
 
+from asterisk.aio.runtime import current_runtime
+from asterisk.asterisk import AsteriskCliCommandError
+
 LOGGER = logging.getLogger(__name__)
 
 
@@ -76,16 +79,22 @@ class TestScenario(object):
         ast                    -- The Asterisk instance for this scenario.
 
         Returns:
-        A twisted deferred instance.
+        An awaitable task that runs the scenario.
         """
 
         LOGGER.debug('{0} Running test scenario.'.format(self))
 
-        cli_deferred = ast.cli_exec(self.__cli_command)
-        cli_deferred.addCallback(self.__parse_cli_output)
-        if self.__on_complete is not None:
-            cli_deferred.addCallback(self.__on_complete)
-        return cli_deferred
+        async def _run():
+            try:
+                cli = await ast.cli_exec(self.__cli_command)
+            except AsteriskCliCommandError:
+                LOGGER.error('{0} CLI command failed.'.format(self))
+                return
+            self.__parse_cli_output(cli)
+            if self.__on_complete is not None:
+                self.__on_complete(cli)
+
+        return current_runtime().create_task(_run())
 
     @property
     def finished(self):

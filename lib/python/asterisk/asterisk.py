@@ -29,7 +29,7 @@ from subprocess import PIPE, TimeoutExpired
 
 from asterisk.aio import defer, utils, error
 from asterisk.aio.runtime import current_runtime
-from asterisk.aio import Failure, ProcessProtocol
+from asterisk.aio import ProcessProtocol
 
 REMOTE_ERROR = None
 try:
@@ -45,13 +45,28 @@ from .pluggable_registry import PLUGGABLE_EVENT_REGISTRY,\
 
 LOGGER = logging.getLogger(__name__)
 
+
+class AsteriskCliCommandError(Exception):
+    """Raised when an Asterisk CLI command fails.
+
+    Carries the originating CLI command object (``AsteriskCliCommand`` or
+    ``AsteriskRemoteCliCommand``) on ``.command`` so a caller awaiting
+    ``cli_exec()`` can still inspect ``exitcode``/``output``/``err`` on the
+    failure path -- the same object the old Deferred errback delivered.
+    """
+
+    def __init__(self, command):
+        self.command = command
+        super().__init__(
+            "Asterisk CLI command failed (exit %s)" % command.exitcode)
+
+
 class AsteriskRemoteCliCommand(object):
     """Class that attempts to manipulate a remote Asterisk CLI over SSH.
 
     Uses ``asyncssh`` to open a connection, run a single command, and collect
-    its output. Preserves the public contract of the previous Twisted/conch
-    implementation: ``execute()`` returns a Deferred that fires with this
-    object on success and errbacks with a ``Failure`` wrapping this object on
+    its output. ``execute()`` is a coroutine that returns this object on
+    success and raises ``AsteriskCliCommandError`` (carrying this object) on
     failure, with ``exitcode``/``output``/``err`` populated in both cases.
     """
 
@@ -93,14 +108,18 @@ class AsteriskRemoteCliCommand(object):
         self.no_agent = bool(self.config.get('no-agent')) or \
             'SSH_AUTH_SOCK' not in os.environ
 
-    def execute(self):
-        """Execute the CLI command, returning a Deferred that fires with self."""
+    async def execute(self):
+        """Execute the CLI command.
+
+        Returns this object on success; raises ``AsteriskCliCommandError``
+        (carrying this object) on failure. ``exitcode``/``output``/``err`` are
+        populated in both cases.
+        """
 
         # Shell-quote each argument so paths/commands containing spaces or
         # quotes survive being run by the remote shell intact.
         cmd = shlex.join(self.cmd)
         LOGGER.debug('Executing {0}'.format(cmd))
-        deferred = defer.Deferred()
 
         # Bound the whole SSH operation (connect + command) so a hung remote or
         # network never wedges the reactor, per the SSH contract (design 6.5).
@@ -129,44 +148,36 @@ class AsteriskRemoteCliCommand(object):
                 # exception to raise.
                 return await conn.run(cmd, check=False)
 
-        async def _run():
-            try:
-                result = await asyncio.wait_for(_connect_and_run(), timeout)
-            except asyncio.TimeoutError:
-                self.exitcode = -1
-                self.output = ''
-                self.err = ('SSH operation timed out after %s seconds'
-                            % timeout)
-                LOGGER.warning('Remote Asterisk SSH timed out (%ss): %s'
-                               % (timeout, cmd))
-                deferred.errback(Failure(self))
-                return
-            except Exception as exc:
-                self.exitcode = -1
-                self.output = ''
-                self.err = str(exc)
-                LOGGER.warning('Remote Asterisk connection failed: '
-                               '{0}'.format(exc))
-                deferred.errback(Failure(self))
-                return
+        try:
+            result = await asyncio.wait_for(_connect_and_run(), timeout)
+        except asyncio.TimeoutError:
+            self.exitcode = -1
+            self.output = ''
+            self.err = ('SSH operation timed out after %s seconds' % timeout)
+            LOGGER.warning('Remote Asterisk SSH timed out (%ss): %s'
+                           % (timeout, cmd))
+            raise AsteriskCliCommandError(self)
+        except Exception as exc:
+            self.exitcode = -1
+            self.output = ''
+            self.err = str(exc)
+            LOGGER.warning('Remote Asterisk connection failed: '
+                           '{0}'.format(exc))
+            raise AsteriskCliCommandError(self)
 
-            # Preserve stdout, stderr and the true exit status separately, as
-            # the local process path does. A signal-killed remote process has
-            # exit_status None; report that as a failure (-1).
-            self.output = result.stdout or ''
-            self.err = result.stderr or ''
-            self.exitcode = result.exit_status \
-                if result.exit_status is not None else -1
-            if self.exitcode == 0:
-                LOGGER.debug('Remote Asterisk process completed successfully')
-                deferred.callback(self)
-            else:
-                LOGGER.warning('Remote Asterisk process exited %s: %s'
-                               % (self.exitcode, self.err))
-                deferred.errback(Failure(self))
-
-        current_runtime().callWhenRunning(lambda: asyncio.ensure_future(_run()))
-        return deferred
+        # Preserve stdout, stderr and the true exit status separately, as
+        # the local process path does. A signal-killed remote process has
+        # exit_status None; report that as a failure (-1).
+        self.output = result.stdout or ''
+        self.err = result.stderr or ''
+        self.exitcode = result.exit_status \
+            if result.exit_status is not None else -1
+        if self.exitcode == 0:
+            LOGGER.debug('Remote Asterisk process completed successfully')
+            return self
+        LOGGER.warning('Remote Asterisk process exited %s: %s'
+                       % (self.exitcode, self.err))
+        raise AsteriskCliCommandError(self)
 
 
 class AsteriskCliCommand(object):
@@ -191,64 +202,42 @@ class AsteriskCliCommand(object):
         self.exitcode = -1
         self.output = ""
         self.err = ""
-        self._deferred = None
 
-    def execute(self):
+    async def execute(self):
         """Execute the CLI command.
 
-        Returns a deferred that will be called when the operation completes. The
-        parameter to the deferred is this object.
+        Returns this object on success; raises ``AsteriskCliCommandError``
+        (carrying this object) on failure.
         """
-        def __cli_output_callback(result):
-            """Handle a normal exit from getProcessOutputAndValue"""
-            self._set_properties(result)
-            LOGGER.debug("Asterisk CLI %s exited %d" %
-                         (self.host, self.exitcode))
-            if self.err:
-                LOGGER.debug(self.err)
-            if self.exitcode:
-                self._deferred.errback(self)
-            else:
-                self._deferred.callback(self)
-
-        def __cli_error_callback(result):
-            """Handle a signal-terminated getProcessOutputAndValue.
-
-            ``result`` is the ``(out, err, signal)`` tuple carried on
-            ``ProcessSignaled.value``."""
-            self._set_properties(result)
+        try:
+            result = await utils.getProcessOutputAndValue(
+                self._cmd[0], self._cmd[1:], env=os.environ)
+        except utils.ProcessSignaled as exc:
+            # A signal-terminated process carries its (out, err, signal) tuple
+            # on ProcessSignaled.value.
+            self._set_properties(exc.value)
             LOGGER.warning("Asterisk CLI %s exited %d with error: %s" %
                            (self.host, self.exitcode, self.err))
             if self.err:
                 LOGGER.debug(self.err)
-            self._deferred.errback(self)
+            raise AsteriskCliCommandError(self)
+        except Exception as exc:
+            # A startup failure (bad executable, permissions, OSError from
+            # create_subprocess_exec) must surface as a failure -- matching the
+            # old Deferred helper, which errbacked on any task exception.
+            self.exitcode = -1
+            self.output = ''
+            self.err = str(exc)
+            LOGGER.warning("Asterisk CLI %s failed: %s", self.host, exc)
+            raise AsteriskCliCommandError(self)
 
-        self._deferred = defer.Deferred()
-
-        async def _run():
-            try:
-                result = await utils.getProcessOutputAndValue(
-                    self._cmd[0], self._cmd[1:], env=os.environ)
-            except utils.ProcessSignaled as exc:
-                __cli_error_callback(exc.value)
-            except Exception as exc:
-                # A startup failure (bad executable, permissions, OSError from
-                # create_subprocess_exec) must errback the returned Deferred --
-                # not leave it unresolved with an unretrieved task exception.
-                # Matches the old Deferred helper, which errbacked on any task
-                # exception.
-                self.exitcode = -1
-                self.output = ''
-                self.err = str(exc)
-                LOGGER.warning("Asterisk CLI %s failed: %s", self.host, exc)
-                self._deferred.errback(self)
-            else:
-                __cli_output_callback(result)
-
-        current_runtime().callWhenRunning(
-            lambda: asyncio.ensure_future(_run()))
-
-        return self._deferred
+        self._set_properties(result)
+        LOGGER.debug("Asterisk CLI %s exited %d" % (self.host, self.exitcode))
+        if self.err:
+            LOGGER.debug(self.err)
+        if self.exitcode:
+            raise AsteriskCliCommandError(self)
+        return self
 
     def _set_properties(self, result):
         """Set the properties based on the result of the
@@ -611,11 +600,17 @@ class Asterisk(object):
                     pass
             return reason
 
-        def __send_stop_gracefully():
+        async def __send_stop_gracefully():
             """Send a core stop gracefully CLI command"""
             LOGGER.debug('sending stop gracefully')
-            cli_deferred = self.cli_exec("core stop gracefully")
-            cli_deferred.addCallbacks(__stop_gracefully_callback, __stop_gracefully_error)
+            try:
+                cli_command = await self.cli_exec("core stop gracefully")
+            except AsteriskCliCommandError as exc:
+                __stop_gracefully_error(exc.command)
+            except Exception:
+                __stop_gracefully_error(None)
+            else:
+                __stop_gracefully_callback(cli_command)
 
         def __stop_gracefully_callback(cli_command):
             """Callback handler for the core stop gracefully CLI command"""
@@ -667,7 +662,7 @@ class Asterisk(object):
                                             __send_kill))
 
             # Start by asking to stop gracefully.
-            __send_stop_gracefully()
+            current_runtime().create_task(__send_stop_gracefully())
 
             self._stop_deferred.addCallback(__cancel_stops)
 
@@ -945,7 +940,8 @@ class Asterisk(object):
         argstr Arguments to be passed to the originate
 
         Returns:
-        A deferred object that can be used to listen for command completion
+        An awaitable task (see cli_exec) that can be used to listen for command
+        completion
 
         Example Usage:
         asterisk.originate("Local/a_exten@context extension b_exten@context")
@@ -978,7 +974,10 @@ class Asterisk(object):
         cli_cmd The command to execute.
 
         Returns:
-        A deferred object that will be signaled when the process has exited
+        An awaitable task that resolves to the CLI command object once the
+        process has exited (and raises ``AsteriskCliCommandError`` on failure).
+        The task is scheduled immediately, so a caller may either ``await`` it
+        or fire-and-forget -- the command still runs either way.
 
         Example Usage:
         asterisk.cli_exec("core set verbose 10")
@@ -997,7 +996,11 @@ class Asterisk(object):
             cli_protocol = AsteriskCliCommand(self.host, cmd)
         else:
             cli_protocol = AsteriskRemoteCliCommand(self.remote_config, cmd)
-        return cli_protocol.execute()
+        # execute() is a coroutine; schedule it as a runtime task so callers may
+        # either ``await`` the returned task or fire-and-forget (the task still
+        # runs). This preserves the old Deferred's self-executing behaviour and
+        # is safe to call before the loop is running (it runs once it starts).
+        return current_runtime().create_task(cli_protocol.execute())
 
     def cli_exec_blocking(self, cli_cmd, responsekey="", timeout=10):
         """Execute a CLI command on this instance of Asterisk.

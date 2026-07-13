@@ -1,8 +1,8 @@
 # Deferred/defer classification  (B5.0)
-files_with_defer=139  roles={'core': 4, 'fixture': 110, 'other': 2, 'shim': 3, 'starpy': 20}
+files_with_defer=136  roles={'core': 4, 'fixture': 107, 'other': 2, 'shim': 3, 'starpy': 20}
 
 ## construction totals
-  Deferred                   57
+  Deferred                   55
   DeferredList               12
   fail                       5
   gatherResults              1
@@ -11,11 +11,11 @@ files_with_defer=139  roles={'core': 4, 'fixture': 110, 'other': 2, 'shim': 3, '
 
 ## chaining totals (Deferred-attributed method calls)
   addBoth                    4
-  addCallback                257
-  addCallbacks               58
-  addErrback                 165
-  callback                   45
-  errback                    27
+  addCallback                247
+  addCallbacks               56
+  addErrback                 157
+  callback                   43
+  errback                    21
 
 ## ambiguous defer-shaped calls  (callback/errback/cancel/pause on non-Deferred or unresolved receivers -- NOT migration sites)
   callback                   13
@@ -28,17 +28,17 @@ files_with_defer=139  roles={'core': 4, 'fixture': 110, 'other': 2, 'shim': 3, '
   fireOnOneErrback           2
 
 ## construction by role
-  [core] {'Deferred': 11, 'DeferredList': 2, 'maybeDeferred': 1}
+  [core] {'Deferred': 9, 'DeferredList': 2, 'maybeDeferred': 1}
   [fixture] {'Deferred': 3, 'DeferredList': 4}
   [other] {'Deferred': 1}
   [shim] {'Deferred': 29, 'DeferredList': 5, 'fail': 3, 'gatherResults': 1, 'maybeDeferred': 8, 'succeed': 2}
   [starpy] {'Deferred': 13, 'DeferredList': 1, 'fail': 2, 'maybeDeferred': 1, 'succeed': 1}
 
 ## chaining by role
-  [core] {'addCallback': 15, 'addCallbacks': 4, 'addErrback': 4, 'callback': 10, 'errback': 7}
-  [fixture] {'addCallback': 68, 'addCallbacks': 18, 'addErrback': 137, 'callback': 3}
+  [core] {'addCallback': 15, 'addCallbacks': 3, 'addErrback': 4, 'callback': 8, 'errback': 1}
+  [fixture] {'addCallback': 58, 'addCallbacks': 17, 'addErrback': 130, 'callback': 3}
   [other] {'addBoth': 1, 'addCallback': 1, 'callback': 1}
-  [shim] {'addBoth': 1, 'addCallback': 28, 'addCallbacks': 6, 'addErrback': 7, 'callback': 20, 'errback': 9}
+  [shim] {'addBoth': 1, 'addCallback': 28, 'addCallbacks': 6, 'addErrback': 6, 'callback': 20, 'errback': 9}
   [starpy] {'addBoth': 2, 'addCallback': 145, 'addCallbacks': 30, 'addErrback': 17, 'callback': 11, 'errback': 11}
 
 ## inlineCallbacks decorators (should be 0): none
@@ -93,11 +93,11 @@ files_with_defer=139  roles={'core': 4, 'fixture': 110, 'other': 2, 'shim': 3, '
   [shim    ] lib/python/asterisk/aio/runtime.py
              ctor=Deferred:1  chain=callback:1,errback:2  amb=cancel:8
   [shim    ] lib/python/asterisk/aio/test_aio.py
-             ctor=Deferred:24,DeferredList:4,fail:1,gatherResults:1,maybeDeferred:8,succeed:1  chain=addCallback:28,addErrback:7,callback:14,errback:3  amb=callback:7,cancel:8,errback:2  dl=consumeErrors:1,fireOnOneCallback:1
+             ctor=Deferred:24,DeferredList:4,fail:1,gatherResults:1,maybeDeferred:8,succeed:1  chain=addCallback:28,addErrback:6,callback:14,errback:3  amb=callback:7,cancel:8,errback:2  dl=consumeErrors:1,fireOnOneCallback:1
   [core    ] lib/python/asterisk/apptest.py
              ctor=Deferred:6  chain=addCallback:5,addErrback:2,callback:2  amb=callback:4
   [core    ] lib/python/asterisk/asterisk.py
-             ctor=Deferred:4  chain=addCallback:1,addCallbacks:1,callback:7,errback:7  amb=cancel:1
+             ctor=Deferred:2  chain=addCallback:1,callback:5,errback:1  amb=cancel:1
   [core    ] lib/python/asterisk/sipp.py
              chain=addCallback:2
   [core    ] lib/python/asterisk/test_case.py
@@ -151,7 +151,7 @@ files_with_defer=139  roles={'core': 4, 'fixture': 110, 'other': 2, 'shim': 3, '
   [fixture ] tests/apps/voicemail/check_voicemail_forward_hangup/run-test
              chain=addErrback:1
   [fixture ] tests/apps/voicemail/check_voicemail_forward_with_prepend/run-test
-             chain=addCallback:1,addErrback:1
+             chain=addErrback:1
   [fixture ] tests/apps/voicemail/check_voicemail_new_user/run-test
              chain=addErrback:1
   [fixture ] tests/apps/voicemail/check_voicemail_new_user_hangup/run-test
@@ -210,8 +210,6 @@ files_with_defer=139  roles={'core': 4, 'fixture': 110, 'other': 2, 'shim': 3, '
              chain=addErrback:3
   [fixture ] tests/channels/pjsip/call_pickup/run-test
              chain=addCallback:2,addErrback:2
-  [fixture ] tests/channels/pjsip/configuration/test_scenario.py
-             chain=addCallback:2
   [fixture ] tests/channels/pjsip/hold/run-test
              chain=addCallback:4
   [fixture ] tests/channels/pjsip/hold_inactive/run-test
@@ -299,11 +297,7 @@ files_with_defer=139  roles={'core': 4, 'fixture': 110, 'other': 2, 'shim': 3, '
   [fixture ] tests/manager/status_all_vars/status.py
              chain=addCallback:1
   [fixture ] tests/masquerade/run-test
-             chain=addCallbacks:1,addErrback:2
-  [fixture ] tests/pbx/dialplan_reload/run-test
-             chain=addCallback:3,addErrback:3
-  [fixture ] tests/pbx/dialplan_save/run-test
-             chain=addCallback:4,addErrback:4
+             chain=addErrback:2
   [fixture ] tests/pbx/manager_extensions/ami_extension_control.py
              ctor=DeferredList:1  chain=addCallback:1,addErrback:1
   [fixture ] tests/pbx/merge_contexts/run-test

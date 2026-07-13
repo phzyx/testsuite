@@ -16,6 +16,8 @@ from asterisk.test_runner import run_test_object
 
 sys.path.append("lib/python")
 
+from asterisk.aio.runtime import current_runtime
+from asterisk.asterisk import AsteriskCliCommandError
 from asterisk.test_state import FailureTestState
 from asterisk.voicemail import VoiceMailMailboxManagement
 from asterisk.voicemail import TestCondition
@@ -200,8 +202,14 @@ class ForwardTestState(VoiceMailState):
                     return result
 
                 audioFile = os.path.join(os.getcwd(), "%s/sounds/talking" % (self.voice_mail_test.testParentDir))
-                df = self.voice_mail_test.ast_sender.cli_exec("dialplan set global TALK_AUDIO " + audioFile)
-                df.addCallback(__send_redirect)
+
+                async def __run_redirect():
+                    try:
+                        result = await self.voice_mail_test.ast_sender.cli_exec("dialplan set global TALK_AUDIO " + audioFile)
+                    except AsteriskCliCommandError as exc:
+                        result = exc.command
+                    __send_redirect(result)
+                current_runtime().create_task(__run_redirect())
             elif message == 'vm-msgforwarded' or message == 'vm-msgsaved':
                 self.voice_mail_test.set_test_condition("msgForwarded", True)
             elif message == 'pbx-invalid':

@@ -1,12 +1,12 @@
 {
-  "defer_grand_total": 69,
+  "defer_grand_total": 67,
   "defer_totals": {
     "AlreadyCalledError": 2,
     "Deferred": 25,
     "DeferredList": 4,
     "TimeoutError": 1,
     "defer.AlreadyCalledError": 4,
-    "defer.Deferred": 15,
+    "defer.Deferred": 13,
     "defer.DeferredList": 6,
     "defer.maybeDeferred": 1,
     "fail": 1,
@@ -53,7 +53,7 @@
     "lib/python/asterisk/asterisk.py": {
       "defer": {
         "defer.AlreadyCalledError": 3,
-        "defer.Deferred": 4
+        "defer.Deferred": 2
       },
       "reactor": {}
     },

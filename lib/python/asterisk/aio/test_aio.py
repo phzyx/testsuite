@@ -1124,28 +1124,55 @@ class GetProcessOutputAndValueTests(_LoopTestCase):
 
 
 # --------------------------------------------------------------------------- #
-# AsteriskCliCommand.execute() bridges getProcessOutputAndValue onto a Deferred
+# AsteriskCliCommand.execute() is a native async def raising on failure
 # --------------------------------------------------------------------------- #
 class AsteriskCliCommandBridgeTests(_LoopTestCase):
-    """Regression: a subprocess *startup* failure must errback the returned
-    Deferred (not leave it unresolved with an unretrieved task exception).
+    """Regression: ``execute()`` is now an ``async def``. A subprocess *startup*
+    failure must ``raise AsteriskCliCommandError`` (carrying the command object)
+    rather than leave a task unresolved with an unretrieved exception.
 
-    getProcessOutputAndValue is now a native ``async def``; if execute()'s bridge
+    getProcessOutputAndValue is a native ``async def``; if execute()'s handling
     only caught ``ProcessSignaled``, a ``FileNotFoundError``/``OSError`` from
-    ``create_subprocess_exec`` would crash the task and never fire the Deferred.
+    ``create_subprocess_exec`` would crash the coroutine on the failure path.
     """
 
-    def test_bad_executable_errbacks_returned_deferred(self):
-        from asterisk.asterisk import AsteriskCliCommand
-
-        # cmd[0] is a nonexistent binary; cmd[4] satisfies __init__'s cli_cmd.
-        cmd = ['/nonexistent/definitely-not-a-real-asterisk',
+    # cmd[0] is a nonexistent binary; cmd[4] satisfies __init__'s cli_cmd.
+    BAD_CMD = ['/nonexistent/definitely-not-a-real-asterisk',
                '-C', 'asterisk.conf', '-rx', 'core show version']
-        cli = AsteriskCliCommand('127.0.0.1', cmd)
-        record = {}
 
-        # Capture asyncio's "Task exception was never retrieved" warning, which
-        # is what the old (ProcessSignaled-only) bridge produced on this path.
+    def test_bad_executable_raises_cli_error(self):
+        from asterisk.asterisk import (AsteriskCliCommand,
+                                        AsteriskCliCommandError)
+
+        cli = AsteriskCliCommand('127.0.0.1', self.BAD_CMD)
+
+        # Awaiting execute() raises AsteriskCliCommandError -- the async analogue
+        # of the old errback(Failure(command)) delivery.
+        with self.assertRaises(AsteriskCliCommandError) as ctx:
+            self.loop.run_until_complete(cli.execute())
+
+        exc = ctx.exception
+        # The failure carries the originating command so callers can still
+        # inspect exitcode/output/err on the failure path.
+        self.assertIs(exc.command, cli)
+        self.assertEqual(cli.exitcode, -1)
+        self.assertTrue(cli.err)
+        # No task leaked.
+        pending = [t for t in asyncio.all_tasks(self.loop) if not t.done()]
+        self.assertEqual(pending, [])
+
+    def test_execute_scheduled_before_running_is_safe(self):
+        """cli_exec() schedules execute() via create_task() immediately, which
+        may happen before the runtime reaches RUNNING (e.g. during module
+        registration). Prove that a task created pre-RUNNING runs safely once
+        the loop starts, resolves with AsteriskCliCommandError, and neither
+        leaks nor logs an unretrieved-task-exception warning.
+        """
+        from asterisk.asterisk import (AsteriskCliCommand,
+                                        AsteriskCliCommandError)
+
+        cli = AsteriskCliCommand('127.0.0.1', self.BAD_CMD)
+
         task_warnings = []
 
         class _WarningCapture(logging.Handler):
@@ -1157,22 +1184,22 @@ class AsteriskCliCommandBridgeTests(_LoopTestCase):
         asyncio_logger = logging.getLogger('asyncio')
         asyncio_logger.addHandler(warning_capture)
 
-        def run():
-            d = cli.execute()
-            d.addErrback(lambda f: record.__setitem__('err', f)
-                         or current_runtime().stop())
-            current_runtime().callLater(5.0, current_runtime().stop)
+        # Schedule BEFORE the runtime is RUNNING -- the loop is not spinning yet.
+        task = current_runtime().create_task(cli.execute())
+
+        def stop_soon():
+            current_runtime().callLater(0.2, current_runtime().stop)
 
         try:
-            current_runtime().callWhenRunning(run)
+            current_runtime().callWhenRunning(stop_soon)
             current_runtime().run()
             gc.collect()      # force any unretrieved-task-exception warning
         finally:
             asyncio_logger.removeHandler(warning_capture)
 
-        # The Deferred errbacked (did not hang unresolved) ...
-        self.assertIn('err', record)
-        self.assertTrue(_is_failure_like(record['err']))
+        # The pre-RUNNING task ran to completion once the loop started ...
+        self.assertTrue(task.done())
+        self.assertIsInstance(task.exception(), AsteriskCliCommandError)
         # ... execute() recorded the failure state ...
         self.assertEqual(cli.exitcode, -1)
         self.assertTrue(cli.err)
@@ -1180,11 +1207,6 @@ class AsteriskCliCommandBridgeTests(_LoopTestCase):
         pending = [t for t in asyncio.all_tasks(self.loop) if not t.done()]
         self.assertEqual(pending, [])
         self.assertEqual(task_warnings, [])
-
-
-def _is_failure_like(obj):
-    """True for the aio Failure the errback chain delivers."""
-    return isinstance(obj, Failure) or hasattr(obj, 'value')
 
 
 # --------------------------------------------------------------------------- #

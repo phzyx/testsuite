@@ -3,13 +3,13 @@ scanned=398 parsed=398 skipped_non_python=0 files_with_usage=12
 
 ## reactor.* totals  (grand=0)
 
-## defer totals  (grand=69)
+## defer totals  (grand=67)
   AlreadyCalledError         2
   Deferred                   25
   DeferredList               4
   TimeoutError               1
   defer.AlreadyCalledError   4
-  defer.Deferred             15
+  defer.Deferred             13
   defer.DeferredList         6
   defer.maybeDeferred        1
   fail                       1
