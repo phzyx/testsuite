@@ -12,10 +12,10 @@ the GNU General Public License Version 2.
 """
 
 import sys
+import asyncio
 import logging
 import uuid
 
-from asterisk.aio import defer
 from asterisk.aio.runtime import current_runtime
 
 sys.path.append("lib/python")
@@ -278,7 +278,7 @@ class ChannelObject(object):
         self._started = False
         self._unique_id = channel_def.get('testuniqueid', str(uuid.uuid1()))
         if 'start-on-create' in channel_def and channel_def['start-on-create']:
-            self.spawn_call(delay)
+            current_runtime().create_task(self.spawn_call(delay))
 
     def is_active(self):
         """Returns whether or not this channel object is active
@@ -291,15 +291,15 @@ class ChannelObject(object):
             return self._started
         return True
 
-    def spawn_call(self, delay=0):
+    async def spawn_call(self, delay=0):
         """Spawn the call!
 
         Keyword Arguments:
         delay The amount of time to wait before spawning the call
 
         Returns:
-        Deferred object that will be called after the call has been originated.
-        The deferred will pass this object as the parameter.
+        An awaitable that completes after the call has been originated,
+        yielding this object.
         """
 
         def __originate_failure(result):
@@ -311,20 +311,15 @@ class ChannelObject(object):
                 self._unique_id, result))
             return
 
-        def __spawn_call_callback(spawn_call_deferred):
-            """Actually perform the origination"""
-            self.ami.originate(channel=self._channel_name,
-                               context=self._controller_context,
-                               exten=self._controller_initial_exten,
-                               priority='1',
-                               variable={'testuniqueid': '%s' % self._unique_id}).addErrback(__originate_failure)
-            self._started = True
-            spawn_call_deferred.callback(self)
-
-        spawn_call_deferred = defer.Deferred()
-        current_runtime().callLater(delay, __spawn_call_callback,
-                          spawn_call_deferred)
-        return spawn_call_deferred
+        if delay:
+            await asyncio.sleep(delay)
+        self.ami.originate(channel=self._channel_name,
+                           context=self._controller_context,
+                           exten=self._controller_initial_exten,
+                           priority='1',
+                           variable={'testuniqueid': '%s' % self._unique_id}).addErrback(__originate_failure)
+        self._started = True
+        return self
 
     def __str__(self):
         return '(Controller: %s; Application %s)' % (self.controller_channel,
@@ -348,23 +343,19 @@ class ChannelObject(object):
                                      1)
         deferred.addErrback(self._handle_redirect_failure)
 
-    def hangup(self, delay=0):
+    async def hangup(self, delay=0):
         """Hang up the channel
 
         Keywords:
         delay How long to wait before hanging up the channel
 
         Returns:
-        A deferred object called when the hangup is initiated
+        An awaitable that completes when the hangup is initiated
         """
-        def __hangup_callback(hangup_deferred):
-            """Deferred callback when a hangup has started"""
-            self._send_redirect(self._controller_hangup_exten)
-            hangup_deferred.callback(self)
-
-        hangup_deferred = defer.Deferred()
-        current_runtime().callLater(delay, __hangup_callback, hangup_deferred)
-        return hangup_deferred
+        if delay:
+            await asyncio.sleep(delay)
+        self._send_redirect(self._controller_hangup_exten)
+        return self
 
     def is_hungup(self):
         """Return whether or not the channels owned by this object are hungup"""
@@ -389,7 +380,7 @@ class ChannelObject(object):
         """
         self._hangup_observers.append(callback)
 
-    def send_dtmf(self, dtmf, delay=0):
+    async def send_dtmf(self, dtmf, delay=0):
         """Send DTMF into the conference
 
         Keywords:
@@ -397,38 +388,25 @@ class ChannelObject(object):
         delay Schedule the sending of the DTMF for some time period
 
         Returns:
-        A deferred object that will be called when the DTMF starts to be sent.
-        The callback parameter will be this object.
+        An awaitable that completes when the DTMF starts to be sent,
+        yielding this object.
         """
-
-        def __send_dtmf_initial(param):
-            """Initial callback called by the reactor. This sets the dialplan
-            variable DTMF_TO_SEND to the dtmf value to stream"""
-            dtmf, dtmf_deferred = param
-            if (self._previous_dtmf != dtmf):
-                deferred = self.ami.setVar(channel=self.controller_channel,
-                                           variable='DTMF_TO_SEND',
-                                           value=dtmf)
-                deferred.addCallback(__send_dtmf_redirect, dtmf_deferred)
-                self._previous_dtmf = dtmf
-            else:
-                __send_dtmf_redirect(None, dtmf_deferred)
-
-        def __send_dtmf_redirect(result, deferred):
-            """Second callback called when the dialplan variable has been
-            set. This redirect the controlling channel to the sendDTMF
-            extension"""
-            self._send_redirect(self._controller_dtmf_exten)
-            deferred.callback(self)
-            return deferred
 
         LOGGER.debug("Sending DTMF %s over Controlling Channel %s" %
                      (dtmf, self.controller_channel))
-        dtmf_deferred = defer.Deferred()
-        current_runtime().callLater(delay, __send_dtmf_initial, (dtmf, dtmf_deferred))
-        return dtmf_deferred
+        if delay:
+            await asyncio.sleep(delay)
+        # Set the dialplan variable DTMF_TO_SEND to the dtmf value to stream
+        if (self._previous_dtmf != dtmf):
+            await self.ami.setVar(channel=self.controller_channel,
+                                  variable='DTMF_TO_SEND',
+                                  value=dtmf)
+            self._previous_dtmf = dtmf
+        # Redirect the controlling channel to the sendDTMF extension
+        self._send_redirect(self._controller_dtmf_exten)
+        return self
 
-    def stream_audio(self, sound_file, delay=0):
+    async def stream_audio(self, sound_file, delay=0):
         """Stream an audio sound file into the conference
 
         Keywords:
@@ -436,43 +414,29 @@ class ChannelObject(object):
         delay Schedule the sending of the audio for some time period
 
         Returns:
-        A deferred object that will be called when the aduio starts to be sent.
-        The callback parameter will be this object.
+        An awaitable that completes when the audio starts to be sent,
+        yielding this object.
         """
-
-        def __stream_audio_initial(param):
-            """Initial callback called by the reactor. This sets the dialplan
-            variable TALK_AUDIO to the file to stream"""
-            sound_file, audio_deferred = param
-            if (self._previous_sound_file != sound_file):
-                deferred = self.ami.setVar(channel=self.controller_channel,
-                                           variable="TALK_AUDIO",
-                                           value=sound_file)
-                deferred.addCallback(__stream_audio_redirect, audio_deferred)
-                self._previous_sound_file = sound_file
-            else:
-                __stream_audio_redirect(None, audio_deferred)
-
-        def __stream_audio_redirect(result, deferred):
-            """Second callback called when the dialplan variable has been
-            set.  This redirect the controlling channel to the sendAudio
-            extension"""
-            self._send_redirect(self._controller_audio_exten)
-            deferred.callback(self)
-            return deferred
 
         LOGGER.debug("Streaming Audio File %s over Controlling Channel %s" %
                      (sound_file, self.controller_channel))
-        audio_deferred = defer.Deferred()
-        current_runtime().callLater(delay, __stream_audio_initial,
-                          (sound_file, audio_deferred))
-        return audio_deferred
+        if delay:
+            await asyncio.sleep(delay)
+        # Set the dialplan variable TALK_AUDIO to the file to stream
+        if (self._previous_sound_file != sound_file):
+            await self.ami.setVar(channel=self.controller_channel,
+                                  variable="TALK_AUDIO",
+                                  value=sound_file)
+            self._previous_sound_file = sound_file
+        # Redirect the controlling channel to the sendAudio extension
+        self._send_redirect(self._controller_audio_exten)
+        return self
 
-    def stream_audio_with_dtmf(self,
-                               sound_file,
-                               dtmf,
-                               sound_delay=0,
-                               dtmf_delay=0):
+    async def stream_audio_with_dtmf(self,
+                                     sound_file,
+                                     dtmf,
+                                     sound_delay=0,
+                                     dtmf_delay=0):
         """Stream an audio sound file into the conference followed by some DTMF
 
         Keywords:
@@ -482,27 +446,13 @@ class ChannelObject(object):
         dtmf_delay Schedule the sending of the DTMF for some time period
 
         Returns:
-        A deferred object that will be called when both the audio and dtmf
-        have been triggered
+        An awaitable that completes when both the audio and dtmf have been
+        triggered, yielding this object.
         """
 
-        def __start_dtmf(_, param):
-            """Triggered when the audio has started"""
-            dtmf, dtmf_delay, audio_dtmf_deferred = param
-            start_deferred = self.send_dtmf(dtmf, dtmf_delay)
-            start_deferred.addCallback(__dtmf_sent, audio_dtmf_deferred)
-            return param
-
-        def __dtmf_sent(result, deferred):
-            """Triggered when the DTMF has started"""
-            deferred.callback(self)
-            return deferred
-
-        audio_dtmf_deferred = defer.Deferred()
-        param_tuple = (dtmf, dtmf_delay, audio_dtmf_deferred)
-        deferred = self.stream_audio(sound_file, sound_delay)
-        deferred.addCallback(__start_dtmf, param_tuple)
-        return audio_dtmf_deferred
+        await self.stream_audio(sound_file, sound_delay)
+        await self.send_dtmf(dtmf, dtmf_delay)
+        return self
 
     def _evaluate_candidates(self):
         """Determine if we know who our candidate channel is"""
@@ -717,7 +667,18 @@ class ApplicationEventInstance(AMIEventInstance):
 
         self.__current_action += 1
         if ret_obj is not None:
-            ret_obj.addCallback(self.execute_next_action, actions=actions)
+            async def _await_action():
+                try:
+                    await ret_obj
+                except Exception:
+                    # Mirror the old Deferred chain, which had no errback: a
+                    # failed action does not advance to the next action, so the
+                    # sequence stalls and the test times out / fails rather than
+                    # silently completing later actions.
+                    LOGGER.exception("Action failed; halting action sequence")
+                    return
+                self.execute_next_action(actions=actions)
+            current_runtime().create_task(_await_action())
         else:
             current_runtime().callLater(0, self.execute_next_action, actions=actions)
         return result
@@ -832,18 +793,14 @@ class ActionSetExpectedResult(object):
         self.test_object.add_expected_result(self.expected_result)
 
     def __call__(self, channel_object):
-        def __raise_deferred(param):
-            """Raise the deferred callback notifying everyone of the result"""
-            deferred, channel_object = param
-            deferred.callback(channel_object)
-            return param
-
         LOGGER.info("Expected Result: %s" % self.expected_result)
         self.test_object.set_expected_result(self.expected_result)
-        deferred_result = defer.Deferred()
-        param = (deferred_result, channel_object)
-        current_runtime().callLater(0, __raise_deferred, param)
-        return deferred_result
+
+        async def __signal_result():
+            """Yield a loop tick, then notify everyone of the result"""
+            await asyncio.sleep(0)
+            return channel_object
+        return __signal_result()
 
 
 class ActionHangup(object):

@@ -1,15 +1,15 @@
 {
   "ambiguous_totals": {
-    "callback": 13,
+    "callback": 9,
     "cancel": 23,
     "errback": 7
   },
   "chain_by_role": {
     "core": {
-      "addCallback": 15,
+      "addCallback": 10,
       "addCallbacks": 3,
       "addErrback": 4,
-      "callback": 8,
+      "callback": 6,
       "errback": 1
     },
     "fixture": {
@@ -42,15 +42,15 @@
   },
   "chain_totals": {
     "addBoth": 4,
-    "addCallback": 247,
+    "addCallback": 242,
     "addCallbacks": 56,
     "addErrback": 157,
-    "callback": 43,
+    "callback": 41,
     "errback": 21
   },
   "ctor_by_role": {
     "core": {
-      "Deferred": 9,
+      "Deferred": 3,
       "DeferredList": 2,
       "maybeDeferred": 1
     },
@@ -78,7 +78,7 @@
     }
   },
   "ctor_totals": {
-    "Deferred": 55,
+    "Deferred": 49,
     "DeferredList": 12,
     "fail": 5,
     "gatherResults": 1,
@@ -437,17 +437,11 @@
       "role": "shim"
     },
     "lib/python/asterisk/apptest.py": {
-      "ambiguous": {
-        "callback": 4
-      },
+      "ambiguous": {},
       "chain": {
-        "addCallback": 5,
-        "addErrback": 2,
-        "callback": 2
+        "addErrback": 2
       },
-      "ctor": {
-        "Deferred": 6
-      },
+      "ctor": {},
       "deferredlist_flags": {},
       "inline_callbacks_decorators": 0,
       "role": "core"

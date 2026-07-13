@@ -2,7 +2,7 @@
 files_with_defer=136  roles={'core': 4, 'fixture': 107, 'other': 2, 'shim': 3, 'starpy': 20}
 
 ## construction totals
-  Deferred                   55
+  Deferred                   49
   DeferredList               12
   fail                       5
   gatherResults              1
@@ -11,14 +11,14 @@ files_with_defer=136  roles={'core': 4, 'fixture': 107, 'other': 2, 'shim': 3, '
 
 ## chaining totals (Deferred-attributed method calls)
   addBoth                    4
-  addCallback                247
+  addCallback                242
   addCallbacks               56
   addErrback                 157
-  callback                   43
+  callback                   41
   errback                    21
 
 ## ambiguous defer-shaped calls  (callback/errback/cancel/pause on non-Deferred or unresolved receivers -- NOT migration sites)
-  callback                   13
+  callback                   9
   cancel                     23
   errback                    7
 
@@ -28,14 +28,14 @@ files_with_defer=136  roles={'core': 4, 'fixture': 107, 'other': 2, 'shim': 3, '
   fireOnOneErrback           2
 
 ## construction by role
-  [core] {'Deferred': 9, 'DeferredList': 2, 'maybeDeferred': 1}
+  [core] {'Deferred': 3, 'DeferredList': 2, 'maybeDeferred': 1}
   [fixture] {'Deferred': 3, 'DeferredList': 4}
   [other] {'Deferred': 1}
   [shim] {'Deferred': 29, 'DeferredList': 5, 'fail': 3, 'gatherResults': 1, 'maybeDeferred': 8, 'succeed': 2}
   [starpy] {'Deferred': 13, 'DeferredList': 1, 'fail': 2, 'maybeDeferred': 1, 'succeed': 1}
 
 ## chaining by role
-  [core] {'addCallback': 15, 'addCallbacks': 3, 'addErrback': 4, 'callback': 8, 'errback': 1}
+  [core] {'addCallback': 10, 'addCallbacks': 3, 'addErrback': 4, 'callback': 6, 'errback': 1}
   [fixture] {'addCallback': 58, 'addCallbacks': 17, 'addErrback': 130, 'callback': 3}
   [other] {'addBoth': 1, 'addCallback': 1, 'callback': 1}
   [shim] {'addBoth': 1, 'addCallback': 28, 'addCallbacks': 6, 'addErrback': 6, 'callback': 20, 'errback': 9}
@@ -95,7 +95,7 @@ files_with_defer=136  roles={'core': 4, 'fixture': 107, 'other': 2, 'shim': 3, '
   [shim    ] lib/python/asterisk/aio/test_aio.py
              ctor=Deferred:24,DeferredList:4,fail:1,gatherResults:1,maybeDeferred:8,succeed:1  chain=addCallback:28,addErrback:6,callback:14,errback:3  amb=callback:7,cancel:8,errback:2  dl=consumeErrors:1,fireOnOneCallback:1
   [core    ] lib/python/asterisk/apptest.py
-             ctor=Deferred:6  chain=addCallback:5,addErrback:2,callback:2  amb=callback:4
+             chain=addErrback:2
   [core    ] lib/python/asterisk/asterisk.py
              ctor=Deferred:2  chain=addCallback:1,callback:5,errback:1  amb=cancel:1
   [core    ] lib/python/asterisk/sipp.py

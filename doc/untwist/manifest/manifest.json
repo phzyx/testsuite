@@ -1,12 +1,12 @@
 {
-  "defer_grand_total": 67,
+  "defer_grand_total": 61,
   "defer_totals": {
     "AlreadyCalledError": 2,
     "Deferred": 25,
     "DeferredList": 4,
     "TimeoutError": 1,
     "defer.AlreadyCalledError": 4,
-    "defer.Deferred": 13,
+    "defer.Deferred": 7,
     "defer.DeferredList": 6,
     "defer.maybeDeferred": 1,
     "fail": 1,
@@ -14,9 +14,9 @@
     "maybeDeferred": 8,
     "succeed": 1
   },
-  "files_with_reactor_or_defer": 12,
+  "files_with_reactor_or_defer": 11,
   "lifecycle_owners": {},
-  "parsed": 398,
+  "parsed": 399,
   "per_file": {
     "doc/untwist/test_core_runtime.py": {
       "defer": {
@@ -41,12 +41,6 @@
         "gatherResults": 1,
         "maybeDeferred": 8,
         "succeed": 1
-      },
-      "reactor": {}
-    },
-    "lib/python/asterisk/apptest.py": {
-      "defer": {
-        "defer.Deferred": 6
       },
       "reactor": {}
     },
@@ -107,6 +101,6 @@
   "reactor_grand_total": 0,
   "reactor_totals": {},
   "root": "/usr/src/phzyx/testsuite",
-  "scanned": 398,
+  "scanned": 399,
   "skipped_non_python": 0
 }
