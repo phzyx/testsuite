@@ -15,6 +15,7 @@ sys.path.append("lib/python")
 from asterisk.test_case import TestCase
 from asterisk.sipp import SIPpScenario
 from asterisk.test_runner import run_test_object
+from asterisk.aio.runtime import current_runtime
 
 LOGGER = logging.getLogger(__name__)
 INJECT_FILE = "inject.csv"
@@ -138,13 +139,19 @@ class SIPHold(TestCase):
         # Start up the listener first - Phone A calls Phone B
         self._a_finished = False
         self._b_finished = False
-        res_b = sipp_b.run(self)
-        res_a = sipp_a.run(self)
 
-        res_a.addCallback(__check_scenario_a)
-        res_a.addCallback(__execute_next_scenario)
-        res_b.addCallback(__check_scenario_b)
-        res_b.addCallback(__execute_next_scenario)
+        async def _run_b():
+            result = await sipp_b.run(self)
+            result = __check_scenario_b(result)
+            __execute_next_scenario(result)
+
+        async def _run_a():
+            result = await sipp_a.run(self)
+            result = __check_scenario_a(result)
+            __execute_next_scenario(result)
+
+        current_runtime().create_task(_run_b())
+        current_runtime().create_task(_run_a())
 
     def user_event_handler(self, ami, event):
         ''' Reacts to UserEvents issued to indicate the end of a call.

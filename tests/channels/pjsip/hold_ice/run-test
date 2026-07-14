@@ -15,6 +15,7 @@ sys.path.append("lib/python")
 from asterisk.test_case import TestCase
 from asterisk.sipp import SIPpScenario
 from asterisk.test_runner import run_test_object
+from asterisk.aio.runtime import current_runtime
 
 LOGGER = logging.getLogger(__name__)
 INJECT_FILE = "inject.csv"
@@ -64,8 +65,8 @@ class SIPHold(TestCase):
         sipp_b = SIPpScenario(self.test_name, self.sipp_phone_b_scenario)
 
         # Start up the listener first - Phone A calls Phone B
-        sipp_b.run(self)
-        sipp_a.run(self)
+        current_runtime().create_task(sipp_b.run(self))
+        current_runtime().create_task(sipp_a.run(self))
 
     def handle_checklist_create(self, ami, event):
         """ Reacts to ICECHECKLISTCREATE user events

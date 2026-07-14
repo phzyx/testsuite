@@ -15,6 +15,7 @@ from asterisk.test_case import TestCase
 from asterisk.voicemail import VoiceMailMailboxManagement
 from asterisk.sipp import SIPpScenario
 from asterisk.test_runner import run_test_object
+from asterisk.aio.runtime import current_runtime
 
 LOGGER = logging.getLogger(__name__)
 
@@ -51,7 +52,7 @@ class PollingTest(TestCase):
                 LOGGER.error("Mailbox count was different than expected")
                 self.stop_test()
             sipp = SIPpScenario(self.test_name, self.sipp_unregister)
-            sipp.run(self)
+            current_runtime().create_task(sipp.run(self))
             self.test_phase = 2
         # Phase 2: There should not be a notification after unregistering
         elif self.test_phase == 2:
@@ -103,7 +104,7 @@ class PollingTest(TestCase):
         ami.registerEvent("Hangup", self.handle_hangup)
 
         sipp = SIPpScenario(self.test_name, self.sipp_register)
-        sipp.run(self)
+        current_runtime().create_task(sipp.run(self))
 
     def run(self):
         TestCase.run(self)

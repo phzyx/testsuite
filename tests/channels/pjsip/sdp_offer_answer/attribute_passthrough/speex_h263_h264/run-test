@@ -17,6 +17,7 @@ sys.path.append("lib/python")
 from asterisk.test_case import TestCase
 from asterisk.sipp import SIPpScenario
 from asterisk.test_runner import run_test_object
+from asterisk.aio.runtime import current_runtime
 
 logger = logging.getLogger(__name__)
 TEST_DIR = os.path.dirname(os.path.realpath(__file__))
@@ -65,13 +66,19 @@ class SDPPassthrough(TestCase):
         # Start up the listener first - Phone A calls Phone B
         self.__a_finished = False
         self.__b_finished = False
-        db = self.sipp_b.run(self)
-        da = self.sipp_a.run(self)
 
-        da.addCallback(__check_scenario_a)
-        da.addCallback(__execute_next_scenario)
-        db.addCallback(__check_scenario_b)
-        db.addCallback(__execute_next_scenario)
+        async def _run_b():
+            result = await self.sipp_b.run(self)
+            result = __check_scenario_b(result)
+            __execute_next_scenario(result)
+
+        async def _run_a():
+            result = await self.sipp_a.run(self)
+            result = __check_scenario_a(result)
+            __execute_next_scenario(result)
+
+        current_runtime().create_task(_run_b())
+        current_runtime().create_task(_run_a())
 
     def run(self):
         TestCase.run(self)

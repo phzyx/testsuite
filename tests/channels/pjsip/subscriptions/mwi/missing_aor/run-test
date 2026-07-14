@@ -15,6 +15,7 @@ sys.path.append("lib/python")
 from asterisk.test_runner import run_test_object
 from asterisk.sipp import SIPpScenario
 from asterisk.test_case import TestCase
+from asterisk.aio.runtime import current_runtime
 
 LOGGER = logging.getLogger(__name__)
 
@@ -61,7 +62,12 @@ class MissingAor(TestCase):
             # messages waiting so subscribe to them
             sipp = SIPpScenario(self.test_name,
                                 {'scenario':'subscribe.xml', '-p':'5061'})
-            sipp.run(self).addCallback(_on_scenario_complete)
+
+            async def _run():
+                obj = await sipp.run(self)
+                _on_scenario_complete(obj)
+
+            current_runtime().create_task(_run())
 
         def _send_second_update():
             """Send the second MWI update"""

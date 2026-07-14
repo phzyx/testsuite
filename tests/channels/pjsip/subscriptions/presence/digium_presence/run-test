@@ -14,6 +14,7 @@ sys.path.append("lib/python")
 from asterisk.test_runner import run_test_object
 from asterisk.sipp import SIPpScenario
 from asterisk.test_case import TestCase
+from asterisk.aio.runtime import current_runtime
 
 class DigiumPresence(TestCase):
     """Test case for presence on a digium phone"""
@@ -46,7 +47,12 @@ class DigiumPresence(TestCase):
             """
             sipp = SIPpScenario(self.test_name,
                                 {'scenario':'subscribe.xml', '-p':'5061'})
-            sipp.run(self).addCallback(_on_scenario_complete)
+
+            async def _run():
+                obj = await sipp.run(self)
+                _on_scenario_complete(obj)
+
+            current_runtime().create_task(_run())
 
         ami.registerEvent('PresenceStatus', _subscribe)
         # make sure alice is available
