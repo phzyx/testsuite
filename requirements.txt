@@ -15,7 +15,7 @@ rawsocket==0.2
 requests==2.27.1
 typing_extensions==4.12.2
 urllib3==1.26.9
-starpy @ git+https://github.com/phzyx/starpy@abeb0de15322016460139d8563e6ebff418c5bbe
+starpy @ git+https://github.com/phzyx/starpy@633d3dbc9f5df84dd10f4b3d4eaaa62508c24ef6
 scapy==2.6.1
 asyncssh==2.21.1
 websockets==12.0
