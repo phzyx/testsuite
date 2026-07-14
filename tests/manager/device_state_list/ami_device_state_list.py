@@ -8,8 +8,9 @@ This program is free software, distributed under the terms of
 the GNU General Public License Version 2.
 """
 
+import asyncio
 import logging
-from asterisk.aio import defer
+from asterisk.aio.runtime import current_runtime
 
 LOGGER = logging.getLogger(__name__)
 
@@ -69,16 +70,20 @@ class AMIDeviceStateList(object):
             deferred.addCallbacks(self.device_state_list_success,
                                   _action_failed)
 
-        # Create a few device state values
-        resp_list = []
-        for state in STATES:
-            device = "DEVICE_STATE(Custom:{0})".format(state['device'])
-            deferred = ami.setVar(None, device, state['state'])
-            resp_list.append(deferred)
+        async def _run():
+            # Create a few device state values
+            resp_list = []
+            for state in STATES:
+                device = "DEVICE_STATE(Custom:{0})".format(state['device'])
+                resp_list.append(ami.setVar(None, device, state['state']))
 
-        defer_list = defer.DeferredList(resp_list)
-        defer_list.addCallback(_execute_query, ami)
-        defer_list.addErrback(_action_failed)
+            result = await asyncio.gather(*resp_list, return_exceptions=True)
+            try:
+                _execute_query(result, ami)
+            except Exception as exc:
+                _action_failed(exc)
+
+        current_runtime().create_task(_run())
 
     def device_state_list_success(self, result):
         """Handle the completion of the DeviceStateList action

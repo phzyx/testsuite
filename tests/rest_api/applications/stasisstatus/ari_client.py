@@ -16,7 +16,6 @@ sys.path.append("tests/rest_api/applications")
 
 from asterisk.ari import ARI, AriClientFactory
 from stasisstatus.observable_object import ObservableObject
-from asterisk.aio import defer
 from asterisk.aio.runtime import current_runtime
 
 LOGGER = logging.getLogger(__name__)
@@ -63,22 +62,14 @@ class AriClient(ObservableObject):
     def connect_websocket(self):
         """Creates an AriClientFactory instance and connects to it."""
 
-        def wait_for_it(deferred=None):
-            """Waits for the client to reset before connecting the web socket.
-
-            Keyword Arguments:
-            deferred              -- The twisted.defer instance to use for
-                                     chaining callbacks (optional)
-                                     (default None).
-            """
+        def wait_for_it():
+            """Waits for the client to reset before connecting the web socket."""
 
             msg = '{0} '.format(self)
 
-            if not deferred:
-                deferred = defer.Deferred()
             if not self.clean:
                 LOGGER.debug(msg + 'I\'m not so fresh so clean.')
-                current_runtime().callLater(1, wait_for_it, deferred)
+                current_runtime().callLater(1, wait_for_it)
             else:
                 LOGGER.debug(msg + 'Connecting web socket.')
                 self.__ari = ARI(self.__host, userpass=self.__credentials)
@@ -87,7 +78,7 @@ class AriClient(ObservableObject):
                                                   port=self.__port,
                                                   apps=self.name,
                                                   userpass=self.__credentials)
-                deferred.callback(self.__factory.connect())
+                self.__factory.connect()
 
         self.__reset()
         wait_for_it()
@@ -326,11 +317,11 @@ class AriClient(ObservableObject):
     def __tear_down(self):
         """Tears down the channels and web socket."""
 
-        def wait_for_it(deferred=None, run=0):
+        def wait_for_it(run=0):
             """Disposes each piece, one at a time.
 
 
-            The first run (run=0) initialized the deferred and kicks of
+            The first run (run=0) suspends the client and kicks off
             the process to destroy all of our channels.
 
             The second run (run=1) waits for all the channels to be
@@ -340,9 +331,6 @@ class AriClient(ObservableObject):
             disconnect then cleans up the remaining state variables.
 
             Keyword Arguments:
-            deferred              -- The twisted.defer instance to use for
-                                     chaining callbacks (optional)
-                                     (default None).
             run                   -- The current phase of tear down:
                                      0=Entry phase
                                      1=Waiting for ARI to destroy all channels
@@ -353,35 +341,33 @@ class AriClient(ObservableObject):
 
             msg = '{0} '.format(self)
 
-            if not deferred:
-                deferred = defer.Deferred()
-                self.suspend()
             if run == 0:
+                self.suspend()
                 LOGGER.debug(msg + 'Tearing down active connections.')
                 self.__delete_all_channels()
-                current_runtime().callLater(2, wait_for_it, deferred, 1)
+                current_runtime().callLater(2, wait_for_it, 1)
             elif run == 1:
                 if len(self.__channels) > 0:
                     msg += 'Waiting for channels to be destroyed.'
                     LOGGER.debug(msg)
-                    current_runtime().callLater(2, wait_for_it, deferred, 1)
-                current_runtime().callLater(2, wait_for_it, deferred, 2)
+                    current_runtime().callLater(2, wait_for_it, 1)
+                current_runtime().callLater(2, wait_for_it, 2)
             elif run == 2:
                 LOGGER.debug(msg + 'Disconnecting web socket.')
                 self.__ari = None
                 self.__factory = None
                 self.disconnect_websocket()
-                current_runtime().callLater(2, wait_for_it, deferred, 3)
+                current_runtime().callLater(2, wait_for_it, 3)
             elif run == 3:
                 if self.__ws_client is not None:
                     msg += 'Waiting for web socket to be destroyed.'
                     LOGGER.debug(msg)
-                    current_runtime().callLater(2, wait_for_it, deferred, 3)
+                    current_runtime().callLater(2, wait_for_it, 3)
                 else:
                     LOGGER.debug(msg + 'Client successfully torn down.')
                     current_runtime().callLater(0, self.on_client_stop)
                     current_runtime().callLater(2, self.reset_registrar)
-                    deferred.callback(self.resume())
+                    self.resume()
         wait_for_it()
         return
 

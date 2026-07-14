@@ -8,8 +8,9 @@ This program is free software, distributed under the terms of
 the GNU General Public License Version 2.
 """
 
+import asyncio
 import logging
-from asterisk.aio import defer
+from asterisk.aio.runtime import current_runtime
 
 LOGGER = logging.getLogger(__name__)
 
@@ -111,22 +112,26 @@ class AMIExtensionStateList(object):
         ami.registerEvent('ExtensionStatus', self.on_extension_status)
         ami.registerEvent('PresenceStateChange', self.on_presence_state_change)
 
-        # Create a few state values
-        resp_list = []
-        for state in DEVICE_STATES:
-            device = "DEVICE_STATE(Custom:{0})".format(state['device'])
-            deferred = ami.setVar(None, device, state['state'])
-            resp_list.append(deferred)
-        for state in PRESENCE_STATES:
-            presence = "PRESENCE_STATE(CustomPresence:{0})".format(state['presence'])
-            value = "{0},{1},{2}".format(state['status'],
-                                         state['subtype'],
-                                         state['message'])
-            deferred = ami.setVar(None, presence, value)
-            resp_list.append(deferred)
+        async def _run():
+            # Create a few state values
+            resp_list = []
+            for state in DEVICE_STATES:
+                device = "DEVICE_STATE(Custom:{0})".format(state['device'])
+                resp_list.append(ami.setVar(None, device, state['state']))
+            for state in PRESENCE_STATES:
+                presence = "PRESENCE_STATE(CustomPresence:{0})".format(state['presence'])
+                value = "{0},{1},{2}".format(state['status'],
+                                             state['subtype'],
+                                             state['message'])
+                resp_list.append(ami.setVar(None, presence, value))
 
-        defer_list = defer.DeferredList(resp_list)
-        defer_list.addErrback(self.action_failed)
+            # Plain DeferredList (no flags) waited for all setVar calls and
+            # only ever fired its callback -- child failures were captured, so
+            # the attached errback never ran. gather(return_exceptions=True)
+            # preserves that wait-for-all-and-swallow behaviour.
+            await asyncio.gather(*resp_list, return_exceptions=True)
+
+        current_runtime().create_task(_run())
 
     def extension_state_list_success(self, result):
         """Handle the completion of the ExtensionStateList action

@@ -15,7 +15,6 @@ sys.path.append("lib/python")
 sys.path.append("tests/rest_api/applications")
 
 from asterisk.test_case import TestCase
-from asterisk.aio import defer
 
 LOGGER = logging.getLogger(__name__)
 
@@ -81,7 +80,6 @@ class StasisStatusTestCase(TestCase):
         ami                    -- The AMI instance for this test.
         """
 
-        deferred = defer.Deferred()
         self.__scenarios = self.__builder(ami,
                                           self.__host,
                                           self.__port,
@@ -94,8 +92,7 @@ class StasisStatusTestCase(TestCase):
             scenario.register_observers('on_complete',
                                         self.__on_scenario_complete)
 
-        deferred.addCallback(self.__try_run_scenario)
-        deferred.callback(self.__get_next_scenario())
+        self.__try_run_scenario(self.__get_next_scenario())
 
     def on_reactor_timeout(self):
         """Called when the reactor times out"""

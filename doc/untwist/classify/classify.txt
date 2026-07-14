@@ -1,9 +1,9 @@
 # Deferred/defer classification  (B5.0)
-files_with_defer=134  roles={'core': 3, 'fixture': 107, 'other': 1, 'shim': 3, 'starpy': 20}
+files_with_defer=132  roles={'core': 3, 'fixture': 105, 'other': 1, 'shim': 3, 'starpy': 20}
 
 ## construction totals
-  Deferred                   45
-  DeferredList               10
+  Deferred                   42
+  DeferredList               6
   fail                       5
   gatherResults              1
   maybeDeferred              9
@@ -11,10 +11,10 @@ files_with_defer=134  roles={'core': 3, 'fixture': 107, 'other': 1, 'shim': 3, '
 
 ## chaining totals (Deferred-attributed method calls)
   addBoth                    4
-  addCallback                233
+  addCallback                229
   addCallbacks               56
-  addErrback                 157
-  callback                   34
+  addErrback                 154
+  callback                   31
   errback                    20
 
 ## ambiguous defer-shaped calls  (callback/errback/cancel/pause on non-Deferred or unresolved receivers -- NOT migration sites)
@@ -29,14 +29,14 @@ files_with_defer=134  roles={'core': 3, 'fixture': 107, 'other': 1, 'shim': 3, '
 
 ## construction by role
   [core] {}
-  [fixture] {'Deferred': 3, 'DeferredList': 4}
+  [fixture] {}
   [other] {}
   [shim] {'Deferred': 29, 'DeferredList': 5, 'fail': 3, 'gatherResults': 1, 'maybeDeferred': 8, 'succeed': 2}
   [starpy] {'Deferred': 13, 'DeferredList': 1, 'fail': 2, 'maybeDeferred': 1, 'succeed': 1}
 
 ## chaining by role
   [core] {'addCallback': 2, 'addCallbacks': 3, 'addErrback': 4}
-  [fixture] {'addCallback': 58, 'addCallbacks': 17, 'addErrback': 130, 'callback': 3}
+  [fixture] {'addCallback': 54, 'addCallbacks': 17, 'addErrback': 127}
   [other] {'addBoth': 1}
   [shim] {'addBoth': 1, 'addCallback': 28, 'addCallbacks': 6, 'addErrback': 6, 'callback': 20, 'errback': 9}
   [starpy] {'addBoth': 2, 'addCallback': 145, 'addCallbacks': 30, 'addErrback': 17, 'callback': 11, 'errback': 11}
@@ -281,13 +281,13 @@ files_with_defer=134  roles={'core': 3, 'fixture': 107, 'other': 1, 'shim': 3, '
   [fixture ] tests/manager/danger/safe/run-test
              chain=addCallbacks:1
   [fixture ] tests/manager/device_state_list/ami_device_state_list.py
-             ctor=DeferredList:1  chain=addCallback:1,addCallbacks:1,addErrback:1
+             chain=addCallbacks:1
   [fixture ] tests/manager/exten_state_list/ami_exten_state_list.py
-             ctor=DeferredList:1  chain=addCallbacks:1,addErrback:1
+             chain=addCallbacks:1
   [fixture ] tests/manager/login/run-test
              chain=addCallbacks:1
   [fixture ] tests/manager/presence_state_list/ami_presence_state_list.py
-             ctor=DeferredList:1  chain=addCallback:1,addCallbacks:1,addErrback:1
+             chain=addCallbacks:1
   [fixture ] tests/manager/status/status.py
              chain=addCallback:1
   [fixture ] tests/manager/status_all_vars/status.py
@@ -295,7 +295,7 @@ files_with_defer=134  roles={'core': 3, 'fixture': 107, 'other': 1, 'shim': 3, '
   [fixture ] tests/masquerade/run-test
              chain=addErrback:2
   [fixture ] tests/pbx/manager_extensions/ami_extension_control.py
-             ctor=DeferredList:1  chain=addCallback:1,addErrback:1
+             chain=addErrback:1
   [fixture ] tests/pbx/merge_contexts/run-test
              chain=addErrback:3
   [fixture ] tests/pbx/pbx_lua_background/run-test
@@ -306,9 +306,5 @@ files_with_defer=134  roles={'core': 3, 'fixture': 107, 'other': 1, 'shim': 3, '
              chain=addErrback:1
   [fixture ] tests/regressions/M18882/run-test
              chain=addCallbacks:5
-  [fixture ] tests/rest_api/applications/stasisstatus/ari_client.py
-             ctor=Deferred:2  chain=callback:2
-  [fixture ] tests/rest_api/applications/stasisstatus/test_case.py
-             ctor=Deferred:1  chain=addCallback:1,callback:1
   [fixture ] tests/skeleton_test/run-test
              chain=addErrback:1

@@ -7,9 +7,10 @@ This program is free software, distributed under the terms of
 the GNU General Public License Version 2.
 '''
 
+import asyncio
 import logging
 from asterisk.test_case import TestCase
-from asterisk.aio import defer
+from asterisk.aio.runtime import current_runtime
 
 LOGGER = logging.getLogger(__name__)
 
@@ -50,19 +51,25 @@ class AMIExtensionControl(TestCase):
             passed = all(result[0] for result in results if result[0])
             test_object.set_passed(passed)
 
-        deferds = []
-        for channel in self.originates:
-            deferred = self.test_ami.originate(channel=channel['channel'],
-                                               exten='originate',
-                                               context='test',
-                                               priority='1',
-                                               timeout='5',
-                                               callerid='"test_id" <1337>')
-            deferred.addErrback(self.handle_originate_failure)
-            deferds.append(deferred)
+        async def _run():
+            deferds = []
+            for channel in self.originates:
+                deferred = self.test_ami.originate(channel=channel['channel'],
+                                                   exten='originate',
+                                                   context='test',
+                                                   priority='1',
+                                                   timeout='5',
+                                                   callerid='"test_id" <1337>')
+                deferred.addErrback(self.handle_originate_failure)
+                deferds.append(deferred)
 
-        deferred_list = defer.DeferredList(deferds)
-        deferred_list.addCallback(_pass_test, self)
+            gathered = await asyncio.gather(*deferds, return_exceptions=True)
+            # Preserve the DeferredList (success, value) tuple shape _pass_test
+            # indexes into.
+            results = [(not isinstance(r, Exception), r) for r in gathered]
+            _pass_test(results, self)
+
+        current_runtime().create_task(_run())
 
     def response_received(self):
         """Tracks the number of responses received to the test-config defined

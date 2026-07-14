@@ -11,10 +11,9 @@
       "addErrback": 4
     },
     "fixture": {
-      "addCallback": 58,
+      "addCallback": 54,
       "addCallbacks": 17,
-      "addErrback": 130,
-      "callback": 3
+      "addErrback": 127
     },
     "other": {
       "addBoth": 1
@@ -38,18 +37,15 @@
   },
   "chain_totals": {
     "addBoth": 4,
-    "addCallback": 233,
+    "addCallback": 229,
     "addCallbacks": 56,
-    "addErrback": 157,
-    "callback": 34,
+    "addErrback": 154,
+    "callback": 31,
     "errback": 20
   },
   "ctor_by_role": {
     "core": {},
-    "fixture": {
-      "Deferred": 3,
-      "DeferredList": 4
-    },
+    "fixture": {},
     "other": {},
     "shim": {
       "Deferred": 29,
@@ -68,8 +64,8 @@
     }
   },
   "ctor_totals": {
-    "Deferred": 45,
-    "DeferredList": 10,
+    "Deferred": 42,
+    "DeferredList": 6,
     "fail": 5,
     "gatherResults": 1,
     "maybeDeferred": 9,
@@ -82,12 +78,12 @@
   },
   "files_by_role": {
     "core": 3,
-    "fixture": 107,
+    "fixture": 105,
     "other": 1,
     "shim": 3,
     "starpy": 20
   },
-  "files_with_defer": 134,
+  "files_with_defer": 132,
   "inline_callbacks_files": [],
   "per_file": {
     "[starpy] examples/amicommand.py": {
@@ -1374,13 +1370,9 @@
     "tests/manager/device_state_list/ami_device_state_list.py": {
       "ambiguous": {},
       "chain": {
-        "addCallback": 1,
-        "addCallbacks": 1,
-        "addErrback": 1
+        "addCallbacks": 1
       },
-      "ctor": {
-        "DeferredList": 1
-      },
+      "ctor": {},
       "deferredlist_flags": {},
       "inline_callbacks_decorators": 0,
       "role": "fixture"
@@ -1388,12 +1380,9 @@
     "tests/manager/exten_state_list/ami_exten_state_list.py": {
       "ambiguous": {},
       "chain": {
-        "addCallbacks": 1,
-        "addErrback": 1
+        "addCallbacks": 1
       },
-      "ctor": {
-        "DeferredList": 1
-      },
+      "ctor": {},
       "deferredlist_flags": {},
       "inline_callbacks_decorators": 0,
       "role": "fixture"
@@ -1411,13 +1400,9 @@
     "tests/manager/presence_state_list/ami_presence_state_list.py": {
       "ambiguous": {},
       "chain": {
-        "addCallback": 1,
-        "addCallbacks": 1,
-        "addErrback": 1
+        "addCallbacks": 1
       },
-      "ctor": {
-        "DeferredList": 1
-      },
+      "ctor": {},
       "deferredlist_flags": {},
       "inline_callbacks_decorators": 0,
       "role": "fixture"
@@ -1455,12 +1440,9 @@
     "tests/pbx/manager_extensions/ami_extension_control.py": {
       "ambiguous": {},
       "chain": {
-        "addCallback": 1,
         "addErrback": 1
       },
-      "ctor": {
-        "DeferredList": 1
-      },
+      "ctor": {},
       "deferredlist_flags": {},
       "inline_callbacks_decorators": 0,
       "role": "fixture"
@@ -1511,31 +1493,6 @@
         "addCallbacks": 5
       },
       "ctor": {},
-      "deferredlist_flags": {},
-      "inline_callbacks_decorators": 0,
-      "role": "fixture"
-    },
-    "tests/rest_api/applications/stasisstatus/ari_client.py": {
-      "ambiguous": {},
-      "chain": {
-        "callback": 2
-      },
-      "ctor": {
-        "Deferred": 2
-      },
-      "deferredlist_flags": {},
-      "inline_callbacks_decorators": 0,
-      "role": "fixture"
-    },
-    "tests/rest_api/applications/stasisstatus/test_case.py": {
-      "ambiguous": {},
-      "chain": {
-        "addCallback": 1,
-        "callback": 1
-      },
-      "ctor": {
-        "Deferred": 1
-      },
       "deferredlist_flags": {},
       "inline_callbacks_decorators": 0,
       "role": "fixture"

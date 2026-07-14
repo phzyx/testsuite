@@ -1,18 +1,16 @@
 {
-  "defer_grand_total": 50,
+  "defer_grand_total": 43,
   "defer_totals": {
     "AlreadyCalledError": 2,
     "Deferred": 25,
     "DeferredList": 4,
     "TimeoutError": 1,
-    "defer.Deferred": 3,
-    "defer.DeferredList": 4,
     "fail": 1,
     "gatherResults": 1,
     "maybeDeferred": 8,
     "succeed": 1
   },
-  "files_with_reactor_or_defer": 8,
+  "files_with_reactor_or_defer": 2,
   "lifecycle_owners": {},
   "parsed": 399,
   "per_file": {
@@ -32,42 +30,6 @@
         "gatherResults": 1,
         "maybeDeferred": 8,
         "succeed": 1
-      },
-      "reactor": {}
-    },
-    "tests/manager/device_state_list/ami_device_state_list.py": {
-      "defer": {
-        "defer.DeferredList": 1
-      },
-      "reactor": {}
-    },
-    "tests/manager/exten_state_list/ami_exten_state_list.py": {
-      "defer": {
-        "defer.DeferredList": 1
-      },
-      "reactor": {}
-    },
-    "tests/manager/presence_state_list/ami_presence_state_list.py": {
-      "defer": {
-        "defer.DeferredList": 1
-      },
-      "reactor": {}
-    },
-    "tests/pbx/manager_extensions/ami_extension_control.py": {
-      "defer": {
-        "defer.DeferredList": 1
-      },
-      "reactor": {}
-    },
-    "tests/rest_api/applications/stasisstatus/ari_client.py": {
-      "defer": {
-        "defer.Deferred": 2
-      },
-      "reactor": {}
-    },
-    "tests/rest_api/applications/stasisstatus/test_case.py": {
-      "defer": {
-        "defer.Deferred": 1
       },
       "reactor": {}
     }
