@@ -1,8 +1,8 @@
 {
   "ambiguous_totals": {
-    "callback": 9,
-    "cancel": 22,
-    "errback": 7
+    "callback": 2,
+    "cancel": 6,
+    "errback": 4
   },
   "chain_by_role": {
     "core": {
@@ -18,14 +18,6 @@
     "other": {
       "addBoth": 1
     },
-    "shim": {
-      "addBoth": 1,
-      "addCallback": 28,
-      "addCallbacks": 6,
-      "addErrback": 6,
-      "callback": 20,
-      "errback": 9
-    },
     "starpy": {
       "addBoth": 2,
       "addCallback": 145,
@@ -36,25 +28,17 @@
     }
   },
   "chain_totals": {
-    "addBoth": 4,
-    "addCallback": 229,
-    "addCallbacks": 56,
-    "addErrback": 154,
-    "callback": 31,
-    "errback": 20
+    "addBoth": 3,
+    "addCallback": 201,
+    "addCallbacks": 50,
+    "addErrback": 148,
+    "callback": 11,
+    "errback": 11
   },
   "ctor_by_role": {
     "core": {},
     "fixture": {},
     "other": {},
-    "shim": {
-      "Deferred": 29,
-      "DeferredList": 5,
-      "fail": 3,
-      "gatherResults": 1,
-      "maybeDeferred": 8,
-      "succeed": 2
-    },
     "starpy": {
       "Deferred": 13,
       "DeferredList": 1,
@@ -64,26 +48,23 @@
     }
   },
   "ctor_totals": {
-    "Deferred": 42,
-    "DeferredList": 6,
-    "fail": 5,
-    "gatherResults": 1,
-    "maybeDeferred": 9,
-    "succeed": 3
+    "Deferred": 13,
+    "DeferredList": 1,
+    "fail": 2,
+    "maybeDeferred": 1,
+    "succeed": 1
   },
   "deferredlist_flag_totals": {
-    "consumeErrors": 3,
-    "fireOnOneCallback": 1,
-    "fireOnOneErrback": 2
+    "consumeErrors": 1,
+    "fireOnOneErrback": 1
   },
   "files_by_role": {
     "core": 3,
     "fixture": 105,
     "other": 1,
-    "shim": 3,
     "starpy": 20
   },
-  "files_with_defer": 132,
+  "files_with_defer": 129,
   "inline_callbacks_files": [],
   "per_file": {
     "[starpy] examples/amicommand.py": {
@@ -343,71 +324,6 @@
       "deferredlist_flags": {},
       "inline_callbacks_decorators": 0,
       "role": "other"
-    },
-    "lib/python/asterisk/aio/defer.py": {
-      "ambiguous": {
-        "errback": 1
-      },
-      "chain": {
-        "addBoth": 1,
-        "addCallbacks": 6,
-        "callback": 5,
-        "errback": 4
-      },
-      "ctor": {
-        "Deferred": 4,
-        "DeferredList": 1,
-        "fail": 2,
-        "succeed": 1
-      },
-      "deferredlist_flags": {
-        "consumeErrors": 1,
-        "fireOnOneErrback": 1
-      },
-      "inline_callbacks_decorators": 0,
-      "role": "shim"
-    },
-    "lib/python/asterisk/aio/runtime.py": {
-      "ambiguous": {
-        "cancel": 8
-      },
-      "chain": {
-        "callback": 1,
-        "errback": 2
-      },
-      "ctor": {
-        "Deferred": 1
-      },
-      "deferredlist_flags": {},
-      "inline_callbacks_decorators": 0,
-      "role": "shim"
-    },
-    "lib/python/asterisk/aio/test_aio.py": {
-      "ambiguous": {
-        "callback": 7,
-        "cancel": 8,
-        "errback": 2
-      },
-      "chain": {
-        "addCallback": 28,
-        "addErrback": 6,
-        "callback": 14,
-        "errback": 3
-      },
-      "ctor": {
-        "Deferred": 24,
-        "DeferredList": 4,
-        "fail": 1,
-        "gatherResults": 1,
-        "maybeDeferred": 8,
-        "succeed": 1
-      },
-      "deferredlist_flags": {
-        "consumeErrors": 1,
-        "fireOnOneCallback": 1
-      },
-      "inline_callbacks_decorators": 0,
-      "role": "shim"
     },
     "lib/python/asterisk/apptest.py": {
       "ambiguous": {},

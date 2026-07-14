@@ -1,17 +1,9 @@
 # reactor/defer manifest  (root=.)
-scanned=399 parsed=399 skipped_non_python=0 files_with_usage=2
+scanned=398 parsed=398 skipped_non_python=0 files_with_usage=0
 
 ## reactor.* totals  (grand=0)
 
-## defer totals  (grand=43)
-  AlreadyCalledError         2
-  Deferred                   25
-  DeferredList               4
-  TimeoutError               1
-  fail                       1
-  gatherResults              1
-  maybeDeferred              8
-  succeed                    1
+## defer totals  (grand=0)
 
 ## lifecycle owners (0)  [run/stop/running/callWhenRunning]
 

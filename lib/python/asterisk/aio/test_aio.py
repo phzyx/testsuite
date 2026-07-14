@@ -1,11 +1,6 @@
 """Unit tests for the asterisk.aio compatibility layer.
 
-Covers the Twisted semantics the test suite relies on:
-  * Deferred callback/errback threading and branch-switching
-  * late-added callbacks (added after the Deferred has fired)
-  * AlreadyCalledError on double-fire
-  * DeferredList result shaping, fireOnOne*, and consumeErrors
-  * maybeDeferred wrapping of plain values, Failures, and raised exceptions
+Covers the asyncio-backed semantics the test suite relies on:
   * Failure.check/trap
   * current_runtime().callLater / _DelayedCall.cancel
   * a UDP echo round-trip through the DatagramProtocol adapter
@@ -23,19 +18,15 @@ import unittest
 import warnings
 from unittest import mock
 
-from asterisk.aio.defer import (
-    Deferred, DeferredList, gatherResults, maybeDeferred, succeed, fail,
-    AlreadyCalledError, TimeoutError as DeferTimeoutError,
-)
 from asterisk.aio.failure import Failure
 from asterisk.aio.protocols import (
     DatagramProtocol, ProcessProtocol, ProcessDone, ProcessTerminated,
     Protocol, Factory, ClientFactory, _ProcessTransportAdapter,
 )
 from asterisk.aio.runtime import (
-    AsyncTestRuntime, ReactorAlreadyRunning, _RuntimeState, _Connector,
-    new_runtime, install_runtime, detach_runtime, get_current_runtime,
-    current_runtime,
+    AsyncTestRuntime, ReactorAlreadyRunning, ReactorNotRunning, _RuntimeState,
+    _Connector, new_runtime, install_runtime, detach_runtime,
+    get_current_runtime, current_runtime,
 )
 from asterisk.test_runner import run_test_object
 
@@ -58,163 +49,6 @@ class _LoopTestCase(unittest.TestCase):
         if not self.loop.is_closed():
             self.loop.close()
         asyncio.set_event_loop(None)
-
-
-# --------------------------------------------------------------------------- #
-# Deferred semantics (no running loop required)
-# --------------------------------------------------------------------------- #
-class DeferredTests(_LoopTestCase):
-
-    def test_callback_threading(self):
-        d = Deferred()
-        d.addCallback(lambda r: r + 1)
-        d.addCallback(lambda r: r * 2)
-        seen = []
-        d.addCallback(lambda r: seen.append(r) or r)
-        d.callback(3)
-        self.assertEqual(seen, [(3 + 1) * 2])
-
-    def test_late_callback_runs_immediately(self):
-        d = Deferred()
-        d.callback(10)
-        seen = []
-        d.addCallback(lambda r: seen.append(r) or r)
-        self.assertEqual(seen, [10])
-
-    def test_errback_branch_and_switch_back(self):
-        d = Deferred()
-        order = []
-
-        def boom(_):
-            raise ValueError("boom")
-
-        def handle(failure):
-            order.append(('errback', failure.check(ValueError)))
-            return "recovered"   # switch back to callback branch
-
-        def after(result):
-            order.append(('callback', result))
-            return result
-
-        d.addCallback(boom)
-        d.addErrback(handle)
-        d.addCallback(after)
-        d.callback("start")
-
-        self.assertEqual(order, [('errback', ValueError), ('callback', 'recovered')])
-
-    def test_errback_fired_directly(self):
-        d = Deferred()
-        captured = []
-        d.addErrback(lambda f: captured.append(f.getErrorMessage()))
-        d.errback(RuntimeError("nope"))
-        self.assertEqual(captured, ["nope"])
-
-    def test_already_called(self):
-        d = Deferred()
-        d.callback(1)
-        with self.assertRaises(AlreadyCalledError):
-            d.callback(2)
-        with self.assertRaises(AlreadyCalledError):
-            d.errback(RuntimeError("x"))
-
-    def test_nested_deferred_pauses_chain(self):
-        outer = Deferred()
-        inner = Deferred()
-        order = []
-
-        def returns_inner(_):
-            return inner
-
-        def after(result):
-            order.append(result)
-            return result
-
-        outer.addCallback(returns_inner)
-        outer.addCallback(after)
-        outer.callback("go")
-        # Chain is paused waiting on inner; nothing after it yet.
-        self.assertEqual(order, [])
-        inner.callback("inner-done")
-        self.assertEqual(order, ["inner-done"])
-
-    def test_await_resolves_with_result(self):
-        async def coro():
-            d = Deferred()
-            d.addCallback(lambda r: r + 5)
-            d.callback(10)
-            return await d
-        self.assertEqual(self.loop.run_until_complete(coro()), 15)
-
-    def test_await_raises_on_failure(self):
-        async def coro():
-            d = Deferred()
-            d.errback(ValueError("bad"))
-            return await d
-        with self.assertRaises(ValueError):
-            self.loop.run_until_complete(coro())
-
-
-class DeferredListTests(_LoopTestCase):
-
-    def test_shaping_all_succeed(self):
-        d1, d2 = Deferred(), Deferred()
-        dl = DeferredList([d1, d2])
-        out = []
-        dl.addCallback(out.append)
-        d2.callback("b")
-        d1.callback("a")
-        self.assertEqual(out, [[(True, "a"), (True, "b")]])
-
-    def test_empty_fires_immediately(self):
-        out = []
-        DeferredList([]).addCallback(out.append)
-        self.assertEqual(out, [[]])
-
-    def test_fire_on_one_callback(self):
-        d1, d2 = Deferred(), Deferred()
-        dl = DeferredList([d1, d2], fireOnOneCallback=True)
-        out = []
-        dl.addCallback(out.append)
-        d2.callback("first")
-        self.assertEqual(out, [("first", 1)])
-
-    def test_consume_errors(self):
-        d1, d2 = Deferred(), Deferred()
-        dl = DeferredList([d1, d2], consumeErrors=True)
-        out = []
-        dl.addCallback(out.append)
-        d1.errback(ValueError("x"))
-        d2.callback("ok")
-        # First element is the (False, Failure) tuple.
-        self.assertFalse(out[0][0][0])
-        self.assertIsInstance(out[0][0][1], Failure)
-        self.assertEqual(out[0][1], (True, "ok"))
-        # consumeErrors means the child Deferred settled cleanly: its chain
-        # result was replaced with None, so no Failure dangles on it.
-        self.assertTrue(d1.called)
-        self.assertFalse(getattr(d1.result, '_is_failure', False))
-
-
-class MaybeDeferredTests(_LoopTestCase):
-
-    def test_plain_value(self):
-        out = []
-        maybeDeferred(lambda: 42).addCallback(out.append)
-        self.assertEqual(out, [42])
-
-    def test_passes_deferred_through(self):
-        d = Deferred()
-        self.assertIs(maybeDeferred(lambda: d), d)
-
-    def test_wraps_raised_exception(self):
-        out = []
-
-        def boom():
-            raise ValueError("kaboom")
-
-        maybeDeferred(boom).addErrback(lambda f: out.append(f.check(ValueError)))
-        self.assertEqual(out, [ValueError])
 
 
 class FailureTests(unittest.TestCase):
@@ -604,136 +438,6 @@ class SubprocessSyncKillTests(_LoopTestCase):
 
 
 # --------------------------------------------------------------------------- #
-# Late callback + await (review finding 3)
-# --------------------------------------------------------------------------- #
-class LateCallbackAwaitTests(_LoopTestCase):
-
-    def test_late_callback_visible_to_await(self):
-        async def scenario():
-            d = Deferred()
-            d.callback(1)
-            d.addCallback(lambda v: v + 1)   # added AFTER firing
-            return await d
-        # The Future-subclass prototype returned 1 here; the wrapper returns 2.
-        self.assertEqual(self.loop.run_until_complete(scenario()), 2)
-
-    def test_called_property(self):
-        d = Deferred()
-        self.assertFalse(d.called)
-        d.callback(1)
-        self.assertTrue(d.called)
-
-
-# --------------------------------------------------------------------------- #
-# Cross-shim chaining and pausing on Futures/coroutines (review finding 4)
-# --------------------------------------------------------------------------- #
-class _ForeignDeferred(object):
-    """Minimal stand-in for a *different* shim's Deferred (e.g. starpy's).
-
-    Exposes only addBoth/callback/errback, so it is recognised purely by duck
-    typing, and routes failures using the shared ``_is_failure`` marker.
-    """
-
-    def __init__(self):
-        self._cbs = []
-        self._fired = False
-        self._result = None
-
-    def addBoth(self, fn):
-        self._cbs.append(fn)
-        if self._fired:
-            self._drain()
-        return self
-
-    def callback(self, result):
-        self._fire(result)
-
-    def errback(self, failure):
-        self._fire(failure)
-
-    def _fire(self, result):
-        self._fired = True
-        self._result = result
-        self._drain()
-
-    def _drain(self):
-        while self._cbs:
-            fn = self._cbs.pop(0)
-            self._result = fn(self._result)
-
-
-class CrossShimTests(_LoopTestCase):
-
-    def test_pause_on_foreign_deferred_success(self):
-        foreign = _ForeignDeferred()
-        d = Deferred()
-        out = []
-        d.addCallback(lambda r: foreign)            # return a foreign deferred
-        d.addCallback(lambda r: out.append(r) or r)
-        d.callback('go')
-        self.assertEqual(out, [])                   # paused on foreign
-        foreign.callback('foreign-result')
-        self.assertEqual(out, ['foreign-result'])
-
-    def test_pause_on_foreign_deferred_failure(self):
-        foreign = _ForeignDeferred()
-        d = Deferred()
-        out = []
-        d.addCallback(lambda r: foreign)
-        d.addErrback(lambda f: out.append(f.check(ValueError)) or 'handled')
-        d.callback('go')
-        foreign.errback(Failure(ValueError('x')))   # foreign Failure, marker set
-        self.assertEqual(out, [ValueError])
-
-    def test_pause_on_future(self):
-        async def producer():
-            return 'fut-done'
-        out = []
-        d = Deferred()
-        d.addCallback(lambda r: asyncio.ensure_future(producer()))
-        d.addCallback(lambda r: out.append(r) or r)
-        d.callback('x')
-        self.loop.run_until_complete(asyncio.sleep(0.02))
-        self.assertEqual(out, ['fut-done'])
-
-    def test_pause_on_coroutine(self):
-        async def producer():
-            return 'coro-done'
-        out = []
-        d = Deferred()
-        d.addCallback(lambda r: producer())         # raw coroutine
-        d.addCallback(lambda r: out.append(r) or r)
-        d.callback('x')
-        self.loop.run_until_complete(asyncio.sleep(0.02))
-        self.assertEqual(out, ['coro-done'])
-
-
-# --------------------------------------------------------------------------- #
-# succeed / fail / gatherResults / TimeoutError helpers
-# --------------------------------------------------------------------------- #
-class HelperTests(_LoopTestCase):
-
-    def test_succeed_and_fail(self):
-        out = []
-        succeed(7).addCallback(out.append)
-        self.assertEqual(out, [7])
-        errs = []
-        fail(Failure(ValueError('z'))).addErrback(lambda f: errs.append(f.check(ValueError)))
-        self.assertEqual(errs, [ValueError])
-
-    def test_gather_results(self):
-        d1, d2 = Deferred(), Deferred()
-        out = []
-        gatherResults([d1, d2]).addCallback(out.append)
-        d1.callback('a')
-        d2.callback('b')
-        self.assertEqual(out, [['a', 'b']])
-
-    def test_timeout_error_is_exception(self):
-        self.assertTrue(issubclass(DeferTimeoutError, Exception))
-
-
-# --------------------------------------------------------------------------- #
 # Listener bind-failure propagation (review finding 6)
 # --------------------------------------------------------------------------- #
 class BindFailureTests(_LoopTestCase):
@@ -802,7 +506,7 @@ class PipeDrainTests(_LoopTestCase):
 
 
 # --------------------------------------------------------------------------- #
-# callInThread returns a Deferred with the worker result
+# callInThread returns an asyncio Future with the worker result
 # --------------------------------------------------------------------------- #
 class CallInThreadTests(_LoopTestCase):
 
@@ -810,8 +514,13 @@ class CallInThreadTests(_LoopTestCase):
         record = {}
 
         def setup():
-            d = current_runtime().callInThread(lambda: 21 * 2)
-            d.addCallback(lambda r: (record.__setitem__('r', r), current_runtime().stop()))
+            fut = current_runtime().callInThread(lambda: 21 * 2)
+
+            def _done(f):
+                record['r'] = f.result()
+                current_runtime().stop()
+
+            fut.add_done_callback(_done)
             current_runtime().callLater(5.0, current_runtime().stop)  # safety net
 
         current_runtime().callWhenRunning(setup)
@@ -1005,74 +714,6 @@ class ReactorStopIdempotentTests(_LoopTestCase):
 
 
 # --------------------------------------------------------------------------- #
-# maybeDeferred adapts awaitables without leaving them un-awaited (blocker 4)
-# --------------------------------------------------------------------------- #
-class MaybeDeferredAwaitableTests(_LoopTestCase):
-
-    def test_coroutine_result(self):
-        async def producer():
-            return 'async-result'
-        out = []
-
-        def run():
-            d = maybeDeferred(producer)
-            d.addCallback(lambda r: out.append(r) or current_runtime().stop())
-            current_runtime().callLater(5.0, current_runtime().stop)
-
-        current_runtime().callWhenRunning(run)
-        current_runtime().run()
-        self.assertEqual(out, ['async-result'])
-
-    def test_future_result(self):
-        out = []
-
-        def run():
-            fut = self.loop.create_future()
-            d = maybeDeferred(lambda: fut)
-            d.addCallback(lambda r: out.append(r) or current_runtime().stop())
-            self.loop.call_later(0.01, lambda: fut.set_result('fut-val'))
-            current_runtime().callLater(5.0, current_runtime().stop)
-
-        current_runtime().callWhenRunning(run)
-        current_runtime().run()
-        self.assertEqual(out, ['fut-val'])
-
-    def test_coroutine_failure_errbacks(self):
-        async def boom():
-            raise ValueError('async-boom')
-        out = []
-
-        def run():
-            d = maybeDeferred(boom)
-            d.addErrback(lambda f: out.append(f.check(ValueError)) or current_runtime().stop())
-            current_runtime().callLater(5.0, current_runtime().stop)
-
-        current_runtime().callWhenRunning(run)
-        current_runtime().run()
-        self.assertEqual(out, [ValueError])
-
-    def test_no_unawaited_coroutine_warning(self):
-        import gc
-        import warnings
-        async def producer():
-            return 1
-        out = []
-
-        with warnings.catch_warnings():
-            warnings.simplefilter('error', RuntimeWarning)
-
-            def run():
-                d = maybeDeferred(producer)
-                d.addCallback(lambda r: out.append(r) or current_runtime().stop())
-                current_runtime().callLater(5.0, current_runtime().stop)
-
-            current_runtime().callWhenRunning(run)
-            current_runtime().run()
-            gc.collect()                    # force any "never awaited" warning
-        self.assertEqual(out, [1])
-
-
-# --------------------------------------------------------------------------- #
 # aio.utils.getProcessOutputAndValue (replaces twisted.internet.utils)
 # --------------------------------------------------------------------------- #
 class GetProcessOutputAndValueTests(_LoopTestCase):
@@ -1214,12 +855,12 @@ class AsteriskCliCommandBridgeTests(_LoopTestCase):
 # --------------------------------------------------------------------------- #
 class ShutdownStrayTaskTests(_LoopTestCase):
 
-    def test_pending_maybe_deferred_task_is_cancelled(self):
-        # maybeDeferred(coroutine) schedules work via asyncio.ensure_future, not
-        # through a reactor registry. Stopping while it is pending must not leak
-        # a live task past run().
+    def test_pending_stray_task_is_cancelled(self):
+        # A coroutine scheduled via asyncio.ensure_future lands on the loop
+        # outside the reactor registry. Stopping while it is pending must not
+        # leak a live task past run().
         def setup():
-            maybeDeferred(lambda: asyncio.sleep(60))   # stray task
+            asyncio.ensure_future(asyncio.sleep(60))   # stray task
             current_runtime().callLater(0.05, current_runtime().stop)
 
         current_runtime().callWhenRunning(setup)
@@ -2482,10 +2123,13 @@ class TeardownPolicyTests(_LoopTestCase):
             seen['task_result'] = self.runtime.create_task(asyncio.sleep(10))
             seen['tasks_len'] = len(self.runtime._tasks)
 
-            # callInThread must FIRE its Deferred (not hang shutdown).
+            # callInThread must hand back an already-resolved Future (not hang
+            # shutdown): it refuses with a failed Future carrying ReactorNotRunning.
             in_thread_d = self.runtime.callInThread(
                 lambda: fired.__setitem__('in_thread', True))
-            seen['in_thread_fired'] = in_thread_d.called
+            seen['in_thread_done'] = in_thread_d.done()
+            seen['in_thread_exc'] = isinstance(
+                in_thread_d.exception(), ReactorNotRunning)
 
             self.runtime.addStartupBind(lambda: asyncio.sleep(0))
             seen['binds_queued'] = len(self.runtime._pending_binds)
@@ -2524,7 +2168,8 @@ class TeardownPolicyTests(_LoopTestCase):
         self.assertEqual(seen['proc_tracked'], 0)   # no transport registered
         self.assertIsNone(seen['task_result'])      # create_task refused (None)
         self.assertEqual(seen['tasks_len'], 0)      # nothing scheduled/tracked
-        self.assertTrue(seen['in_thread_fired'])    # callInThread Deferred fired
+        self.assertTrue(seen['in_thread_done'])     # callInThread Future resolved
+        self.assertTrue(seen['in_thread_exc'])      # ... failed with ReactorNotRunning
         self.assertEqual(seen['binds_queued'], 0)   # addStartupBind refused
         # Only 'probe' itself is in the cleanup list (the late add was refused).
         self.assertEqual(seen['cleanups_len'], 1)
@@ -2571,9 +2216,10 @@ class TeardownPolicyTests(_LoopTestCase):
         self.assertIsNone(self.runtime.create_task(asyncio.sleep(10)))
         self.assertEqual(self.runtime._tasks, set())
 
-        # callInThread fires its Deferred (no hang) without submitting work.
+        # callInThread returns a resolved (failed) Future without submitting work.
         in_thread_d = self.runtime.callInThread(lambda: None)
-        self.assertTrue(in_thread_d.called)
+        self.assertTrue(in_thread_d.done())
+        self.assertIsInstance(in_thread_d.exception(), ReactorNotRunning)
 
         mod = object()
         self.runtime.register_module(mod)
@@ -2586,7 +2232,7 @@ class TeardownPolicyTests(_LoopTestCase):
         # Production condition: after a run the loop is CLOSED. Every refusal
         # path must decline without touching the closed loop -- no
         # "Event loop is closed" RuntimeError -- and callInThread must still
-        # fire its Deferred rather than deadlock an awaiter.
+        # resolve its Future rather than deadlock an awaiter.
         reports = []
         self.loop.set_exception_handler(lambda loop, ctx: reports.append(ctx))
         holder = {}
@@ -2619,9 +2265,10 @@ class TeardownPolicyTests(_LoopTestCase):
         # callFromThread: no-op, no raise.
         self.runtime.callFromThread(lambda: None)
 
-        # callInThread: immediately-fired (failed) Deferred, no executor work.
+        # callInThread: immediately-resolved (failed) Future, no executor work.
         d = self.runtime.callInThread(lambda: None)
-        self.assertTrue(d.called)
+        self.assertTrue(d.done())
+        self.assertIsInstance(d.exception(), ReactorNotRunning)
 
         # create_task: refused, returns None, coroutine closed (not scheduled).
         self.assertIsNone(self.runtime.create_task(asyncio.sleep(10)))

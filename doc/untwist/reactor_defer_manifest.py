@@ -330,6 +330,25 @@ def main():
             "nothing may import it (anywhere, including aio/ and doc/untwist/). "
             f"Offending importers: {importer_offenders}")
 
+    # Zero-Deferred hard gate (Phase B step B5.4).  The transitional
+    # asterisk.aio.defer shim (Future-backed Deferred/DeferredList/maybeDeferred
+    # + succeed/fail/gatherResults/AlreadyCalledError/TimeoutError) was DELETED
+    # in B5.4.  The suite -- lib/python (including the shim's own aio/ unit
+    # harness) AND tests/ -- now uses native async/await + asyncio primitives,
+    # so NOT A SINGLE defer construct may remain anywhere under the repo tree.
+    # Any resurfacing symbol (a stale import, a re-added Deferred) is a hard
+    # failure.  The starpy fork keeps its self-contained starpy._async shim
+    # until Phase C; it lives in a SEPARATE tree that this scan never touches
+    # (root == REPO only), so it is unaffected by this gate.
+    if root == REPO:
+        defer_offenders = {f: v["defer"] for f, v in manifest["per_file"].items()
+                           if v.get("defer")}
+        assert manifest["defer_grand_total"] == 0 and not defer_offenders, (
+            "B5.4 zero-Deferred gate: the asterisk.aio.defer shim was deleted; "
+            "no Deferred/DeferredList/maybeDeferred/succeed/fail/gatherResults "
+            "construct may remain in the suite (aio/ and tests/ included). "
+            f"Offending files: {defer_offenders}")
+
     text = json.dumps(manifest, indent=2, sort_keys=True) + "\n"
 
     if args.check:

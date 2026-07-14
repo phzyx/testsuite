@@ -1,44 +1,15 @@
 {
-  "defer_grand_total": 43,
-  "defer_totals": {
-    "AlreadyCalledError": 2,
-    "Deferred": 25,
-    "DeferredList": 4,
-    "TimeoutError": 1,
-    "fail": 1,
-    "gatherResults": 1,
-    "maybeDeferred": 8,
-    "succeed": 1
-  },
-  "files_with_reactor_or_defer": 2,
+  "defer_grand_total": 0,
+  "defer_totals": {},
+  "files_with_reactor_or_defer": 0,
   "lifecycle_owners": {},
-  "parsed": 399,
-  "per_file": {
-    "lib/python/asterisk/aio/runtime.py": {
-      "defer": {
-        "Deferred": 1
-      },
-      "reactor": {}
-    },
-    "lib/python/asterisk/aio/test_aio.py": {
-      "defer": {
-        "AlreadyCalledError": 2,
-        "Deferred": 24,
-        "DeferredList": 4,
-        "TimeoutError": 1,
-        "fail": 1,
-        "gatherResults": 1,
-        "maybeDeferred": 8,
-        "succeed": 1
-      },
-      "reactor": {}
-    }
-  },
+  "parsed": 398,
+  "per_file": {},
   "reactor_all_importers": [],
   "reactor_consumer_importers": [],
   "reactor_grand_total": 0,
   "reactor_totals": {},
   "root": "/usr/src/phzyx/testsuite",
-  "scanned": 399,
+  "scanned": 398,
   "skipped_non_python": 0
 }

@@ -5,7 +5,6 @@ test suite (and the bundled starpy fork) depend on, implemented on top of
 ``asyncio``. The goal is to make removing Twisted a mostly mechanical import
 swap::
 
-    from twisted.internet import defer                ->  from asterisk.aio import defer
     from twisted.python.failure import Failure        ->  from asterisk.aio import Failure
     from twisted.internet.protocol import ProcessProtocol, DatagramProtocol
                                                       ->  from asterisk.aio import ProcessProtocol, DatagramProtocol
@@ -16,10 +15,14 @@ removed (Phase B step B4). Reactor-shaped primitives now live on
 ``from asterisk.aio.runtime import current_runtime`` and call
 ``current_runtime().<method>()`` directly.
 
+The ``defer`` module (Future-backed Deferred shim) has likewise been removed
+(Phase B step B5.4): the suite now uses native ``async``/``await`` and
+``asyncio`` primitives. The starpy fork keeps its own self-contained shim
+(``starpy._async``) until Phase C.
+
 See doc/untwist/02-design.md for the full design.
 """
 
-from . import defer
 from . import utils
 from . import error
 from .failure import Failure
@@ -36,7 +39,6 @@ from .protocols import (
 )
 
 __all__ = [
-    'defer',
     'utils',
     'error',
     'Failure',

@@ -40,7 +40,6 @@ import logging
 import sys
 import time
 
-from .defer import Deferred
 from .failure import Failure
 
 LOGGER = logging.getLogger(__name__)
@@ -1173,30 +1172,22 @@ class AsyncTestRuntime(object):
         self._ensure_loop().call_soon_threadsafe(lambda: fn(*args, **kw))
 
     def callInThread(self, fn, *args, **kw):
-        """Run ``fn`` in a worker thread; return a Deferred with the result."""
-        deferred = Deferred()
-        if self._tearing_down():
-            # Refuse new executor work during teardown, but FIRE the Deferred so
-            # an awaiter resolves instead of deadlocking shutdown: errback with
-            # ReactorNotRunning rather than handing back an inert (never-fired)
-            # Deferred. No job is submitted and the loop is not touched, so a
-            # closed loop is safe (design doc point 4).
-            deferred.errback(ReactorNotRunning(
-                "callInThread refused: runtime is shutting down"))
-            return deferred
+        """Run ``fn`` in a worker thread; return an asyncio Future with the result."""
         loop = self._ensure_loop()
+        if self._tearing_down():
+            # Refuse new executor work during teardown, but hand back an
+            # already-failed Future so an awaiter resolves instead of
+            # deadlocking shutdown. No job is submitted and no callback is
+            # scheduled -- create_future()/set_exception never touch the loop's
+            # run machinery -- so a closed loop is safe (design doc point 4).
+            fut = loop.create_future()
+            fut.set_exception(ReactorNotRunning(
+                "callInThread refused: runtime is shutting down"))
+            return fut
         fut = loop.run_in_executor(None, lambda: fn(*args, **kw))
         self._tasks.add(fut)
-
-        def _done(f):
-            self._tasks.discard(f)
-            try:
-                deferred.callback(f.result())
-            except Exception:
-                deferred.errback(Failure())
-
-        fut.add_done_callback(_done)
-        return deferred
+        fut.add_done_callback(self._tasks.discard)
+        return fut
 
     # -- background tasks ------------------------------------------------- #
     def track_task(self, task, fatal=False):
