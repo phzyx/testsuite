@@ -257,7 +257,7 @@ class AsteriskProtocol(ProcessProtocol):
 
         Keyword Arguments:
         host - the hostname or address of the Asterisk instance
-        stop_deferred - a Deferred object that will be called when the
+        stop_deferred - an asyncio Future that will be resolved when the
         process has exited
         """
 
@@ -477,7 +477,7 @@ class Asterisk(object):
         """Start this instance of Asterisk.
 
         Returns:
-        A deferred object that will be called when Asterisk is fully booted.
+        An asyncio Future that resolves when Asterisk is fully booted.
 
         Example Usage:
         asterisk.start()
@@ -560,10 +560,9 @@ class Asterisk(object):
             "-C", "%s" % os.path.join(self.astetcdir, "asterisk.conf")
         ]
 
-        # Make the start/stop deferreds - this method will return
-        # the start deferred, and pass the stop deferred to the AsteriskProtocol
-        # object.  The stop deferred will be raised when the Asterisk process
-        # exits
+        # Make the start/stop futures - this method will return the start
+        # future, and pass the stop future to the AsteriskProtocol object.
+        # The stop future will be resolved when the Asterisk process exits.
         loop = current_runtime()._ensure_loop()
         self._start_deferred = loop.create_future()
         self._stop_deferred = loop.create_future()
@@ -583,7 +582,7 @@ class Asterisk(object):
         This function is used to stop this instance of Asterisk.
 
         Returns:
-        A deferred that can be used to detect when Asterisk exits,
+        An asyncio Future that can be used to detect when Asterisk exits,
         or if it fails to exit.
 
         Example Usage:
