@@ -119,7 +119,7 @@ def tonetest(filename):
         if not data:
             break
 
-        samples = numpy.fromstring(data, dtype=sample_type)
+        samples = numpy.frombuffer(data, dtype=sample_type)
 
         analyzer.process(samples)
 
