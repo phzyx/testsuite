@@ -1,43 +1,43 @@
 # Deferred/defer classification  (B5.0)
-files_with_defer=136  roles={'core': 4, 'fixture': 107, 'other': 2, 'shim': 3, 'starpy': 20}
+files_with_defer=134  roles={'core': 3, 'fixture': 107, 'other': 1, 'shim': 3, 'starpy': 20}
 
 ## construction totals
-  Deferred                   49
-  DeferredList               12
+  Deferred                   45
+  DeferredList               10
   fail                       5
   gatherResults              1
-  maybeDeferred              10
+  maybeDeferred              9
   succeed                    3
 
 ## chaining totals (Deferred-attributed method calls)
   addBoth                    4
-  addCallback                242
+  addCallback                233
   addCallbacks               56
   addErrback                 157
-  callback                   41
-  errback                    21
+  callback                   34
+  errback                    20
 
 ## ambiguous defer-shaped calls  (callback/errback/cancel/pause on non-Deferred or unresolved receivers -- NOT migration sites)
   callback                   9
-  cancel                     23
+  cancel                     22
   errback                    7
 
 ## DeferredList flags
-  consumeErrors              4
+  consumeErrors              3
   fireOnOneCallback          1
   fireOnOneErrback           2
 
 ## construction by role
-  [core] {'Deferred': 3, 'DeferredList': 2, 'maybeDeferred': 1}
+  [core] {}
   [fixture] {'Deferred': 3, 'DeferredList': 4}
-  [other] {'Deferred': 1}
+  [other] {}
   [shim] {'Deferred': 29, 'DeferredList': 5, 'fail': 3, 'gatherResults': 1, 'maybeDeferred': 8, 'succeed': 2}
   [starpy] {'Deferred': 13, 'DeferredList': 1, 'fail': 2, 'maybeDeferred': 1, 'succeed': 1}
 
 ## chaining by role
-  [core] {'addCallback': 10, 'addCallbacks': 3, 'addErrback': 4, 'callback': 6, 'errback': 1}
+  [core] {'addCallback': 2, 'addCallbacks': 3, 'addErrback': 4}
   [fixture] {'addCallback': 58, 'addCallbacks': 17, 'addErrback': 130, 'callback': 3}
-  [other] {'addBoth': 1, 'addCallback': 1, 'callback': 1}
+  [other] {'addBoth': 1}
   [shim] {'addBoth': 1, 'addCallback': 28, 'addCallbacks': 6, 'addErrback': 6, 'callback': 20, 'errback': 9}
   [starpy] {'addBoth': 2, 'addCallback': 145, 'addCallbacks': 30, 'addErrback': 17, 'callback': 11, 'errback': 11}
 
@@ -84,8 +84,6 @@ files_with_defer=136  roles={'core': 4, 'fixture': 107, 'other': 2, 'shim': 3, '
              ctor=Deferred:4  chain=addCallback:51,addCallbacks:3,callback:3,errback:2  amb=callback:1,errback:2
   [starpy  ] [starpy] tests/test_async_smoke.py
              chain=addBoth:1,addCallback:1
-  [other   ] doc/untwist/test_core_runtime.py
-             ctor=Deferred:1  chain=addCallback:1,callback:1
   [other   ] doc/untwist/test_ssh_parity.py
              chain=addBoth:1
   [shim    ] lib/python/asterisk/aio/defer.py
@@ -96,12 +94,10 @@ files_with_defer=136  roles={'core': 4, 'fixture': 107, 'other': 2, 'shim': 3, '
              ctor=Deferred:24,DeferredList:4,fail:1,gatherResults:1,maybeDeferred:8,succeed:1  chain=addCallback:28,addErrback:6,callback:14,errback:3  amb=callback:7,cancel:8,errback:2  dl=consumeErrors:1,fireOnOneCallback:1
   [core    ] lib/python/asterisk/apptest.py
              chain=addErrback:2
-  [core    ] lib/python/asterisk/asterisk.py
-             ctor=Deferred:2  chain=addCallback:1,callback:5,errback:1  amb=cancel:1
   [core    ] lib/python/asterisk/sipp.py
              chain=addCallback:2
   [core    ] lib/python/asterisk/test_case.py
-             ctor=Deferred:1,DeferredList:2,maybeDeferred:1  chain=addCallback:7,addCallbacks:3,addErrback:2,callback:1  dl=consumeErrors:1
+             chain=addCallbacks:3,addErrback:2
   [fixture ] tests/agi/exit_status/run-test
              chain=addErrback:8
   [fixture ] tests/agi/nominal/run-test

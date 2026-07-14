@@ -14,16 +14,17 @@ the asyncio reactor shim end to end with NO Twisted in the code path:
     `loseConnection` work, and `error.ProcessExitedAlready` is raised (not a raw
     ProcessLookupError) when signalling a dead child -- the `Asterisk.stop()`
     kill path.
-  * `defer.Deferred.callback` + `error.AlreadyCalled` behave as the stop path
-    expects.
+  * The stop future's `set_result` + `asyncio.InvalidStateError` behave as the
+    stop path expects (a second result raises).
 
 Run:  PYTHONPATH=lib/python .venv/bin/python test_core_runtime.py   (exit 0 = OK)
 """
 
+import asyncio
 import os
 import sys
 
-from asterisk.aio import defer, error
+from asterisk.aio import error
 from asterisk.aio.runtime import current_runtime
 from asterisk.asterisk import AsteriskProtocol
 
@@ -32,7 +33,7 @@ results = {}
 
 def _drive_process_and_stop():
     """callWhenRunning entry: spawn a real process wired through AsteriskProtocol."""
-    stop_deferred = defer.Deferred()
+    stop_deferred = current_runtime()._ensure_loop().create_future()
     proto = AsteriskProtocol('unit-host', stop_deferred)
     results['proto'] = proto
 
@@ -44,7 +45,8 @@ def _drive_process_and_stop():
                                "sys.stdout.flush(); sys.exit(7)"],
         env=os.environ)
 
-    def _on_stopped(message):
+    def _on_stopped(fut):
+        message = fut.result()
         results['stop_message'] = message
         results['output'] = proto.output
         results['exitcode'] = proto.exitcode
@@ -59,17 +61,17 @@ def _drive_process_and_stop():
         except Exception as exc:  # pragma: no cover - would be a failure
             results['signal_dead'] = 'wrong:%r' % (exc,)
 
-        # Deferred already fired -> a second callback must raise AlreadyCalled.
+        # Future already resolved -> a second set_result must raise.
         try:
-            stop_deferred.callback('again')
+            stop_deferred.set_result('again')
             results['double_callback'] = 'no-raise'
-        except defer.AlreadyCalledError:
+        except asyncio.InvalidStateError:
             results['double_callback'] = 'AlreadyCalledError'
 
         current_runtime().stop()
         return message
 
-    stop_deferred.addCallback(_on_stopped)
+    stop_deferred.add_done_callback(_on_stopped)
 
 
 def main():

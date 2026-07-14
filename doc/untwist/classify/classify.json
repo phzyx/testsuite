@@ -1,16 +1,14 @@
 {
   "ambiguous_totals": {
     "callback": 9,
-    "cancel": 23,
+    "cancel": 22,
     "errback": 7
   },
   "chain_by_role": {
     "core": {
-      "addCallback": 10,
+      "addCallback": 2,
       "addCallbacks": 3,
-      "addErrback": 4,
-      "callback": 6,
-      "errback": 1
+      "addErrback": 4
     },
     "fixture": {
       "addCallback": 58,
@@ -19,9 +17,7 @@
       "callback": 3
     },
     "other": {
-      "addBoth": 1,
-      "addCallback": 1,
-      "callback": 1
+      "addBoth": 1
     },
     "shim": {
       "addBoth": 1,
@@ -42,25 +38,19 @@
   },
   "chain_totals": {
     "addBoth": 4,
-    "addCallback": 242,
+    "addCallback": 233,
     "addCallbacks": 56,
     "addErrback": 157,
-    "callback": 41,
-    "errback": 21
+    "callback": 34,
+    "errback": 20
   },
   "ctor_by_role": {
-    "core": {
-      "Deferred": 3,
-      "DeferredList": 2,
-      "maybeDeferred": 1
-    },
+    "core": {},
     "fixture": {
       "Deferred": 3,
       "DeferredList": 4
     },
-    "other": {
-      "Deferred": 1
-    },
+    "other": {},
     "shim": {
       "Deferred": 29,
       "DeferredList": 5,
@@ -78,26 +68,26 @@
     }
   },
   "ctor_totals": {
-    "Deferred": 49,
-    "DeferredList": 12,
+    "Deferred": 45,
+    "DeferredList": 10,
     "fail": 5,
     "gatherResults": 1,
-    "maybeDeferred": 10,
+    "maybeDeferred": 9,
     "succeed": 3
   },
   "deferredlist_flag_totals": {
-    "consumeErrors": 4,
+    "consumeErrors": 3,
     "fireOnOneCallback": 1,
     "fireOnOneErrback": 2
   },
   "files_by_role": {
-    "core": 4,
+    "core": 3,
     "fixture": 107,
-    "other": 2,
+    "other": 1,
     "shim": 3,
     "starpy": 20
   },
-  "files_with_defer": 136,
+  "files_with_defer": 134,
   "inline_callbacks_files": [],
   "per_file": {
     "[starpy] examples/amicommand.py": {
@@ -348,19 +338,6 @@
       "inline_callbacks_decorators": 0,
       "role": "starpy"
     },
-    "doc/untwist/test_core_runtime.py": {
-      "ambiguous": {},
-      "chain": {
-        "addCallback": 1,
-        "callback": 1
-      },
-      "ctor": {
-        "Deferred": 1
-      },
-      "deferredlist_flags": {},
-      "inline_callbacks_decorators": 0,
-      "role": "other"
-    },
     "doc/untwist/test_ssh_parity.py": {
       "ambiguous": {},
       "chain": {
@@ -446,22 +423,6 @@
       "inline_callbacks_decorators": 0,
       "role": "core"
     },
-    "lib/python/asterisk/asterisk.py": {
-      "ambiguous": {
-        "cancel": 1
-      },
-      "chain": {
-        "addCallback": 1,
-        "callback": 5,
-        "errback": 1
-      },
-      "ctor": {
-        "Deferred": 2
-      },
-      "deferredlist_flags": {},
-      "inline_callbacks_decorators": 0,
-      "role": "core"
-    },
     "lib/python/asterisk/sipp.py": {
       "ambiguous": {},
       "chain": {
@@ -475,19 +436,11 @@
     "lib/python/asterisk/test_case.py": {
       "ambiguous": {},
       "chain": {
-        "addCallback": 7,
         "addCallbacks": 3,
-        "addErrback": 2,
-        "callback": 1
+        "addErrback": 2
       },
-      "ctor": {
-        "Deferred": 1,
-        "DeferredList": 2,
-        "maybeDeferred": 1
-      },
-      "deferredlist_flags": {
-        "consumeErrors": 1
-      },
+      "ctor": {},
+      "deferredlist_flags": {},
       "inline_callbacks_decorators": 0,
       "role": "core"
     },

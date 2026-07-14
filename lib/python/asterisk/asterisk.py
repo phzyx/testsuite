@@ -27,7 +27,7 @@ from .config import ConfigFile
 
 from subprocess import PIPE, TimeoutExpired
 
-from asterisk.aio import defer, utils, error
+from asterisk.aio import utils, error
 from asterisk.aio.runtime import current_runtime
 from asterisk.aio import ProcessProtocol
 
@@ -293,9 +293,9 @@ class AsteriskProtocol(ProcessProtocol):
             # (or may not) ever get called, in which case the Asterisk object
             # itself that is terminating this process will attempt to raise the
             # stop deferred.  Prevent calling the object twice.
-            if not self._stop_deferred.called:
-                self._stop_deferred.callback(message)
-        except defer.AlreadyCalledError:
+            if not self._stop_deferred.done():
+                self._stop_deferred.set_result(message)
+        except asyncio.InvalidStateError:
             LOGGER.warning("Asterisk %s stop deferred already called" %
                            self._host)
         self.exited = True
@@ -518,11 +518,11 @@ class Asterisk(object):
             CLIRetVal = self.cli_exec_blocking("core waitfullybooted", "Asterisk has fully booted")
             if CLIRetVal == 0:
                 msg = "Successfully started Asterisk %s" % self.host
-                self._start_deferred.callback(msg)
+                self._start_deferred.set_result(msg)
             elif time.time() - self.__start_asterisk_time > timeout:
                 msg = "Asterisk core waitfullybooted for %s failed" % self.host
                 LOGGER.error(msg)
-                self._start_deferred.errback(Exception(msg))
+                self._start_deferred.set_exception(Exception(msg))
             else:
                 msg = "Asterisk core waitfullybooted for %s failed, retrying" % self.host
                 LOGGER.warning(msg)
@@ -564,8 +564,9 @@ class Asterisk(object):
         # the start deferred, and pass the stop deferred to the AsteriskProtocol
         # object.  The stop deferred will be raised when the Asterisk process
         # exits
-        self._start_deferred = defer.Deferred()
-        self._stop_deferred = defer.Deferred()
+        loop = current_runtime()._ensure_loop()
+        self._start_deferred = loop.create_future()
+        self._stop_deferred = loop.create_future()
 
         # Asterisk will attempt to use built in configuration information if
         # it can't find the configuration files that are being installed - which
@@ -589,8 +590,13 @@ class Asterisk(object):
         asterisk.stop()
         """
 
-        def __cancel_stops(reason):
-            """Cancel all stop actions - called when the process exits"""
+        def __cancel_stops(_ignored=None):
+            """Cancel all stop actions - called when the process exits.
+
+            Invoked both directly (with ``None``) from the graceful-stop
+            callback and as an asyncio ``add_done_callback`` on the stop
+            future (which passes the future); the argument is unused.
+            """
             for token in self._stop_cancel_tokens:
                 try:
                     if token.active():
@@ -598,7 +604,6 @@ class Asterisk(object):
                 except error.AlreadyCalled:
                     # Ignore if we already killed it
                     pass
-            return reason
 
         async def __send_stop_gracefully():
             """Send a core stop gracefully CLI command"""
@@ -642,15 +647,15 @@ class Asterisk(object):
             except:
                 pass
             try:
-                if not self._stop_deferred.called:
-                    self._stop_deferred.callback("Asterisk %s KILLED" % self.host)
-            except defer.AlreadyCalledError:
+                if not self._stop_deferred.done():
+                    self._stop_deferred.set_result("Asterisk %s KILLED" % self.host)
+            except asyncio.InvalidStateError:
                 LOGGER.warning("Asterisk %s stop deferred already called" % self.host)
 
         def __process_stopped(reason):
             """Generic callback that raises the stopped deferred subscribers
             use to know that the process has exited"""
-            self._stop_deferred.callback(reason)
+            self._stop_deferred.set_result(reason)
             return reason
 
         def __actual_stop():
@@ -664,16 +669,16 @@ class Asterisk(object):
             # Start by asking to stop gracefully.
             current_runtime().create_task(__send_stop_gracefully())
 
-            self._stop_deferred.addCallback(__cancel_stops)
+            self._stop_deferred.add_done_callback(__cancel_stops)
 
         if not self.process:
             current_runtime().callLater(0, __process_stopped, None)
         elif self.protocol.exited:
             try:
-                if not self._stop_deferred.called:
-                    self._stop_deferred.callback(
+                if not self._stop_deferred.done():
+                    self._stop_deferred.set_result(
                         "Asterisk %s stopped prematurely" % self.host)
-            except defer.AlreadyCalledError:
+            except asyncio.InvalidStateError:
                 LOGGER.warning("Asterisk %s stop deferred already called" %
                                self.host)
         else:

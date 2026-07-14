@@ -1,30 +1,21 @@
 {
-  "defer_grand_total": 61,
+  "defer_grand_total": 50,
   "defer_totals": {
     "AlreadyCalledError": 2,
     "Deferred": 25,
     "DeferredList": 4,
     "TimeoutError": 1,
-    "defer.AlreadyCalledError": 4,
-    "defer.Deferred": 7,
-    "defer.DeferredList": 6,
-    "defer.maybeDeferred": 1,
+    "defer.Deferred": 3,
+    "defer.DeferredList": 4,
     "fail": 1,
     "gatherResults": 1,
     "maybeDeferred": 8,
     "succeed": 1
   },
-  "files_with_reactor_or_defer": 11,
+  "files_with_reactor_or_defer": 8,
   "lifecycle_owners": {},
   "parsed": 399,
   "per_file": {
-    "doc/untwist/test_core_runtime.py": {
-      "defer": {
-        "defer.AlreadyCalledError": 1,
-        "defer.Deferred": 1
-      },
-      "reactor": {}
-    },
     "lib/python/asterisk/aio/runtime.py": {
       "defer": {
         "Deferred": 1
@@ -41,21 +32,6 @@
         "gatherResults": 1,
         "maybeDeferred": 8,
         "succeed": 1
-      },
-      "reactor": {}
-    },
-    "lib/python/asterisk/asterisk.py": {
-      "defer": {
-        "defer.AlreadyCalledError": 3,
-        "defer.Deferred": 2
-      },
-      "reactor": {}
-    },
-    "lib/python/asterisk/test_case.py": {
-      "defer": {
-        "defer.Deferred": 1,
-        "defer.DeferredList": 2,
-        "defer.maybeDeferred": 1
       },
       "reactor": {}
     },

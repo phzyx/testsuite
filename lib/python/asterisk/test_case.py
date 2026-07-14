@@ -8,6 +8,8 @@ the GNU General Public License Version 2.
 """
 
 import sys
+import asyncio
+import inspect
 import logging
 import logging.config
 import os
@@ -15,7 +17,7 @@ import traceback
 import uuid
 from datetime import datetime
 from hashlib import md5
-from asterisk.aio import defer, error as aio_error
+from asterisk.aio import error as aio_error
 from asterisk.aio.runtime import current_runtime
 from starpy import manager, fastagi
 
@@ -138,7 +140,6 @@ class TestCase(object):
         self._stop_callbacks = []
         self._ami_connect_callbacks = []
         self._ami_reconnect_callbacks = []
-        self._stop_deferred = None
         log_full = True
         log_messages = True
 
@@ -430,49 +431,43 @@ class TestCase(object):
         """
         pass
 
-    def _start_asterisk(self):
+    async def _start_asterisk(self):
         """Start the instances of Asterisk that were previously created. See
         create_asterisk. Note that this should be the first thing called
         when the reactor has started to run
         """
-        def __check_success_failure(result):
-            """Make sure the instances started properly"""
-            for (success, value) in result:
-                if not success:
-                    LOGGER.error(value.getErrorMessage())
-                    self.stop_reactor()
-            return result
-
-        def __perform_pre_checks(result):
-            """Execute the pre-condition checks"""
-            deferred = self.condition_controller.evaluate_pre_checks()
-            if deferred is None:
-                return result
-            else:
-                return deferred
-
-        def __run_callback(result):
-            """Notify the test that we are running"""
-            for callback in self._start_callbacks:
-                callback(self.ast)
-            self.run()
-            return result
-
         # Call the method that derived objects can override
         self.start_asterisk()
 
-        # Gather up the deferred objects from each of the instances of Asterisk
-        # and wait until all are finished before proceeding
+        # Gather up the futures from each of the instances of Asterisk and wait
+        # until all are finished before proceeding. ast.start() now returns an
+        # asyncio Future; gather(return_exceptions=True) mirrors the old
+        # DeferredList(consumeErrors=True) - each result is either the success
+        # value or the raised exception (in start order).
         start_defers = []
         for index, ast in enumerate(self.ast):
             LOGGER.info("Starting Asterisk instance %d" % (index + 1))
-            temp_defer = ast.start(self.test_config.get_deps())
-            start_defers.append(temp_defer)
+            start_defers.append(ast.start(self.test_config.get_deps()))
 
-        deferred = defer.DeferredList(start_defers, consumeErrors=True)
-        deferred.addCallback(__check_success_failure)
-        deferred.addCallback(__perform_pre_checks)
-        deferred.addCallback(__run_callback)
+        results = await asyncio.gather(*start_defers, return_exceptions=True)
+
+        # __check_success_failure: on any failed start, log and stop; the old
+        # chain continued regardless, so preserve that (do not short-circuit).
+        for value in results:
+            if isinstance(value, Exception):
+                LOGGER.error(str(value))
+                self.stop_reactor()
+
+        # __perform_pre_checks: evaluate_pre_checks() now returns a coroutine
+        # (or None); await it so pre-checks complete before we run.
+        deferred = self.condition_controller.evaluate_pre_checks()
+        if deferred is not None:
+            await deferred
+
+        # __run_callback: notify the test that we are running.
+        for callback in self._start_callbacks:
+            callback(self.ast)
+        self.run()
 
     def stop_asterisk(self):
         """This method is called when the reactor is running but immediately
@@ -481,53 +476,44 @@ class TestCase(object):
         """
         pass
 
-    def _stop_asterisk(self):
+    async def _stop_asterisk(self):
         """Stops the instances of Asterisk.
 
         Returns:
-        A deferred object that can be used to be notified when all instances
-        of Asterisk have stopped.
+        The test object (self) once all instances of Asterisk have stopped.
          """
-        def __check_success_failure(result):
-            """Make sure the instances stopped properly"""
-            for (success, value) in result:
-                if not success:
-                    LOGGER.warning(value.getErrorMessage())
-                    # This should already be called when the reactor is being
-                    # terminated. If we couldn't stop the instance of Asterisk,
-                    # there isn't much else to do here other then complain
-            self._stop_deferred.callback(self)
-            return result
+        # evaluate_post_checks() now returns a coroutine (or None); await it
+        # so post-checks complete before we stop the instances.
+        deferred = self.condition_controller.evaluate_post_checks()
+        if deferred is not None:
+            await deferred
 
-        def __stop_instances(result):
-            """Stop the instances"""
+        # Call the overridable method now
+        self.stop_asterisk()
 
-            # Call the overridable method now
-            self.stop_asterisk()
-            # Gather up the stopped defers; check success failure of stopping
-            # when all instances of Asterisk have stopped
-            stop_defers = []
-            for index, ast in enumerate(self.ast):
-                LOGGER.info("Stopping Asterisk instance %d" % (index + 1))
-                temp_defer = ast.stop()
-                stop_defers.append(temp_defer)
+        # Gather up the stop futures and wait until all instances of Asterisk
+        # have stopped. gather(return_exceptions=True) mirrors the old
+        # DeferredList - each result is the stop value or the raised exception.
+        stop_defers = []
+        for index, ast in enumerate(self.ast):
+            LOGGER.info("Stopping Asterisk instance %d" % (index + 1))
+            stop_defers.append(ast.stop())
 
-            defer.DeferredList(stop_defers).addCallback(
-                __check_success_failure)
-            return result
+        results = await asyncio.gather(*stop_defers, return_exceptions=True)
 
-        self._stop_deferred = defer.Deferred()
-        # evaluate_post_checks() now returns a coroutine (or None); maybeDeferred
-        # adapts either into a Deferred so the existing stop chain is preserved.
-        deferred = defer.maybeDeferred(
-            self.condition_controller.evaluate_post_checks)
-        deferred.addCallback(__stop_instances)
-        return self._stop_deferred
+        # __check_success_failure: complain about any failed stop. This should
+        # already be called when the reactor is being terminated; if we
+        # couldn't stop the instance, there isn't much else to do but log.
+        for value in results:
+            if isinstance(value, Exception):
+                LOGGER.warning(str(value))
+
+        return self
 
     def stop_reactor(self):
         """Stop the reactor and cancel the test."""
 
-        def __stop_reactor(result):
+        def __stop_reactor():
             """Called when the Asterisk instances are stopped"""
             LOGGER.info("Stopping Reactor")
             if current_runtime().running:
@@ -538,13 +524,25 @@ class TestCase(object):
                     # keep the guard for parity in case something stopped it
                     # between our checks - at least we're stopped
                     pass
-            return result
+
+        async def __drive_stop():
+            """Stop the instances, run the stop observers, then the reactor.
+
+            Preserves the old Deferred chain: _stop_asterisk() resolves with
+            the test object, each stop observer is invoked in turn with the
+            running result (awaiting any observer that returns an awaitable),
+            and finally the reactor is stopped.
+            """
+            result = await self._stop_asterisk()
+            for callback in self._stop_callbacks:
+                result = callback(result)
+                if inspect.isawaitable(result):
+                    result = await result
+            __stop_reactor()
+
         if not self._stopping:
             self._stopping = True
-            deferred = self._stop_asterisk()
-            for callback in self._stop_callbacks:
-                deferred.addCallback(callback)
-            deferred.addCallback(__stop_reactor)
+            current_runtime().create_task(__drive_stop())
 
     def _reactor_timeout(self):
         """A wrapper function for stop_reactor(), so we know when a reactor
@@ -568,7 +566,7 @@ class TestCase(object):
         moving on.
         """
         if self.ast:
-            self._start_asterisk()
+            current_runtime().create_task(self._start_asterisk())
         else:
             # If no instances of Asterisk are needed, go ahead and just run
             self.run()
