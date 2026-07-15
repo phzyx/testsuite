@@ -8,9 +8,7 @@ the GNU General Public License Version 2.
 
 These tests pin the contract of
 ``ApplicationEventInstance.execute_next_action``: actions are driven in
-order, and a failed action must NOT advance to later actions. The latter
-guards the async conversion of the old Twisted Deferred chain, which had
-no errback and therefore stopped the sequence when an action failed.
+order, and a failed action must NOT advance to later actions.
 """
 
 import sys

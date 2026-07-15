@@ -92,9 +92,7 @@ class HEPPacket(object):
         self.payload = None
 
 class HEPPacketHandler(DatagramProtocol):
-    """A twisted DatagramProtocol that converts a UDP packet
-    into a HEPv3 packet object
-    """
+    """Datagram protocol that converts a UDP packet into a HEPv3 packet."""
 
     def __init__(self, module):
         """Constructor

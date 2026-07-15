@@ -5,16 +5,15 @@ George T Joseph <gjoseph@sangoma.com>
 This program is free software, distributed under the terms of
 the GNU General Public License Version 2.
 
-asyncio port (design doc Section 6.2): the ``autobahn.twisted`` media
-WebSocket client/server is reimplemented on the ``websockets`` library over the
-``asterisk.aio`` reactor loop.
+Media WebSocket client/server support is implemented on the ``websockets``
+library over the ``asterisk.aio`` reactor loop.
 
   * The *client* uses the high-level ``websockets.connect`` coroutine; outgoing
     fragmentation (``autoFragmentSize``) is reproduced by sending a message as an
     iterable of chunks.
-  * The *server* is bound through ``reactor.listenTCP`` exactly as before, so it
-    is driven as a byte-stream twisted-style protocol. The WebSocket handshake
-    and framing are performed with the ``websockets`` sans-I/O
+  * The *server* is bound through ``reactor.listenTCP`` and driven as a raw byte
+    stream. The WebSocket handshake and framing are performed with the
+    ``websockets`` sans-I/O
     ``ServerProtocol`` (``receive_data`` -> ``events_received`` ->
     ``data_to_send``), which lets us keep the reactor's TCP listener while
     reproducing subprotocol negotiation, binary/text framing, fragment
@@ -85,9 +84,8 @@ class MediaWebSocketMixin:
         run under ``reactor.callInThread``).
 
         Sends the ``START_MEDIA_BUFFERING``/``STOP_MEDIA_BUFFERING`` text
-        sentinels around the binary payload, exactly as the autobahn version
-        did. Each ``sendMessage`` marshals the actual send onto the reactor
-        loop.
+        sentinels around the binary payload. Each ``sendMessage`` marshals the
+        actual send onto the reactor loop.
         """
         f = io.open(filename, "rb", buffering=0)
         LOGGER.info(f"Playing '{filename}'")
@@ -135,7 +133,7 @@ class MediaWebSocketClientFactory:
         self.start = None
 
     def setProtocolOptions(self, **kwargs):
-        """Accept the autobahn protocol-option surface the tests use.
+        """Accept the protocol options the tests use.
 
         Only ``autoFragmentSize`` affects behaviour here (outgoing messages
         larger than it are sent as fragmented frames); the rest (``tcpNoDelay``,
@@ -208,10 +206,10 @@ class MediaWebSocketClientProtocol(MediaWebSocketMixin):
     def sendMessage(self, payload, isBinary=False):
         """Send a text (``isBinary=False``) or binary frame.
 
-        ``payload`` is bytes (matching autobahn). Text frames are decoded to
-        ``str`` so ``websockets`` emits a TEXT frame; when ``autoFragmentSize``
-        is set and the payload exceeds it, the message is sent as an iterable of
-        chunks (fragmented frames).
+        ``payload`` is bytes. Text frames are decoded to ``str`` so
+        ``websockets`` emits a TEXT frame; when ``autoFragmentSize`` is set and
+        the payload exceeds it, the message is sent as an iterable of chunks
+        (fragmented frames).
         """
         data = bytes(payload) if isBinary else \
             (payload.decode('utf-8') if isinstance(payload, (bytes, bytearray))
@@ -247,11 +245,10 @@ class MediaWebSocketClientProtocol(MediaWebSocketMixin):
 
 
 # ---------------------------------------------------------------------------- #
-# Server (sans-I/O ServerProtocol driven by reactor.listenTCP)
+# Server (sans-I/O ServerProtocol driven by the runtime TCP listener)
 # ---------------------------------------------------------------------------- #
 class _ConnectRequest(object):
-    """Shim passed to ``on_ws_connect`` exposing autobahn's ``.peer`` plus the
-    handshake ``path``/``headers``."""
+    """Request object passed to ``on_ws_connect`` with peer, path, and headers."""
 
     def __init__(self, peer, request):
         self.peer = peer
@@ -287,13 +284,13 @@ class MediaWebSocketServerFactory:
 
 
 class _SansIOServerProtocol(object):
-    """twisted-``Protocol``-shaped adapter driving a websockets ``ServerProtocol``.
+    """Byte-stream adapter driving a websockets ``ServerProtocol``.
 
-    ``reactor.listenTCP`` hands us a raw byte stream via
-    ``makeConnection``/``dataReceived``/``connectionLost``. We feed those bytes
-    into the sans-I/O state machine, perform the handshake (honouring the
-    subprotocol the receiver's ``on_ws_connect`` selects), reassemble fragmented
-    data frames, and surface complete messages/opens/closes to the subclass.
+    ``reactor.listenTCP`` hands us a raw byte stream via ``makeConnection``/
+    ``dataReceived``/``connectionLost``. We feed those bytes into the sans-I/O
+    state machine, perform the handshake (honouring the subprotocol the
+    receiver's ``on_ws_connect`` selects), reassemble fragmented data frames,
+    and surface complete messages/opens/closes to the subclass.
     Subclasses implement ``_deliver_message(data, binary)``, ``_notify_open`` and
     ``_notify_close``.
     """
@@ -314,7 +311,7 @@ class _SansIOServerProtocol(object):
         # fragmented message arrived as multiple frames before reassembly.
         self.frames_received = 0
 
-    # -- twisted Protocol surface ---------------------------------------- #
+    # -- byte-stream protocol surface ------------------------------------ #
     def makeConnection(self, transport):
         self.transport = transport
         try:

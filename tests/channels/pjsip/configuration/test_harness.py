@@ -110,10 +110,10 @@ class TestHarness(object):
         shutting down the reactor.
 
         Keyword Arguments:
-        result                 -- A twisted deferred object
+        result                 -- The stop observer result
 
         Returns:
-        A twisted deferred object.
+        The stop observer result.
         """
 
         LOGGER.debug('{0} Calculating test results.'.format(self))

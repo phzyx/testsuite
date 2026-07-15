@@ -51,7 +51,7 @@ class PerCallWebsocketTest(TestCase):
         self.create_asterisk()
 
     def run(self):
-        """Entry point for the twisted reactor"""
+        """Entry point for the test runtime."""
         super(PerCallWebsocketTest, self).run()
         LOGGER.info("Binding websocket server")
         current_runtime().listenTCP(9000, self.factory, 10, "127.0.0.1")

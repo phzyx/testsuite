@@ -84,9 +84,6 @@ def handle_redirect_failure(reason):
 
 async def _do_redirect(ami, *args):
     """Await an AMI redirect, routing any failure to handle_redirect_failure.
-
-    Replaces the old ``ami.redirect(...).addErrback(...)`` chain now that
-    starpy AMI calls are awaited directly.
     """
     try:
         await ami.redirect(*args)

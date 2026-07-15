@@ -1,12 +1,8 @@
-"""Subset of ``twisted.internet.error`` used by the Asterisk test suite.
+"""Runtime and transport error types used by the Asterisk test suite.
 
-The suite catches a handful of Twisted reactor/process error types by name
-(``error.AlreadyCalled``, ``error.ProcessExitedAlready``, ...). This module
-gathers the asyncio-shim equivalents under the same names so the only change at
-the call sites is the import (``from twisted.internet import error`` ->
-``from asterisk.aio import error``).
-
-Part of the transitional ``asterisk.aio`` layer (design doc Section 14).
+The suite catches these runtime/process errors through ``asterisk.aio.error`` so
+callers have a single import location for scheduling, cancellation, and process
+exit failures.
 """
 
 from .runtime import (

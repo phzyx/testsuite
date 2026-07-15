@@ -52,10 +52,6 @@ class PassingScenario(object):
 class SIPpScenarioSequenceErrorTest(unittest.TestCase):
     """Regression: when a scenario's run() raises, execute() must treat the
     gathered exception as a failure -- never call attributes on it.
-
-    Previously the return_exceptions=True result tuple (False, <exception>)
-    was fed into code that did `scenario.name`, raising AttributeError and
-    masking the original failure.
     """
 
     def test_execute_scenario_raises_no_attributeerror(self):

@@ -115,9 +115,6 @@ class ConfbridgeTestState(TestState):
 
     async def _do_redirect(self, ami, *args):
         """Await an AMI redirect, routing any failure to the handler.
-
-        Replaces the old ``ami.redirect(...).addErrback(...)`` chain now
-        that starpy AMI calls are awaited directly.
         """
         try:
             await ami.redirect(*args)

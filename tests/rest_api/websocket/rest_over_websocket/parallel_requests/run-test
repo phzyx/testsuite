@@ -48,7 +48,7 @@ class RESToverWebsocketTest(TestCase):
         self.factory.connect()
 
     def run(self):
-        """Entry point for the twisted reactor"""
+        """Entry point for the test runtime."""
         super(RESToverWebsocketTest, self).run()
 
     def on_reactor_timeout(self):

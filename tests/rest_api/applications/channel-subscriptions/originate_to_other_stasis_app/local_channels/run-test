@@ -207,7 +207,7 @@ class OriginateToDifferentApp(TestCase):
                                              'stasisstart': 1}}
 
     def run(self):
-        """Entry point for the twisted reactor"""
+        """Entry point for the test runtime."""
         super(OriginateToDifferentApp, self).run()
 
         self.tmp_app_names = list(self.app_names)
@@ -223,13 +223,11 @@ class OriginateToDifferentApp(TestCase):
         protocol connection for each.
 
         Keyword Arguments:
-        protocol -- the twisted protocol that connected
+        protocol -- the protocol that connected
         """
         self.protocols.append(protocol)
 
-        # Creating the apps immediately after one another leads to a random
-        # twisted error. So we create the next app upon the connection of the
-        # previously created app.
+        # Create the next app once the prior app's protocol has connected.
         try:
             name = self.tmp_app_names.pop()
             self.apps[name] = App(self.ast[0], self, name)

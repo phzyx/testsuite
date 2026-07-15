@@ -1,21 +1,17 @@
-"""asyncio replacements for the twisted protocol base classes the suite uses.
+"""asyncio protocol base classes used by the suite.
 
-Provides the small subset of Twisted's protocol surface that the Asterisk test
-suite actually subclasses:
+Provides the small protocol surface that the Asterisk test suite subclasses:
 
-  * ``DatagramProtocol`` - mirrors ``twisted.internet.protocol.DatagramProtocol``
-    (``datagramReceived``/``startProtocol``/``stopProtocol`` plus a transport
-    exposing ``write(data, addr)`` and ``loseConnection()``).
-  * ``ProcessProtocol`` - mirrors ``twisted.internet.protocol.ProcessProtocol``
-    (``connectionMade``/``outReceived``/``errReceived``/``processEnded``) on top
-    of ``asyncio.SubprocessProtocol``.
+  * ``DatagramProtocol`` - ``datagramReceived``/``startProtocol``/
+    ``stopProtocol`` plus a transport exposing ``write(data, addr)`` and
+    ``loseConnection()``.
+  * ``ProcessProtocol`` - ``connectionMade``/``outReceived``/``errReceived``/
+    ``processEnded`` on top of ``asyncio.SubprocessProtocol``.
   * ``ProcessDone`` / ``ProcessTerminated`` - the ``reason.value`` types handed to
     ``processEnded``.
 
-Design reference: doc/untwist/02-design.md Sections 3.3-3.4. These adapters are
-the bridge between asyncio's transport/protocol callbacks and the Twisted-shaped
-methods existing code overrides. They are part of the transitional ``asterisk.aio``
-layer (design Section 14); Phase B migrates callers to native asyncio protocols.
+These adapters are the bridge between asyncio's transport/protocol callbacks and
+the callback methods suite protocols override.
 """
 
 import asyncio
@@ -29,11 +25,11 @@ from .failure import Failure
 # Process termination reasons
 # ---------------------------------------------------------------------------- #
 class ConnectionDone(Exception):
-    """Connection closed cleanly (twisted.internet.error.ConnectionDone)."""
+    """Connection closed cleanly."""
 
 
 class ProcessDone(Exception):
-    """A process exited cleanly (twisted.internet.error.ProcessDone)."""
+    """A process exited cleanly."""
 
     def __init__(self, status=0):
         super().__init__("process finished with exit code %s" % status)
@@ -45,8 +41,8 @@ class ProcessDone(Exception):
 class ProcessTerminated(Exception):
     """A process exited with a non-zero status or signal.
 
-    Mirrors twisted.internet.error.ProcessTerminated: callers read
-    ``reason.value.exitCode`` (None when killed by signal) and ``.signal``.
+    Callers read ``reason.value.exitCode`` (None when killed by signal) and
+    ``.signal``.
     """
 
     def __init__(self, exitCode=None, signal=None, status=None):
@@ -64,9 +60,8 @@ class ProcessTerminated(Exception):
 class ProcessExitedAlready(Exception):
     """Signalling a process that has already exited.
 
-    Mirrors ``twisted.internet.error.ProcessExitedAlready``: the process
-    transport adapter raises this from ``signalProcess()`` when the underlying
-    child is already gone (asyncio raises ``ProcessLookupError``).
+    The process transport adapter raises this from ``signalProcess()`` when the
+    underlying child is already gone.
     """
 
 
@@ -74,13 +69,13 @@ class ProcessExitedAlready(Exception):
 # Datagram (UDP) protocol adapter
 # ---------------------------------------------------------------------------- #
 class _DatagramWriter(object):
-    """Transport wrapper giving a Twisted-style write(data, addr)/loseConnection."""
+    """Transport wrapper giving write(data, addr)/loseConnection."""
 
     def __init__(self, transport):
         self._transport = transport
 
     def write(self, data, addr=None):
-        """Send ``data``; ``addr`` selects the destination as in Twisted."""
+        """Send ``data``; ``addr`` selects the destination."""
         self._transport.sendto(data, addr)
 
     def loseConnection(self):
@@ -96,7 +91,7 @@ class _DatagramWriter(object):
 
 
 class DatagramProtocol(asyncio.DatagramProtocol):
-    """Twisted-style DatagramProtocol backed by asyncio.DatagramProtocol.
+    """Datagram protocol base backed by asyncio.DatagramProtocol.
 
     Subclasses override ``datagramReceived(data, addr)`` and optionally
     ``startProtocol``/``stopProtocol``. ``self.transport`` exposes
@@ -117,10 +112,10 @@ class DatagramProtocol(asyncio.DatagramProtocol):
         self.stopProtocol()
 
     def error_received(self, exc):
-        # Twisted delivers most UDP errors silently; keep parity by ignoring.
+        # UDP errors are best-effort notifications for these tests.
         pass
 
-    # Twisted-style overrides --------------------------------------------- #
+    # Callback overrides -------------------------------------------------- #
     def startProtocol(self):
         """Called when the transport is connected (override as needed)."""
 
@@ -135,7 +130,7 @@ class DatagramProtocol(asyncio.DatagramProtocol):
 # Generic (stream/TCP) protocol + factory base classes
 # ---------------------------------------------------------------------------- #
 class Protocol(object):
-    """Twisted-style stream Protocol base (twisted.internet.protocol.Protocol).
+    """Stream protocol base.
 
     Subclasses override ``connectionMade``/``dataReceived``/``connectionLost``.
     ``self.transport`` exposes ``write``/``writeSequence``/``loseConnection``/
@@ -147,11 +142,11 @@ class Protocol(object):
     factory = None
 
     def makeConnection(self, transport):
-        """Bind the transport and fire ``connectionMade`` (Twisted contract)."""
+        """Bind the transport and fire ``connectionMade``."""
         self.transport = transport
         self.connectionMade()
 
-    # Twisted-style overrides --------------------------------------------- #
+    # Callback overrides -------------------------------------------------- #
     def connectionMade(self):
         """Called when a connection is established (override as needed)."""
 
@@ -163,11 +158,10 @@ class Protocol(object):
 
 
 class Factory(object):
-    """Twisted-style protocol Factory (twisted.internet.protocol.Factory).
+    """Protocol factory.
 
     ``buildProtocol(addr)`` instantiates ``self.protocol`` and back-links the
-    factory, matching Twisted so subclasses that only set ``protocol`` work
-    unchanged.
+    factory so subclasses that only set ``protocol`` work.
     """
 
     protocol = None
@@ -195,14 +189,14 @@ class Factory(object):
 
 
 class ClientFactory(Factory):
-    """Twisted-style ClientFactory (twisted.internet.protocol.ClientFactory)."""
+    """Client protocol factory."""
 
 
 # ---------------------------------------------------------------------------- #
 # Process protocol adapter
 # ---------------------------------------------------------------------------- #
 class _ProcessTransportAdapter(object):
-    """Expose the Twisted process-transport surface used by the suite."""
+    """Expose the process-transport methods used by the suite."""
 
     def __init__(self, transport):
         self._transport = transport
@@ -245,13 +239,12 @@ class _ProcessTransportAdapter(object):
             self._transport.close()
 
     def signalProcess(self, signal):
-        """Send a signal; accepts a name ('KILL'/'TERM') or number like Twisted."""
+        """Send a signal; accepts a name ('KILL'/'TERM') or number."""
         if isinstance(signal, str):
             signal = getattr(_signal, 'SIG' + signal, None) or \
                 getattr(_signal, signal)
-        # asyncio's transport (via Popen.send_signal) silently no-ops on a child
-        # that has already exited; Twisted raised ProcessExitedAlready there, and
-        # Asterisk.stop()'s kill path relies on catching it. Reproduce that.
+        # Asterisk.stop()'s kill path relies on ProcessExitedAlready when a
+        # child has already exited.
         get_returncode = getattr(self._transport, 'get_returncode', None)
         if get_returncode is not None and get_returncode() is not None:
             raise ProcessExitedAlready()
@@ -297,20 +290,15 @@ class _ProcessTransportAdapter(object):
 
 
 class _PendingProcessTransport(object):
-    """Synchronous stand-in installed by ``reactor.spawnProcess`` before the
+    """Synchronous stand-in installed by ``spawnProcess`` before the
     asyncio subprocess transport connects.
 
-    Twisted's ``reactor.spawnProcess`` wires ``protocol.transport`` (and returns
-    a transport) synchronously, so a fixture may signal or kill the child on the
-    very next line. asyncio's ``loop.subprocess_exec`` is a coroutine, so
-    ``connection_made`` -- which installs the real transport -- runs later; a
-    kill issued in between (e.g. a SIPp scenario killed from an AMI event
-    handler) would otherwise hit ``protocol.transport is None`` and raise
-    ``AttributeError`` instead of doing anything. This placeholder absorbs
-    ``signalProcess``/``loseConnection`` synchronously and replays them once the
-    real transport arrives, so the kill still lands. It also makes the
-    ``_ProcessConnector`` returned by ``spawnProcess`` usable immediately, since
-    that connector delegates to ``protocol.transport``.
+    ``spawnProcess`` returns synchronously, so a fixture may signal or kill the
+    child on the very next line. ``loop.subprocess_exec`` connects the real
+    transport later, so this placeholder records ``signalProcess`` and
+    ``loseConnection`` calls and replays them once the real transport arrives.
+    It also makes the ``_ProcessConnector`` returned by ``spawnProcess`` usable
+    immediately, since that connector delegates to ``protocol.transport``.
     """
 
     pid = None
@@ -334,8 +322,7 @@ class _PendingProcessTransport(object):
 
     def write(self, data):
         # Nothing in the suite writes to a process's stdin before it has
-        # connected; dropping here matches Twisted, which would not have a
-        # transport to write to either.
+        # connected; there is not yet a transport to write to.
         pass
 
     def replay(self, transport):
@@ -353,7 +340,7 @@ class _PendingProcessTransport(object):
 
 
 class ProcessProtocol(asyncio.SubprocessProtocol):
-    """Twisted-style ProcessProtocol backed by asyncio.SubprocessProtocol.
+    """Process protocol base backed by asyncio.SubprocessProtocol.
 
     Subclasses override ``connectionMade``, ``outReceived(data)``,
     ``errReceived(data)`` and ``processEnded(reason)`` where ``reason`` is a
@@ -363,7 +350,7 @@ class ProcessProtocol(asyncio.SubprocessProtocol):
     # ``transport`` and the lifecycle flags are class-level defaults so that
     # subclasses (AsteriskProtocol, SIPpProtocol) need NOT call super().__init__
     # -- which they historically do not. Instance assignment shadows the class
-    # default on first write. (review finding 1)
+    # default on first write.
     transport = None
     _proc_exited = False
     _stdout_open = True
@@ -375,8 +362,8 @@ class ProcessProtocol(asyncio.SubprocessProtocol):
     def connection_made(self, transport):
         # A pre-connect signal/kill may have been buffered on the synchronous
         # placeholder that spawnProcess installed; replay it onto the real
-        # transport now that the child exists (review finding: SIPp scenario
-        # killed from an AMI event before subprocess_exec resolved).
+        # transport now that the child exists (e.g. a SIPp scenario killed from
+        # an AMI event before subprocess_exec resolved).
         pending = self.transport
         self.transport = _ProcessTransportAdapter(transport)
         if isinstance(pending, _PendingProcessTransport):
@@ -410,7 +397,7 @@ class ProcessProtocol(asyncio.SubprocessProtocol):
         # asyncio may deliver process_exited BEFORE the final pipe_data_received
         # / pipe_connection_lost callbacks. Record the exit but defer
         # processEnded until stdout and stderr have both drained, so no trailing
-        # Asterisk/SIPp output is lost. (review finding 1)
+        # Asterisk/SIPp output is lost.
         self._proc_exited = True
         self._returncode = self._reliable_returncode()
         self.transport.processExited()
@@ -430,8 +417,8 @@ class ProcessProtocol(asyncio.SubprocessProtocol):
         ``os.waitpid`` result, so it is authoritative whenever present (it agrees
         with the watcher on a clean exit and holds the true signal status on the
         raced path). Prefer it; fall back to the transport's value otherwise.
-        This restores Twisted parity, where a signal-terminated process reports
-        ``signal``/``exitCode is None`` rather than a fabricated exit code.
+        A signal-terminated process reports ``signal``/``exitCode is None``
+        rather than a fabricated exit code.
         """
         transport_rc = self.transport.get_returncode()
         inner = getattr(self.transport, '_transport', None)
@@ -461,11 +448,11 @@ class ProcessProtocol(asyncio.SubprocessProtocol):
         try:
             self.processEnded(reason)
         finally:
-            # Mirror Twisted: the process transport is finished once the child
-            # has exited. Closing it also avoids asyncio ResourceWarnings.
+            # The process transport is finished once the child has exited.
+            # Closing it also avoids asyncio ResourceWarnings.
             self.transport.loseConnection()
 
-    # Twisted-style overrides --------------------------------------------- #
+    # Callback overrides -------------------------------------------------- #
     def connectionMade(self):
         """Called once the process has started (override as needed)."""
 

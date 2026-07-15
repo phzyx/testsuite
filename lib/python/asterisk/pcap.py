@@ -136,7 +136,7 @@ async def _pcap_main(options):
     pcap.py is not a test-runtime consumer: scapy's AsyncSniffer delivers packets
     from its own background thread, so this needs no reactor -- only something to
     keep the process alive until Ctrl+C. It therefore runs under its own
-    ``asyncio.run(_pcap_main())`` wrapper (design doc point 6), independent of the
+    ``asyncio.run(_pcap_main())`` wrapper, independent of the
     AsyncTestRuntime, and simply awaits a stop signal wired to SIGINT.
     """
     def callback(packet):

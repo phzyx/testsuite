@@ -139,7 +139,6 @@ class AMILoginACLTest(TestCase):
         try:
             self.ami_factory.login(address, bindAddress=(address, 0)).addCallbacks(self.ami_connect, self.ami_login_error)
         except:
-            # old versions of starpy didn't support bindAddress for AMI
             self.ami_factory.login(address).addCallbacks(self.ami_connect, self.ami_login_error)
 
     # Post test evaluation of success conditions

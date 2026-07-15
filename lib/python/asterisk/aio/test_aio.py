@@ -1,4 +1,4 @@
-"""Unit tests for the asterisk.aio compatibility layer.
+"""Unit tests for the asterisk.aio runtime and protocol helpers.
 
 Covers the asyncio-backed semantics the test suite relies on:
   * Failure.check/trap
@@ -100,9 +100,8 @@ class DelayedCallTests(_LoopTestCase):
     def test_get_time_and_reset(self):
         # TestCase.reset_timeout() calls timeout_id.getTime() and feeds the
         # result to datetime.fromtimestamp(), so getTime() must exist and return
-        # a wall-clock POSIX timestamp. A missing getTime() raised AttributeError
-        # that the Deferred chain swallowed, silently stalling multi-phase SIPp
-        # tests (pjsip hold, stir_shaken, attended_transfer, ...).
+        # a wall-clock POSIX timestamp. A missing getTime() stalls multi-phase
+        # SIPp tests (pjsip hold, stir_shaken, attended_transfer, ...).
         import time as _time
         import datetime as _datetime
         out = {}
@@ -183,13 +182,10 @@ class UDPEchoTests(_LoopTestCase):
 class UDPSyncTransportTests(_LoopTestCase):
     """listenUDP must install a usable transport *synchronously*.
 
-    Twisted's ``reactor.listenUDP`` binds the socket and installs
-    ``protocol.transport`` before returning, so fixtures may write a datagram on
-    the very next line. The strict-RTP fixtures rely on this: they call
-    ``listenUDP(port, proto)`` and immediately ``proto.transport.write(...)``.
-    The asyncio ``create_datagram_endpoint`` is a coroutine that binds later, so
-    listenUDP pre-binds the socket and installs a synchronous transport to close
-    the race. This test asserts that guarantee directly.
+    The strict-RTP fixtures rely on this: they call ``listenUDP(port, proto)``
+    and immediately ``proto.transport.write(...)``. listenUDP pre-binds the
+    socket and installs a synchronous transport before the receive endpoint is
+    ready. This test asserts that guarantee directly.
     """
 
     def test_transport_usable_before_endpoint_awaited(self):
@@ -226,7 +222,7 @@ class UDPSyncTransportTests(_LoopTestCase):
 # --------------------------------------------------------------------------- #
 class _CollectingProcess(ProcessProtocol):
     # Deliberately does NOT call super().__init__(), mirroring AsteriskProtocol
-    # and SIPpProtocol, to prove the adapter works without it (review finding 1).
+    # and SIPpProtocol, to prove the adapter works without it.
     def __init__(self, record):
         self._record = record
 
@@ -282,13 +278,11 @@ class SubprocessTests(_LoopTestCase):
 class SubprocessSyncKillTests(_LoopTestCase):
     """spawnProcess must accept a signal/kill issued *synchronously*.
 
-    Twisted wires ``protocol.transport`` inside ``spawnProcess``; the suite kills
-    scenarios on the next line (SIPp is killed straight from an AMI event
-    handler). asyncio's ``subprocess_exec`` is a coroutine, so without a
-    synchronous placeholder ``protocol.transport`` is ``None`` at that point and
-    ``self.transport.signalProcess('KILL')`` raises ``AttributeError``. This
-    reproduces that exact call ordering and asserts the child is actually
-    killed, not that the call silently blew up.
+    The suite may kill scenarios on the next line after ``spawnProcess`` returns
+    (SIPp is killed straight from an AMI event handler). The runtime installs a
+    synchronous placeholder so ``protocol.transport.signalProcess('KILL')`` can
+    be called before the subprocess connection callback arrives. This test
+    asserts the child is actually killed, not that the call silently blew up.
     """
 
     def test_kill_before_connection_made_is_replayed(self):
@@ -438,7 +432,7 @@ class SubprocessSyncKillTests(_LoopTestCase):
 
 
 # --------------------------------------------------------------------------- #
-# Listener bind-failure propagation (review finding 6)
+# Listener bind-failure propagation
 # --------------------------------------------------------------------------- #
 class BindFailureTests(_LoopTestCase):
 
@@ -469,7 +463,7 @@ class BindFailureTests(_LoopTestCase):
 
 
 # --------------------------------------------------------------------------- #
-# Subprocess pipe-drain ordering (review finding 1)
+# Subprocess pipe-drain ordering
 # --------------------------------------------------------------------------- #
 class _BulkCollectingProcess(ProcessProtocol):
     def __init__(self, record):
@@ -529,7 +523,7 @@ class CallInThreadTests(_LoopTestCase):
 
 
 # --------------------------------------------------------------------------- #
-# TCP client: clientConnectionLost notification + reconnect (review blocker 1)
+# TCP client: clientConnectionLost notification + reconnect
 # --------------------------------------------------------------------------- #
 class _DroppingServerProto(object):
     """Server-side protocol that drops every connection as soon as it opens."""
@@ -631,7 +625,7 @@ class TCPClientNotificationTests(_LoopTestCase):
 
 
 # --------------------------------------------------------------------------- #
-# connectTCP honors timeout and bindAddress (review blocker 2)
+# connectTCP honors timeout and bindAddress
 # --------------------------------------------------------------------------- #
 class _AcceptingServerProto(object):
     def makeConnection(self, transport):
@@ -693,7 +687,7 @@ class ConnectTCPOptionsTests(_LoopTestCase):
 
 
 # --------------------------------------------------------------------------- #
-# current_runtime().stop() is idempotent (review blocker 3)
+# current_runtime().stop() is idempotent
 # --------------------------------------------------------------------------- #
 class ReactorStopIdempotentTests(_LoopTestCase):
 
@@ -714,7 +708,7 @@ class ReactorStopIdempotentTests(_LoopTestCase):
 
 
 # --------------------------------------------------------------------------- #
-# aio.utils.getProcessOutputAndValue (replaces twisted.internet.utils)
+# aio.utils.getProcessOutputAndValue
 # --------------------------------------------------------------------------- #
 class GetProcessOutputAndValueTests(_LoopTestCase):
 
@@ -787,8 +781,7 @@ class AsteriskCliCommandBridgeTests(_LoopTestCase):
 
         cli = AsteriskCliCommand('127.0.0.1', self.BAD_CMD)
 
-        # Awaiting execute() raises AsteriskCliCommandError -- the async analogue
-        # of the old errback(Failure(command)) delivery.
+        # Awaiting execute() raises AsteriskCliCommandError.
         with self.assertRaises(AsteriskCliCommandError) as ctx:
             self.loop.run_until_complete(cli.execute())
 
@@ -981,7 +974,7 @@ class StreamProtocolBaseTests(unittest.TestCase):
 
 
 # --------------------------------------------------------------------------- #
-# B1.0: explicit lifecycle state machine
+# Explicit lifecycle state machine
 # --------------------------------------------------------------------------- #
 class RuntimeStateMachineTests(_LoopTestCase):
     """The runtime advances through explicit _RuntimeState transitions, and the
@@ -1026,7 +1019,7 @@ class RuntimeStateMachineTests(_LoopTestCase):
 
 
 # --------------------------------------------------------------------------- #
-# B1.0: re-entrant run() is rejected even after stop() flips running False
+# Re-entrant run() is rejected even after stop() flips running False
 # --------------------------------------------------------------------------- #
 class ReentrantRunTests(_LoopTestCase):
 
@@ -1051,7 +1044,7 @@ class ReentrantRunTests(_LoopTestCase):
 
 
 # --------------------------------------------------------------------------- #
-# B1.0: reset() is guarded (test-facing), never a silent registry discard
+# reset() is guarded (test-facing), never a silent registry discard
 # --------------------------------------------------------------------------- #
 class ResetSafetyTests(_LoopTestCase):
 
@@ -1084,7 +1077,7 @@ class ResetSafetyTests(_LoopTestCase):
 
 
 # --------------------------------------------------------------------------- #
-# B1.0: install_runtime() refuses to silently orphan the incumbent runtime
+# install_runtime() refuses to silently orphan the incumbent runtime
 # --------------------------------------------------------------------------- #
 class InstallGuardTests(_LoopTestCase):
     """Installing a replacement is rejected while the incumbent is active or
@@ -1133,7 +1126,7 @@ class InstallGuardTests(_LoopTestCase):
 
 
 # --------------------------------------------------------------------------- #
-# B1.0: sequential runs with fresh installed runtimes own distinct loop/runtime
+# Sequential runs with fresh installed runtimes own distinct loop/runtime
 # --------------------------------------------------------------------------- #
 class SequentialRunOwnershipTests(unittest.TestCase):
     """Two sequential runs, each installing a freshly created runtime, own
@@ -1168,8 +1161,8 @@ class SequentialRunOwnershipTests(unittest.TestCase):
 
 
 # --------------------------------------------------------------------------- #
-# B1.1: native entrypoint primitives -- startup driver, await-only bridge,
-# ordered teardown -- with responsibilities decoupled (design doc points 2/2b/4)
+# Native entrypoint primitives -- startup driver, await-only bridge,
+# ordered teardown -- with responsibilities decoupled
 # --------------------------------------------------------------------------- #
 class NativeEntrypointTests(_LoopTestCase):
     """start_all() drives startup, run_async() only awaits completion, and
@@ -1279,7 +1272,7 @@ class NativeEntrypointTests(_LoopTestCase):
 
 
 # --------------------------------------------------------------------------- #
-# B1.2: single start_all() startup driver -- cooperative stop-during-STARTING,
+# Single start_all() startup driver -- cooperative stop-during-STARTING,
 # binds registered mid-startup drained before kickoff, cross-thread stop, and
 # the legacy blocking run() driving the SAME start_all/run_async/shutdown path.
 # --------------------------------------------------------------------------- #
@@ -1527,9 +1520,9 @@ class StartupDriverTests(_LoopTestCase):
 
 
 # --------------------------------------------------------------------------- #
-# B1.3: async pluggable-module lifecycle -- retained instances, awaited start()
+# Async pluggable-module lifecycle -- retained instances, awaited start()
 # in registration order during STARTING, close() on every started module in the
-# same forward order at shutdown (design doc point 3).
+# same forward order at shutdown.
 # --------------------------------------------------------------------------- #
 class _RecordingModule(object):
     """Test double for a pluggable module with async start()/close() hooks.
@@ -1678,7 +1671,7 @@ class ModuleLifecycleTests(_LoopTestCase):
     def test_broken_close_is_isolated_but_reported(self):
         # One module's close() raising must not skip the others' close()
         # (isolation), but the error must still surface at the end of teardown
-        # rather than be silently swallowed (finding 4: isolated != invisible).
+        # rather than be silently swallowed (isolated != invisible).
         log = []
         a = _RecordingModule('a', log)
         b = _RecordingModule('b', log, fail_close=True)
@@ -1794,7 +1787,7 @@ class ModuleLifecycleTests(_LoopTestCase):
 
 
 # --------------------------------------------------------------------------- #
-# B1.1: test_runner._main -- construction under a running loop, guaranteed
+# test_runner._main -- construction under a running loop, guaranteed
 # teardown + detach on every exit path (including constructor/module failures)
 # --------------------------------------------------------------------------- #
 class MainEntrypointTests(unittest.TestCase):
@@ -2015,7 +2008,7 @@ class MainEntrypointTests(unittest.TestCase):
         # *normally* (no exception unwinds through the finally). If the ordered
         # teardown then ALSO fails, the teardown error must be suppressed and
         # the ORIGINAL fatal error is what propagates -- otherwise a broken
-        # teardown would hide the real cause of failure (finding 2).
+        # teardown would hide the real cause of failure.
         rt_box = {}
         tc = self
 
@@ -2062,10 +2055,10 @@ class MainEntrypointTests(unittest.TestCase):
 
 
 # --------------------------------------------------------------------------- #
-# B1.4: teardown late-registration policy -- once ordered shutdown is running
+# Teardown late-registration policy -- once ordered shutdown is running
 # (state STOPPING) every registration entry point refuses cleanly, so a callback
 # firing during teardown cannot slip a resource past the snapshot-based cleanup
-# or queue work that survives the run (design doc point 4).
+# or queue work that survives the run.
 # --------------------------------------------------------------------------- #
 class TeardownPolicyTests(_LoopTestCase):
     """A callback firing during ordered shutdown must not register live work."""
@@ -2186,8 +2179,8 @@ class TeardownPolicyTests(_LoopTestCase):
     def test_stopped_runtime_refuses_registrations(self):
         # A runtime left STOPPED after a completed run is a spent teardown
         # target, not a valid registration surface. Every entry point must refuse
-        # until reset() returns it to COLLECTING (design doc point 4: STOPPED is
-        # included in the teardown gate on purpose).
+        # until reset() returns it to COLLECTING (STOPPED is included in the
+        # teardown gate on purpose).
         fired = {'timer': False, 'kickoff': False}
 
         async def go():
@@ -2283,7 +2276,7 @@ class TeardownPolicyTests(_LoopTestCase):
                             for c in reports))
         self.assertIsNone(self.runtime._failure)
 
-    def test_midrun_shim_timer_is_torn_down_by_runtime_shutdown(self):
+    def test_midrun_timer_is_torn_down_by_runtime_shutdown(self):
         # Single-registry ownership: a callLater scheduled mid-run through
         # current_runtime() lands in the runtime's own registry and is cancelled
         # by the ordered shutdown -- it neither fires after the run nor leaks.
@@ -2307,10 +2300,10 @@ class TeardownPolicyTests(_LoopTestCase):
 
 
 # --------------------------------------------------------------------------- #
-# B1.4: owned-task exception policy -- every runtime-owned task has its exception
+# Owned-task exception policy -- every runtime-owned task has its exception
 # retrieved (no "task exception was never retrieved"); a fatal task stores the
 # first failure and stops the runtime, a non-fatal one is dispatched to
-# loop.call_exception_handler (design doc point 4).
+# loop.call_exception_handler.
 # --------------------------------------------------------------------------- #
 class OwnedTaskExceptionTests(_LoopTestCase):
     """create_task/track_task retain background tasks and govern their errors."""
@@ -2422,8 +2415,8 @@ class OwnedTaskExceptionTests(_LoopTestCase):
 
 
 # --------------------------------------------------------------------------- #
-# B1.x review findings 1/2/3/4: teardown correctness -- ordered shutdown runs
-# every phase best-effort and surfaces (never masks) the errors it collects,
+# Teardown correctness -- ordered shutdown runs
+# every shutdown stage best-effort and surfaces (never masks) the errors it collects,
 # the legacy blocking run() preserves a fatal error across a failing teardown,
 # and track_task refuses to silently leak a pending task on a closed loop.
 # --------------------------------------------------------------------------- #
@@ -2433,7 +2426,7 @@ class TeardownCorrectnessTests(_LoopTestCase):
         return self.loop.run_until_complete(coro)
 
     def test_shutdown_continues_through_all_phases_on_port_failure(self):
-        # Finding 1: a failing port stopListening() must NOT abort the phases
+        # A failing port stopListening() must NOT abort the shutdown stages
         # after it. The connector is still disconnected and the tracked task is
         # still cancelled/drained; the port error is re-raised only at the end.
         class _FailingPort(object):
@@ -2465,8 +2458,8 @@ class TeardownCorrectnessTests(_LoopTestCase):
         self.assertEqual(self.runtime.live_resources(), [])
 
     def test_shutdown_aggregates_multiple_cleanup_errors(self):
-        # Finding 4: an async-cleanup failure and a module close() failure are
-        # both isolated AND both reported -- aggregated into an ExceptionGroup
+        # An async-cleanup failure and a module close() failure are both
+        # isolated AND both reported -- aggregated into an ExceptionGroup
         # rather than one silently discarded.
         async def bad_cleanup():
             raise ValueError('cleanup failed')
@@ -2603,8 +2596,8 @@ class TeardownCorrectnessTests(_LoopTestCase):
         self.assertIsNone(connector._transport)   # cleared
 
     def test_track_task_rejects_pending_task_on_closed_loop(self):
-        # Finding 3: adopting a still-pending task whose loop is already closed
-        # cannot be drained (touching a closed loop raises), so it must be
+        # A still-pending task whose loop is already closed cannot be drained
+        # (touching a closed loop raises), so it must be
         # rejected loudly rather than silently left alive past the run. Modelled
         # with a stand-in exposing exactly the two attributes the reject branch
         # reads -- a real pending Task on a closed loop would otherwise leak and
@@ -2626,9 +2619,9 @@ class TeardownCorrectnessTests(_LoopTestCase):
         self.assertIn('closed loop', str(ctx.exception))
 
     def test_legacy_run_teardown_failure_does_not_mask_fatal_task(self):
-        # Finding 2 (legacy path): the blocking run() must snapshot the fatal
-        # _failure and, if teardown ALSO fails, suppress the teardown error and
-        # re-raise the original fatal -- and still land STOPPED (via _finish()).
+        # The blocking run() must snapshot the fatal _failure and, if teardown
+        # ALSO fails, suppress the teardown error and re-raise the original fatal
+        # -- and still land STOPPED (via _finish()).
         async def boom():
             raise RuntimeError('original fatal legacy failure')
 
@@ -2682,8 +2675,8 @@ class _RunTestObjectFake(object):
 
 
 class RunTestObjectTests(unittest.TestCase):
-    """B2.1: ``run_test_object`` builds the object inside the loop via a factory,
-    drives the B1 lifecycle, runs optional in-loop ``before_start``/``after_run``
+    """``run_test_object`` builds the object inside the loop via a factory,
+    drives the runtime lifecycle, runs optional in-loop ``before_start``/``after_run``
     hooks (before the loop closes), returns the object after shutdown, and
     detaches the runtime.
 
@@ -2721,7 +2714,7 @@ class RunTestObjectTests(unittest.TestCase):
         self.assertTrue(test.passed)
 
     def test_after_run_executes_before_loop_closes(self):
-        # The B2 invariant: a post-run, loop-dependent step must run BEFORE
+        # Invariant: a post-run, loop-dependent step must run BEFORE
         # asyncio.run() closes the loop. Capture the loop inside after_run and
         # assert it was open there but closed once the helper returned.
         seen = {}
@@ -2853,13 +2846,11 @@ class RunTestObjectTests(unittest.TestCase):
 
 
 class HandleOriginateFailureTests(unittest.TestCase):
-    """Regression for B5.2a-1.
+    """Regression for handle_originate_failure with a raw exception.
 
-    After the ari.py await conversion, TestCase.handle_originate_failure()
-    is called with a raw exception (the object re-raised by ``await`` on a
-    starpy Deferred) rather than a Twisted-style Failure. It must degrade
-    gracefully -- log, stop the test, and NOT raise AttributeError on the
-    Failure-only methods getErrorMessage()/getTraceback().
+    TestCase.handle_originate_failure() may receive a raw exception from an
+    awaited starpy Deferred. It must log, stop the test, and NOT raise
+    AttributeError on optional Failure-style methods.
     """
 
     def setUp(self):

@@ -201,10 +201,10 @@ class CheckVoicemailChangePassword(VoiceMailTest):
         shutting donw the reactor.
 
         Keyword Arguments:
-        result              -- A twistd deferred object
+        result              -- The stop observer result
 
         Returns:
-        A twisted deferred object.
+        The stop observer result.
         """
         if not self.check_test_conditions():
             logger.error("Test failed condition checks")

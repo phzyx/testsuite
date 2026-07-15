@@ -115,7 +115,7 @@ def load_test_modules(test_config, test_object):
 
     # Retain constructed modules on the runtime so they (a) survive past
     # construction rather than being GC'd, and (b) are enrolled in the async
-    # start()/close() lifecycle driven by start_all/_shutdown (design point 3).
+    # start()/close() lifecycle driven by start_all/_shutdown.
     runtime = get_current_runtime()
 
     for module_spec in test_config['test-modules']['modules']:
@@ -281,7 +281,7 @@ def read_module_paths(test_config, test_path):
 
 
 async def _main(test_directory, test_config, result):
-    """Native asyncio entrypoint for a single test run (Phase B step B1.1).
+    """Native asyncio entrypoint for a single test run.
 
     Driven by ``asyncio.run()``, so ``_main`` owns the event loop and the single
     per-run ``AsyncTestRuntime`` for the *whole* run, construction included. The
@@ -359,7 +359,7 @@ async def _maybe_await(value):
 
     In-loop hooks (``before_start``/``after_run``) may be written as plain
     callables (returning ``None``), coroutine functions, or functions that
-    return a shim ``Deferred``. All three shapes are awaitable-or-not; this
+    return a chainable awaitable. All three shapes are awaitable-or-not; this
     normalizes them so the hook driver can ``await`` uniformly.
     """
     if inspect.isawaitable(value):
@@ -372,7 +372,7 @@ async def _run_object_async(factory, before_start, after_run, result):
 
     Where ``_main`` builds the test object from a parsed test-config, this builds
     it from a caller-supplied ``factory`` -- the shape a ``run-test`` script needs
-    now that construction must happen *inside* the running loop (B1). The
+    now that construction must happen *inside* the running loop. The
     lifecycle is otherwise identical to ``_main``: install a fresh per-run
     runtime first (so ``reactor.*`` registrations from the constructor land in
     it), construct via ``factory()``, drive the shared startup state machine
@@ -388,7 +388,7 @@ async def _run_object_async(factory, before_start, after_run, result):
       * ``after_run(test)`` runs *after* ``run_async`` returns but *before* the
         ``finally`` teardown and, crucially, before ``asyncio.run()`` closes the
         loop -- the slot for post-run work (e.g. ``stop_asterisk()``) a script
-        issued after ``reactor.run()``. Running it here upholds the B2 invariant
+        issued after ``reactor.run()``. Running it here upholds the invariant
         that no loop-dependent step is left for after the loop is gone.
 
     Either hook may be sync or async (see ``_maybe_await``). The constructed test

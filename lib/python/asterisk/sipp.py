@@ -490,8 +490,7 @@ class SIPpScenarioSequence(object):
                 if self._scenario_start_fn:
                     self._scenario_start_fn(scenario)
 
-            # DeferredList in the original waited for every child regardless of
-            # errors; return_exceptions=True preserves that (no fail-fast).
+            # Wait for every child regardless of errors; do not fail fast.
             results = await asyncio.gather(*awaitables, return_exceptions=True)
             result = [(not isinstance(r, BaseException), r) for r in results]
 
@@ -743,7 +742,7 @@ class SIPpScenario(object):
         # Wait for the process to exit
         result = await stop_future
 
-        # Bookkeeping formerly done in __scenario_callback
+        # Record the scenario result.
         self.exited = True
         self.result = result
         if (result.exitcode == 0):
@@ -754,8 +753,7 @@ class SIPpScenario(object):
             LOGGER.warning("SIPp Scenario %s Failed [%d]" %
                            (self.scenario['scenario'], result.exitcode))
 
-        # If a test case was injected, auto-fail it on scenario failure
-        # (formerly __evaluate_scenario_results)
+        # If a test case was injected, auto-fail it on scenario failure.
         if test_case:
             self._test_case = test_case
             if not self.passed:
@@ -852,7 +850,7 @@ class CoordinatedScenario(object):
         sender_task = asyncio.ensure_future(self.sender.run(test_case))
         await asyncio.gather(receiver_task, sender_task)
 
-        # Bookkeeping formerly done in __scenario_callback
+        # Record the paired scenario result.
         if self.sender.exited and self.receiver.exited:
             self.exited = True
             if self.sender.passed and self.receiver.passed:
@@ -944,8 +942,7 @@ class SIPpTest(TestCase):
 
     async def __evaluate_scenarios(self, scenarios):
         """Run all scenarios and set the aggregate pass/fail status"""
-        # DeferredList in the original waited for every child regardless of
-        # errors; return_exceptions=True preserves that (no fail-fast).
+        # Wait for every child regardless of errors; do not fail fast.
         results = await asyncio.gather(
             *[scenario.run(self) for scenario in scenarios],
             return_exceptions=True)

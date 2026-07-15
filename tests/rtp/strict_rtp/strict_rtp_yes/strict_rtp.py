@@ -23,8 +23,7 @@ class StrictRtpTester(object):
     """A pluggable module for verifying the strict RTP functionality"""
 
     class NoAnswerProtocol(DatagramProtocol):
-        """The twisted NoAnswerProtocol that fails the test if any packets are received
-        """
+        """Protocol that fails the test if any packets are received."""
 
         def __init__(self, test_object):
             """Constructor

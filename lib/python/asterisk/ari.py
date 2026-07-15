@@ -27,10 +27,9 @@ from .pluggable_registry import PLUGGABLE_EVENT_REGISTRY,\
     PLUGGABLE_ACTION_REGISTRY, var_replace
 from .test_suite_utils import all_match
 from asterisk.aio.runtime import current_runtime
-# asyncio port (design doc Section 6.2): the autobahn ARI WebSocket client is
-# reimplemented on the ``websockets`` library over the ``asterisk.aio`` reactor
-# loop. The (unused) server classes reuse the sans-I/O server adapter shared
-# with media_websocket so the whole module is free of autobahn/twisted.
+# ARI WebSocket support is implemented on the ``websockets`` library over the
+# ``asterisk.aio`` reactor loop. The server classes reuse the sans-I/O server
+# adapter shared with media_websocket.
 from asterisk.media_websocket import (_ConnectRequest, _SansIOServerProtocol,
                                       _on_loop)
 
@@ -344,11 +343,10 @@ def _build_rest_request(method, uri, kwargs):
 
 
 class AriClientFactory(object):
-    """Factory that opens an ARI WebSocket client on the reactor loop.
+    """Factory that opens an ARI WebSocket client on the runtime loop.
 
-    The autobahn ``WebSocketClientFactory``/``connectWS`` pair is replaced by
-    the high-level ``websockets.connect`` coroutine, retried with the same
-    ``timeout_secs`` budget the twisted version used.
+    Connections use ``websockets.connect`` and retry within the configured
+    ``timeout_secs`` budget.
     """
 
     def __init__(self, receiver, host, apps, userpass, port=DEFAULT_PORT,
@@ -385,8 +383,7 @@ class AriClientFactory(object):
     def reconnect(self):
         """Attempt to (re)connect the ARI WebSocket.
 
-        Gives up after timeout_secs has been exceeded, mirroring the twisted
-        factory's behaviour.
+        Gives up after timeout_secs has been exceeded.
         """
         self.attempts += 1
         LOGGER.debug("WebSocket attempt #%d", self.attempts)
@@ -415,11 +412,10 @@ class AriClientFactory(object):
 
 
 class _ClientTransport(object):
-    """Minimal transport shim over an AriClientProtocol.
+    """Minimal transport facade over an AriClientProtocol.
 
-    autobahn/twisted exposed ``protocol.transport`` with ``loseConnection()``;
-    the websockets port has no such transport, so this shim maps the one method
-    fixtures use onto the protocol's ``dropConnection``.
+    Exposes ``loseConnection()`` for fixtures that close via
+    ``protocol.transport``.
     """
 
     def __init__(self, protocol):
@@ -443,9 +439,8 @@ class AriClientProtocol(object):
         self.factory = factory
         self._loop = current_runtime()._ensure_loop()
         self._connection = None
-        # Twisted/autobahn exposed the protocol's transport with a
-        # loseConnection() method; fixtures (e.g. ari_client.py) call
-        # ``ws_client.transport.loseConnection()``. Preserve that surface.
+        # Fixtures (e.g. ari_client.py) call
+        # ``ws_client.transport.loseConnection()``.
         self.transport = _ClientTransport(self)
 
     def _attach(self, connection):
@@ -483,7 +478,7 @@ class AriClientProtocol(object):
         self.receiver.on_ws_event(json.loads(msg))
 
     def sendMessage(self, payload):
-        """Send a text frame (``payload`` is UTF-8 bytes, as autobahn used)."""
+        """Send a text frame (``payload`` is UTF-8 bytes)."""
         data = payload.decode('utf-8') \
             if isinstance(payload, (bytes, bytearray)) else payload
         self._dispatch(self._connection.send(data))
@@ -493,11 +488,10 @@ class AriClientProtocol(object):
         self._dispatch(self._connection.close(code, reason))
 
     def sendClose(self, code=1000, reason=""):
-        """Close the WebSocket connection (autobahn WebSocketProtocol API).
+        """Close the WebSocket connection.
 
         Fixtures (e.g. the inbound media_client) call ``sendClose(code)`` on the
-        ARI client protocol just as they do on the media client protocol; keep
-        that surface by delegating to ``dropConnection``.
+        ARI client protocol just as they do on the media client protocol.
         """
         self.dropConnection(code, reason)
 
@@ -526,10 +520,9 @@ class AriClientProtocol(object):
 
 
 class AriServerFactory(object):
-    """Factory (bound via ``reactor.listenTCP``) for ARI WebSocket servers.
+    """Factory for ARI WebSocket servers.
 
-    Retained for API compatibility; no test currently drives the ARI server
-    path. Built on the shared sans-I/O server adapter.
+    Built on the shared sans-I/O server adapter.
     """
 
     def __init__(self, receiver, uri, protocols, server_name, reactor=None):
@@ -539,7 +532,7 @@ class AriServerFactory(object):
         :param uri: URI to be served.
         :param protocols: List of protocols to accept.
         :param server_name: Server name for the HTTP response.
-        :param reactor: Ignored (accepted for signature compatibility).
+        :param reactor: Optional runtime argument accepted by existing callers.
         """
         self.receiver = receiver
         self.uri = uri
@@ -563,7 +556,7 @@ class AriServerProtocol(_SansIOServerProtocol):
     def _on_connect(self, request):
         LOGGER.debug("New WebSocket Connected")
         if hasattr(self.receiver, 'on_ws_connect'):
-            # Present the autobahn-shaped request (``.peer``/``.path``/
+            # Present the request object surface (``.peer``/``.path``/
             # ``.headers``) the receiver expects, as the media server does.
             return self.receiver.on_ws_connect(_ConnectRequest(self.peer,
                                                                request))

@@ -52,7 +52,7 @@ class AsteriskCliCommandError(Exception):
     Carries the originating CLI command object (``AsteriskCliCommand`` or
     ``AsteriskRemoteCliCommand``) on ``.command`` so a caller awaiting
     ``cli_exec()`` can still inspect ``exitcode``/``output``/``err`` on the
-    failure path -- the same object the old Deferred errback delivered.
+    failure path.
     """
 
     def __init__(self, command):
@@ -122,7 +122,7 @@ class AsteriskRemoteCliCommand(object):
         LOGGER.debug('Executing {0}'.format(cmd))
 
         # Bound the whole SSH operation (connect + command) so a hung remote or
-        # network never wedges the reactor, per the SSH contract (design 6.5).
+        # network never wedges the runtime.
         timeout = self.config.get('timeout', 60)
 
         connect_kwargs = {
@@ -223,8 +223,7 @@ class AsteriskCliCommand(object):
             raise AsteriskCliCommandError(self)
         except Exception as exc:
             # A startup failure (bad executable, permissions, OSError from
-            # create_subprocess_exec) must surface as a failure -- matching the
-            # old Deferred helper, which errbacked on any task exception.
+            # create_subprocess_exec) must surface as a task failure.
             self.exitcode = -1
             self.output = ''
             self.err = str(exc)
@@ -1002,8 +1001,8 @@ class Asterisk(object):
             cli_protocol = AsteriskRemoteCliCommand(self.remote_config, cmd)
         # execute() is a coroutine; schedule it as a runtime task so callers may
         # either ``await`` the returned task or fire-and-forget (the task still
-        # runs). This preserves the old Deferred's self-executing behaviour and
-        # is safe to call before the loop is running (it runs once it starts).
+        # runs). This is safe to call before the loop is running; it runs once
+        # the runtime starts.
         return current_runtime().create_task(cli_protocol.execute())
 
     def cli_exec_blocking(self, cli_cmd, responsekey="", timeout=10):

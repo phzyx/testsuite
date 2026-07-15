@@ -748,8 +748,7 @@ class VOIPProxy(VOIPSniffer):
     """
 
     class ProxyProtocol(DatagramProtocol):
-        """The twisted DatagramProtocol that swaps packets
-        """
+        """Datagram protocol that swaps packets."""
 
         def __init__(self, rules, cb):
             """Constructor
@@ -801,4 +800,3 @@ class VOIPProxy(VOIPSniffer):
 
         protocol = VOIPProxy.ProxyProtocol(self.rules, self.process_packet)
         current_runtime().listenUDP(self.port, protocol)
-

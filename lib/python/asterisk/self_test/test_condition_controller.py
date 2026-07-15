@@ -63,8 +63,8 @@ class ControllerErrorPathTest(unittest.TestCase):
         cond = FailingCondition()
         controller.register_post_test_condition(cond)
 
-        # Must not raise: previously a raw exception was passed to observers,
-        # which then blew up calling get_status() on it.
+        # Must not raise: observers receive a TestCondition object with
+        # get_status(), not the raw exception.
         run_coroutine(controller.evaluate_post_checks())
 
         # Observers received the TestCondition object (not the exception) and

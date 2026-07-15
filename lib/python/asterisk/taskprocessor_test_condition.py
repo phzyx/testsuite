@@ -96,8 +96,7 @@ class TaskprocessorPreTestCondition(TaskprocessorTestCondition):
         # when the test is finished
         super(TaskprocessorPreTestCondition, self).pass_check()
 
-        # DeferredList in the original waited for every child regardless of
-        # errors; return_exceptions=True preserves that (no fail-fast).
+        # Wait for every child regardless of errors; do not fail fast.
         await asyncio.gather(*[
             super(TaskprocessorPreTestCondition, self).get_task_processors(ast)
             for ast in self.ast], return_exceptions=True)
@@ -116,8 +115,7 @@ class TaskprocessorPostTestCondition(TaskprocessorTestCondition):
             super(TaskprocessorPostTestCondition, self).fail_check(msg)
             return
 
-        # DeferredList in the original waited for every child regardless of
-        # errors; return_exceptions=True preserves that (no fail-fast).
+        # Wait for every child regardless of errors; do not fail fast.
         await asyncio.gather(*[
             super(TaskprocessorPostTestCondition, self).get_task_processors(ast)
             for ast in self.ast], return_exceptions=True)

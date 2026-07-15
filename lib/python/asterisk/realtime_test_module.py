@@ -6,15 +6,13 @@ Mark Michelson <mmichelson@digium.com>
 This program is free software, distributed under the terms of
 the GNU General Public License Version 2.
 
-asyncio port (design doc Section 6.2): the ``twisted.web`` ``Resource``/``Site``
-tree is replaced by an ``aiohttp`` application served on the ``asterisk.aio``
-reactor loop. The realtime data model and the per-operation request handling
-(argument unpacking, LIKE handling, URL-vs-POST argument separation, row
-encoding) are preserved verbatim; only the transport/routing layer changed.
+Realtime HTTP requests are served by an ``aiohttp`` application on the
+``asterisk.aio`` runtime loop. The realtime data model and the per-operation
+request handling cover argument unpacking, LIKE handling, URL-vs-POST argument
+separation, and row encoding.
 
 Requests are routed as ``/{table}/{operation}`` where operation is one of
-single/multi/update/store/destroy/require/static, matching the previous
-RootResource -> TableResource -> LeafResource hierarchy.
+single/multi/update/store/destroy/require/static.
 """
 import logging
 import sys
@@ -145,12 +143,13 @@ class RealtimeData(object):
         return len(to_delete)
 
 
-class _ShimRequest(object):
-    """Adapts an aiohttp request into the small twisted-request surface the
-    resource handlers use: ``args`` (a dict of ``bytes`` keys to lists of
-    ``bytes`` values, merging URL query and POST form parameters as
-    twisted.web did) and ``uri`` (the raw request target, bytes). ``code`` lets
-    a handler request a non-200 status (the old NoResource 404 path)."""
+class _HandlerRequest(object):
+    """Request data object passed to resource handlers.
+
+    ``args`` is a dict of ``bytes`` keys to lists of ``bytes`` values, merging
+    URL query and POST form parameters. ``uri`` is the raw request target as
+    bytes. ``code`` lets a handler request a non-200 status.
+    """
 
     def __init__(self, args, uri):
         self.args = args
@@ -163,8 +162,7 @@ class LeafResource(object):
 
     Each subclass represents an operation to perform on a table and implements
     ``render_GET``/``render_POST`` returning the response body as bytes. The
-    request-data helpers (argument unpacking, encoding) are shared here and are
-    unchanged from the twisted implementation.
+    request-data helpers (argument unpacking, encoding) are shared here.
     """
 
     def __init__(self, table_name, rt_data):
@@ -249,9 +247,8 @@ class LeafResource(object):
         :param request: The request to which we are responding.
         :returns: The error body as bytes.
 
-        Performed if a request tries to access a nonexistent table. Mirrors
-        twisted's NoResource, which set a 404 status; here the status is carried
-        on the shim request and applied by the dispatcher.
+        Performed if a request tries to access a nonexistent table. The status is
+        carried on the request object and applied by the dispatcher.
         """
         request.code = 404
         return ("Table %s could not be found" % self.table_name).encode("utf-8")
@@ -464,10 +461,9 @@ class RealtimeTestModule(object):
         """Create the aiohttp realtime HTTP server.
 
         A single catch-all route dispatches ``/{table}/{operation}`` requests to
-        the operation handler, reproducing the twisted root/table/leaf resource
-        traversal. Startup is bound through the reactor's awaited pre-run path so
-        a bind failure surfaces out of run(), and the AppRunner is registered for
-        async cleanup at shutdown.
+        the operation handler. Startup is bound through the reactor's awaited
+        pre-run path so a bind failure surfaces out of run(), and the AppRunner
+        is registered for async cleanup at shutdown.
         """
         current_runtime().addStartupBind(self._start, label='realtime-http:46821')
 
@@ -484,17 +480,15 @@ class RealtimeTestModule(object):
     async def _dispatch(self, request):
         """Route a request to the matching operation resource.
 
-        Builds the twisted-style ``args``/``uri`` shim (merging URL query and
-        POST form parameters, both as bytes), selects the ``_<operation>Resource``
-        by reflection as the old TableResource.getChild did, invokes the
-        method-specific render handler, and returns its bytes body with the
-        status the handler requested.
+        Builds the ``args``/``uri`` request object (merging URL query and POST
+        form parameters, both as bytes), selects the ``_<operation>Resource`` by
+        reflection, invokes the method-specific render handler, and returns its
+        bytes body with the status the handler requested.
         """
         table = request.match_info['table']
         operation = request.match_info['operation']
 
-        # Merge URL query and POST form parameters into {bytes: [bytes]}, the
-        # shape twisted's request.args presented.
+        # Merge URL query and POST form parameters into {bytes: [bytes]}.
         args = {}
         for key, value in request.rel_url.query.items():
             args.setdefault(key.encode("utf-8"), []).append(value.encode("utf-8"))
@@ -507,7 +501,7 @@ class RealtimeTestModule(object):
                 args.setdefault(key.encode("utf-8"), []).append(
                     value.encode("utf-8"))
 
-        shim = _ShimRequest(args, request.path_qs.encode("utf-8"))
+        handler_request = _HandlerRequest(args, request.path_qs.encode("utf-8"))
 
         resource_cls = getattr(THIS_MODULE, "_" + operation + "Resource", None)
         if resource_cls is None:
@@ -521,10 +515,10 @@ class RealtimeTestModule(object):
             return web.Response(status=501,
                                 body=b'Method not supported')
 
-        body = handler(shim)
+        body = handler(handler_request)
         if not isinstance(body, (bytes, bytearray)):
             body = bytes(body)
-        return web.Response(status=shim.code, body=body)
+        return web.Response(status=handler_request.code, body=body)
 
     def _ami_connect(self, ami):
         """Callback for when AMI connects.

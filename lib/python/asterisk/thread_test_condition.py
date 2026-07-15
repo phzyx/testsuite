@@ -91,8 +91,7 @@ class ThreadPreTestCondition(ThreadTestCondition):
             result = await ast.cli_exec("core show threads")
             self.parse_threads(ast, result.output)
 
-        # DeferredList in the original waited for every child regardless of
-        # errors; return_exceptions=True preserves that (no fail-fast).
+        # Wait for every child regardless of errors; do not fail fast.
         await asyncio.gather(*[__show_threads(ast) for ast in self.ast],
                              return_exceptions=True)
 
@@ -143,8 +142,7 @@ class ThreadPostTestCondition(ThreadTestCondition):
             result = await ast.cli_exec("core show threads")
             self.parse_threads(ast, result.output)
 
-        # DeferredList in the original waited for every child regardless of
-        # errors; return_exceptions=True preserves that (no fail-fast).
+        # Wait for every child regardless of errors; do not fail fast.
         await asyncio.gather(*[__show_threads(ast) for ast in self.ast],
                              return_exceptions=True)
 

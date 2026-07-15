@@ -383,8 +383,8 @@ class BridgeTestCase(TestCase):
         async def _get_and_check(channel, varname, handler, expected):
             """Await a channel variable, then run its handler.
 
-            Replaces the old ``getVar(...).addCallback(handler, expected)``
-            chain now that starpy AMI calls are awaited directly.
+            The handler receives ``(value, expected)`` after the AMI variable
+            lookup succeeds.
             """
             try:
                 value = await self.ami_uut.getVar(channel, varname)

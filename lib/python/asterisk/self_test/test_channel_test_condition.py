@@ -152,10 +152,9 @@ class ChannelTestConditionUnitTest(unittest.TestCase):
     def test_evaluate_one_instance_raises_no_failfast(self):
         """A CLI error on one instance must not abort the others.
 
-        The original defer.DeferredList waited for every child regardless of
-        errors. asyncio.gather(return_exceptions=True) preserves that: the
-        raising instance is ignored and the healthy instance is still
-        evaluated, so the condition still resolves (Passed here).
+        asyncio.gather(return_exceptions=True) lets the raising instance be
+        ignored while the healthy instance is still evaluated, so the condition
+        still resolves (Passed here).
         """
         obj = ChannelTestCondition(TestConfig())
         obj.allowed_channels = 1

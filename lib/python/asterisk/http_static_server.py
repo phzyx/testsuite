@@ -7,10 +7,9 @@ Matt Jordan <mjordan@digium.com>
 This program is free software, distributed under the terms of
 the GNU General Public License Version 2.
 
-asyncio port (design doc Section 6.2): the ``twisted.web`` ``static.File`` +
-``server.Site`` listener is reimplemented as an ``aiohttp`` static route served
-on the ``asterisk.aio`` reactor loop. aiohttp's static handler provides the
-path-traversal protection the parity contract (Section 6.5) requires.
+The server is an ``aiohttp`` static route served on the ``asterisk.aio`` reactor
+loop. The static handler provides the path-traversal protection this server
+requires.
 """
 
 import logging
@@ -37,8 +36,8 @@ class HTTPStaticServer(object):
         self._port = module_config.get('port', 8090)
         self._runner = None
         # Bind through the reactor's awaited startup path so a failure to claim
-        # the port surfaces out of run() (matching twisted's synchronous
-        # listenTCP), and register async cleanup of the AppRunner at shutdown.
+        # the port surfaces out of run(), and register async cleanup of the
+        # AppRunner at shutdown.
         current_runtime().addStartupBind(self._start,
                                label='http-static:%d' % self._port)
 
@@ -48,12 +47,10 @@ class HTTPStaticServer(object):
         # add_static resolves requests against the root and rejects attempts to
         # escape it (path traversal), returning 403/404 rather than the file.
         #
-        # follow_symlinks=True restores Twisted's static.File behaviour: some
-        # webroots (e.g. the STIR/SHAKEN tests) publish their certificate files
-        # as symlinks into a sibling keys/ directory. aiohttp refuses to serve
-        # symlinked targets by default (404), which broke those tests; Twisted
-        # followed the links. The root is a fixed, test-controlled directory, so
-        # following links here does not widen the traversal surface in practice.
+        # Some webroots (e.g. the STIR/SHAKEN tests) publish certificate files
+        # as symlinks into a sibling keys/ directory. The root is a fixed,
+        # test-controlled directory, so following links here does not widen the
+        # traversal surface in practice.
         app.router.add_static('/', self._root, show_index=False,
                               follow_symlinks=True)
         self._runner = web.AppRunner(app)

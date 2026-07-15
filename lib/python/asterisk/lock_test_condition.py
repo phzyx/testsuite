@@ -187,9 +187,8 @@ class LockTestCondition(TestCondition):
     async def evaluate(self, related_test_condition=None):
         """Evaluate the condition"""
 
-        # Build up the locks for each instance of asterisk. DeferredList in the
-        # original waited for every child regardless of errors;
-        # return_exceptions=True preserves that (no fail-fast).
+        # Build up the locks for each instance of Asterisk. Wait for every
+        # child regardless of errors; do not fail fast.
         await asyncio.gather(*[self.__get_locks(ast) for ast in self.ast],
                              return_exceptions=True)
 
@@ -212,4 +211,3 @@ class LockTestCondition(TestCondition):
         if super(LockTestCondition, self).get_status() == 'Inconclusive':
             super(LockTestCondition, self).pass_check()
         return self
-

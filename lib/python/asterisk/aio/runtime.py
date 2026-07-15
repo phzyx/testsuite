@@ -1,7 +1,7 @@
 """The single async test-runtime owner for the asterisk.aio layer.
 
-Phase B, step B1.0. This module defines ``AsyncTestRuntime``: the one concrete
-object that owns, as the authoritative set,
+This module defines ``AsyncTestRuntime``: the one concrete object that owns, as
+the authoritative set,
 
   * the event loop reference,
   * every resource registry (delayed calls, endpoint/executor tasks, listening
@@ -13,12 +13,10 @@ object that owns, as the authoritative set,
 There is no module-level runtime singleton. Ownership is *per run*: a fresh
 ``AsyncTestRuntime`` is installed as the current runtime for the duration of a
 run and detached on shutdown (see the current-runtime holder at the bottom of
-this module). ``reactor.py`` is a thin, stateless facade that resolves whatever
-runtime is currently installed on every call; the higher-level ``asyncio.run()``
-entrypoint added in later B1 steps installs and drives one such runtime
-directly. The Twisted-shaped reactor surface (``run``/``stop``/``callLater``/
-``listenTCP``/...) lives here so both the facade and the native entrypoint share
-one implementation and one set of registries.
+this module). Callers obtain the currently installed runtime via
+``current_runtime()`` and invoke its methods directly. The runtime surface
+(``run``/``stop``/``callLater``/``listenTCP``/...) lives here so every caller
+shares one implementation and one set of registries.
 
 Lifecycle states (``_RuntimeState``)::
 
@@ -46,11 +44,11 @@ LOGGER = logging.getLogger(__name__)
 
 
 class ReactorNotRunning(Exception):
-    """Raised by stop() when the reactor is not running (twisted parity)."""
+    """Raised when reactor-only operations require a running reactor."""
 
 
 class ReactorAlreadyRunning(Exception):
-    """Raised by run() when the reactor is already running (twisted parity)."""
+    """Raised by run() when the reactor is already running."""
 
 
 class AlreadyCalled(Exception):
@@ -82,7 +80,7 @@ def _get_loop():
 # Delayed calls
 # ---------------------------------------------------------------------------- #
 class _DelayedCall(object):
-    """Cancellable scheduled call (twisted.internet.base.DelayedCall).
+    """Cancellable scheduled call.
 
     Wraps an asyncio ``TimerHandle``. Supports ``cancel()`` and ``active()``;
     ``reset()``/``delay()`` reschedule relative to now. Deregisters itself from
@@ -98,10 +96,8 @@ class _DelayedCall(object):
         self._cancelled = False
         self._called = False
         # Absolute wall-clock time (time.time() units) at which this call is
-        # scheduled to fire. Twisted's DelayedCall.getTime() returns this in
-        # reactor.seconds() units, and callers (e.g. TestCase.reset_timeout)
-        # feed it to datetime.fromtimestamp(), so it must be a POSIX timestamp
-        # rather than asyncio's monotonic loop clock.
+        # scheduled to fire. Callers feed getTime() to datetime.fromtimestamp(),
+        # so it must be a POSIX timestamp rather than asyncio's monotonic clock.
         self._scheduled_time = time.time() + delay
         self._handle = runtime._loop.call_later(delay, self._fire)
 
@@ -138,8 +134,7 @@ class _DelayedCall(object):
     def getTime(self):
         """Return the wall-clock time (seconds since epoch) this call fires.
 
-        Mirrors twisted.internet.base.DelayedCall.getTime(), whose result is a
-        reactor.seconds()/time.time()-compatible absolute timestamp.
+        The result is a ``time.time()``-compatible absolute timestamp.
         """
         return self._scheduled_time
 
@@ -171,7 +166,7 @@ class _DelayedCall(object):
 # Listening / connecting handles
 # ---------------------------------------------------------------------------- #
 class _Port(object):
-    """Handle for a listening UDP or TCP endpoint (twisted IListeningPort)."""
+    """Handle for a listening UDP or TCP endpoint."""
 
     def __init__(self):
         self._transport = None
@@ -217,16 +212,11 @@ class _Port(object):
 class _SyncDatagramTransport(object):
     """A UDP transport available synchronously from ``listenUDP``.
 
-    Twisted's ``reactor.listenUDP`` binds the socket and installs
-    ``protocol.transport`` before returning, so pluggable modules routinely send
-    a first datagram on the very next line. asyncio's
-    ``create_datagram_endpoint`` is a coroutine, so between ``listenUDP``
-    returning and ``DatagramProtocol.connection_made`` installing the
-    asyncio-backed writer there is a window where ``protocol.transport`` would
-    otherwise be ``None``. This shim closes that window by carrying sends
-    straight to the freshly bound socket. Its ``write(data, addr)`` mirrors the
-    Twisted UDP transport signature; ``connection_made`` later replaces it with
-    the asyncio-backed writer over the same fd.
+    ``listenUDP`` installs ``protocol.transport`` before returning, so pluggable
+    modules can send a first datagram on the very next line. The transport
+    carries sends straight to the freshly bound socket until
+    ``DatagramProtocol.connection_made`` installs the asyncio-backed writer over
+    the same fd.
     """
 
     def __init__(self, sock):
@@ -239,7 +229,7 @@ class _SyncDatagramTransport(object):
             else:
                 self._sock.sendto(data, addr)
         except (BlockingIOError, InterruptedError):
-            # UDP send buffer momentarily full; Twisted drops silently too.
+            # UDP send buffer momentarily full; datagram sends are best-effort.
             pass
 
     def writeSequence(self, seq, addr=None):
@@ -258,10 +248,10 @@ class _SyncDatagramTransport(object):
 
 
 class _Connector(object):
-    """Handle for an outgoing TCP connection (twisted IConnector).
+    """Handle for an outgoing TCP connection.
 
     Supports reconnection: when an established connection is lost,
-    ``_TwistedProtocolAdapter.connection_lost`` notifies the factory via
+    ``_ProtocolAdapter.connection_lost`` notifies the factory via
     ``clientConnectionLost``; a ReconnectingClientFactory's ``retry`` then calls
     ``connector.connect()`` to start a fresh attempt. Honors the original
     ``timeout`` and ``bindAddress`` on every attempt.
@@ -290,7 +280,7 @@ class _Connector(object):
 
         def _bind():
             coro = loop.create_connection(
-                lambda: _TwistedProtocolAdapter(factory, self),
+                lambda: _ProtocolAdapter(factory, self),
                 self.host, self.port, local_addr=local_addr)
             if self._timeout:
                 coro = asyncio.wait_for(coro, self._timeout)
@@ -336,14 +326,14 @@ class _Connector(object):
 
 
 # ---------------------------------------------------------------------------- #
-# Twisted factory/protocol -> asyncio.Protocol adapter (for listenTCP/connectTCP)
+# Factory/protocol -> asyncio.Protocol adapter (for listenTCP/connectTCP)
 # ---------------------------------------------------------------------------- #
-class _TwistedProtocolAdapter(asyncio.Protocol):
-    """Drive a Twisted-style protocol from asyncio.Protocol callbacks.
+class _ProtocolAdapter(asyncio.Protocol):
+    """Drive a callback protocol from asyncio.Protocol callbacks.
 
     The wrapped protocol is produced by ``factory.buildProtocol(addr)`` and is
     expected to expose ``makeConnection(transport)``/``dataReceived(data)``/
-    ``connectionLost(reason)`` (the twisted.internet.protocol.Protocol surface).
+    ``connectionLost(reason)``.
     """
 
     def __init__(self, factory, connector=None):
@@ -373,8 +363,8 @@ class _TwistedProtocolAdapter(asyncio.Protocol):
             self._proto.connectionLost(reason)
         # For *client* connections (connectTCP), an established-then-lost
         # connection must notify the factory so a ReconnectingClientFactory can
-        # retry. Server connections (listenTCP) have no connector and Twisted
-        # server factories are not given clientConnectionLost. (review blocker 1)
+        # retry. Server connections (listenTCP) have no connector and do not
+        # receive clientConnectionLost notifications.
         connector = self._connector
         if connector is not None:
             connector._transport = None
@@ -384,7 +374,7 @@ class _TwistedProtocolAdapter(asyncio.Protocol):
 
 
 class _TCPTransportAdapter(object):
-    """Expose the twisted ITransport surface used by protocols over TCP."""
+    """Expose the transport methods used by callback protocols over TCP."""
 
     def __init__(self, transport):
         self._transport = transport
@@ -430,7 +420,7 @@ class AsyncTestRuntime(object):
         self._failure = None          # first fatal mid-run error, re-raised by run()
         self._startup_task = None     # in-flight start_all() drain; awaited by
                                       # concurrent start_all() callers
-        # Pluggable-module lifecycle (design point 3).
+        # Pluggable-module lifecycle.
         self._modules = []            # retained module instances (strong refs),
                                       # in registration order
         self._started_modules = []    # modules whose start() was invoked (incl.
@@ -481,8 +471,7 @@ class AsyncTestRuntime(object):
         well as any registration attempted against an already-finished run
         observes this as True. Every registration entry point consults it and
         refuses cleanly, so a resource cannot slip past the snapshot-based
-        cleanup or queue work that survives into another run (design doc
-        point 4).
+        cleanup or queue work that survives into another run.
 
         STOPPED is included on purpose: a finished runtime is not a valid
         registration target. Sequential reuse must first return the runtime to a
@@ -580,7 +569,7 @@ class AsyncTestRuntime(object):
         loop (``run_until_complete``) but drives the **same** ``start_all`` /
         ``run_async`` / ``_shutdown`` sequence the native ``_main`` path uses, so
         module ``start()`` and the startup state machine have a single
-        implementation across both paths (design doc points 2b/5): COLLECTING ->
+        implementation across both paths: COLLECTING ->
         STARTING (``start_all`` drains the pre-run queue, surfacing a fatal bind)
         -> RUNNING (kickoff flushed) -> await completion (``run_async``) ->
         STOPPING (ordered ``_shutdown`` in this method's ``finally``) -> STOPPED,
@@ -609,8 +598,8 @@ class AsyncTestRuntime(object):
         # but this blocking run() does *not* detach the runtime from the holder
         # -- the STOPPED (resource-free) runtime stays installed until the caller
         # detaches it. Full detach-on-shutdown belongs to the native asyncio.run()
-        # entrypoint / legacy-run wiring (later B1 steps); callers that want a
-        # fresh owner per run install one via new_runtime() and detach it after.
+        # entrypoint; callers that want a fresh owner per run install one via
+        # new_runtime() and detach it after.
         try:
             loop.run_until_complete(self.start_all())
             loop.run_until_complete(self.run_async())
@@ -640,7 +629,7 @@ class AsyncTestRuntime(object):
             self._failure = None
             raise failure
 
-    # -- pluggable-module lifecycle (design point 3) ---------------------- #
+    # -- pluggable-module lifecycle ------------------------------------- #
     def register_module(self, module):
         """Retain a constructed pluggable module for the run's lifetime.
 
@@ -653,14 +642,14 @@ class AsyncTestRuntime(object):
 
         A module offered during teardown is refused: the close snapshot has
         already been taken, so appending it here would either discard it
-        unclosed or leak it into another run (design doc point 4).
+        unclosed or leak it into another run.
         """
         if self._tearing_down():
             return
         self._modules.append(module)
 
     async def _start_modules(self):
-        """Invoke each retained module's optional ``start()`` (design point 3).
+        """Invoke each retained module's optional ``start()``.
 
         Runs during STARTING, before the bind-queue drain, so binds a module
         issues from ``start()`` land in the awaited startup queue. Semantics:
@@ -722,7 +711,7 @@ class AsyncTestRuntime(object):
     async def start_all(self):
         """Single guarded startup driver for the native AND legacy paths.
 
-        The one place the startup state machine runs (design doc point 2b).
+        The one place the startup state machine runs.
         ``_main`` (native) awaits it under ``asyncio.run``; blocking ``run()``
         (legacy) drives the *same* coroutine via ``run_until_complete`` -- module
         ``start()`` is therefore invoked from exactly one sequence, never twice.
@@ -732,7 +721,7 @@ class AsyncTestRuntime(object):
         surfacing a fatal bind, then RUNNING and flushes the ``callWhenRunning``
         kickoff queue.
 
-        Deliberately narrow (points 2/2b): it does NOT await completion (that is
+        Deliberately narrow: it does NOT await completion (that is
         ``run_async``) and does NOT tear down (that is ``_shutdown``, run from the
         driver's ``finally``). A fatal bind stores ``_failure`` and re-raises so
         the driver's ``finally`` runs the ordered teardown and re-raises after.
@@ -752,7 +741,7 @@ class AsyncTestRuntime(object):
         proceeds believing startup finished while binds are still running.
         """
         # Coordinate concurrent callers around a single in-flight startup so the
-        # once-per-run guarantee holds even under overlap (design point 2b):
+        # once-per-run guarantee holds even under overlap:
         #
         #   - A startup is already in flight (STARTING): a second caller must
         #     AWAIT that same task, not return early -- returning would let it
@@ -796,12 +785,11 @@ class AsyncTestRuntime(object):
 
         Split out so it can run as a single tracked task per run (see
         ``start_all``), letting concurrent ``start_all`` callers await the one
-        in-flight startup rather than each re-driving the drain. Runs the point-2b
-        startup sequence: invoke each retained module's ``start()`` (step 2),
-        drain the bind queue to quiescence (step 3) -- both surfacing failures and
-        honoring a stop -- then, absent a stop, enter RUNNING and flush the
-        ``callWhenRunning`` kickoff queue. On stop it goes straight to STOPPING
-        (never RUNNING/kickoff).
+        in-flight startup rather than each re-driving the drain. Startup invokes
+        each retained module's ``start()``, drains the bind queue to quiescence
+        while surfacing failures and honoring a stop, then enters RUNNING and
+        flushes the ``callWhenRunning`` kickoff queue. On stop it goes straight
+        to STOPPING (never RUNNING/kickoff).
         """
         # Step 2: module start() hooks (may enqueue binds drained just below).
         if not await self._start_modules():
@@ -887,9 +875,9 @@ class AsyncTestRuntime(object):
         return True
 
     async def run_async(self):
-        """Transitional bridge: adopt the running loop and await completion.
+        """Adopt the running loop and await completion.
 
-        The linchpin of incrementality (design doc Section, point 2). By the time
+        By the time
         ``_main`` awaits this, ``start_all`` has already advanced the runtime
         to RUNNING with a live completion future, so this bridge does the one
         thing it owns: **await the runtime's completion signal**. ``stop()``
@@ -899,9 +887,9 @@ class AsyncTestRuntime(object):
         It deliberately does NOT mark ``running``, does NOT drive ``start_all`` /
         startup, and does NOT perform shutdown: startup has one driver (``_main``)
         and shutdown has one owner (``_main``'s ``finally`` -> ordered
-        ``_shutdown``). Every shim registration it services already lands in this
+        ``_shutdown``). Every runtime registration it services already lands in this
         runtime's registries, and any fatal error sits on this runtime's
-        ``_failure``, which ``_main`` re-raises. Deleted in B4 with reactor.py.
+        ``_failure``, which ``_main`` re-raises.
         """
         if self._completion is None:
             # Misuse: run_async() awaits a completion start_all() must have
@@ -935,10 +923,8 @@ class AsyncTestRuntime(object):
     def stop(self):
         """Stop the runtime, unblocking run().
 
-        Idempotent: calling stop() when not running is a no-op (Twisted raises
-        ReactorNotRunning, but callers here treat shutdown as safe to request
-        more than once). Marking the stop requested immediately flips
-        ``running`` to False, matching the old eager flag.
+        Idempotent: calling stop() when not running is a no-op. Marking the
+        stop requested immediately flips ``running`` to False.
         """
         if not self.running:
             return
@@ -960,8 +946,8 @@ class AsyncTestRuntime(object):
         exception is collected rather than propagated on the spot, and the
         collected errors are raised only at the very end -- as a single
         exception if there was one, or an ``ExceptionGroup`` if several. So the
-        caller still learns teardown failed (findings 1 & 4: "isolated" must not
-        mean invisible) without any resource being abandoned unclosed.
+        caller still learns teardown failed ("isolated" must not mean invisible)
+        without any resource being abandoned unclosed.
         """
         errors = []
 
@@ -992,7 +978,7 @@ class AsyncTestRuntime(object):
                 errors.append(exc)
         self._async_cleanups.clear()
 
-        # Module close() hooks (design point 3): every module whose start() was
+        # Module close() hooks: every module whose start() was
         # invoked -- or that had no start() and so is treated as started -- is
         # closed exactly once, in forward registration order (behavior-preserving:
         # the async-cleanup registry also runs forward). close() must tolerate
@@ -1111,11 +1097,10 @@ class AsyncTestRuntime(object):
             await asyncio.gather(*self._tasks, return_exceptions=True)
         self._tasks.clear()
 
-        # Cancel any remaining loop tasks that were NOT created through a runtime
-        # registry -- e.g. defer.maybeDeferred / aio.utils schedule work with
-        # asyncio.ensure_future directly. Without this, stopping while such a
-        # task is pending leaks a live task past run(). The current task (this
-        # _shutdown coroutine) is excluded.
+        # Cancel any remaining loop tasks that were NOT created through a
+        # runtime registry. Without this, stopping while such a task is pending
+        # leaks a live task past run(). The current task (this _shutdown
+        # coroutine) is excluded.
         try:
             current = asyncio.current_task(self._loop)
             stragglers = [t for t in asyncio.all_tasks(self._loop)
@@ -1179,7 +1164,7 @@ class AsyncTestRuntime(object):
             # already-failed Future so an awaiter resolves instead of
             # deadlocking shutdown. No job is submitted and no callback is
             # scheduled -- create_future()/set_exception never touch the loop's
-            # run machinery -- so a closed loop is safe (design doc point 4).
+            # run machinery -- so a closed loop is safe.
             fut = loop.create_future()
             fut.set_exception(ReactorNotRunning(
                 "callInThread refused: runtime is shutting down"))
@@ -1196,7 +1181,7 @@ class AsyncTestRuntime(object):
         Gives a module (or internal code) a single place to hand off a
         background task so it is (a) held by a strong reference -- neither GC'd
         early nor leaked past shutdown -- and (b) governed by the owned-task
-        exception policy (design doc point 4). On completion the task's exception
+        exception policy. On completion the task's exception
         is always *retrieved*, so Python never emits "task exception was never
         retrieved"; but retrieval does not erase a real error:
 
@@ -1324,7 +1309,7 @@ class AsyncTestRuntime(object):
         if self._tearing_down():
             # The async-cleanup phase has already run (or is running) its
             # snapshot; a cleanup registered this late must never be deferred to
-            # the next run, so reject it rather than append (design doc point 4).
+            # the next run, so reject it rather than append.
             return
         self._async_cleanups.append(cleanup)
 
@@ -1332,13 +1317,11 @@ class AsyncTestRuntime(object):
     def listenUDP(self, port, protocol, interface='', maxPacketSize=8192):
         """Listen for UDP datagrams, driving ``protocol`` (a DatagramProtocol).
 
-        The socket is bound *synchronously* (as Twisted's listenUDP does) and
-        ``protocol.transport`` is installed before returning, so a pluggable
-        module can send its first datagram on the next line without racing the
-        asyncio endpoint-creation coroutine (review finding: strict-RTP
-        fixtures). A bind failure therefore also surfaces synchronously here,
-        matching Twisted's ``CannotListenError``. The asyncio receive path is
-        then wired from the same bound socket; when it is ready,
+        The socket is bound *synchronously* and ``protocol.transport`` is
+        installed before returning, so a pluggable module can send its first
+        datagram on the next line without racing endpoint creation. A bind
+        failure therefore also surfaces synchronously here. The asyncio receive
+        path is then wired from the same bound socket; when it is ready,
         ``DatagramProtocol.connection_made`` upgrades ``protocol.transport`` to
         the asyncio-backed writer.
         """
@@ -1361,7 +1344,7 @@ class AsyncTestRuntime(object):
             self._ports.remove(handle)
             raise
         handle._presock = sock
-        # Give the protocol a working transport immediately (Twisted parity).
+        # Give the protocol a working transport immediately.
         if getattr(protocol, 'transport', None) is None:
             protocol.transport = _SyncDatagramTransport(sock)
 
@@ -1394,7 +1377,7 @@ class AsyncTestRuntime(object):
         self._ports.append(handle)
 
         def _bind():
-            return loop.create_server(lambda: _TwistedProtocolAdapter(factory),
+            return loop.create_server(lambda: _ProtocolAdapter(factory),
                                       interface or '0.0.0.0', port,
                                       backlog=backlog)
 
@@ -1429,18 +1412,16 @@ class AsyncTestRuntime(object):
         """Spawn a child process, driving ``processProtocol`` (a ProcessProtocol).
 
         Returns a connector proxying the eventual process transport. ``args``
-        follows the Twisted convention where ``args[0]`` is the program name.
+        includes the program name at index 0.
         """
         from .protocols import _PendingProcessTransport
 
         loop = self._ensure_loop()
         rest = tuple(args[1:]) if args else ()
 
-        # Twisted installs protocol.transport synchronously; asyncio's
-        # subprocess_exec is a coroutine. Give the protocol a placeholder now so
-        # a signal/kill issued before connection_made (e.g. a SIPp scenario
-        # killed from an AMI event) is buffered and replayed, instead of hitting
-        # protocol.transport is None.
+        # Give the protocol a placeholder now so a signal/kill issued before
+        # connection_made (e.g. a SIPp scenario killed from an AMI event) is
+        # buffered and replayed, instead of hitting protocol.transport is None.
         if getattr(processProtocol, 'transport', None) is None:
             processProtocol.transport = _PendingProcessTransport()
 
@@ -1472,7 +1453,7 @@ class AsyncTestRuntime(object):
         factories (never bare coroutine *objects*) keeps an un-run startup entry
         inert: if construction fails, or a bind aborts, the factories left on
         the queue are simply discarded at shutdown -- nothing was created, so
-        nothing can emit "coroutine was never awaited" (design doc point 2b).
+        nothing can emit "coroutine was never awaited".
 
         Classification is state-based: only while RUNNING is a bind turned into
         a tracked mid-run task (the factory is invoked now); during COLLECTING or
@@ -1542,10 +1523,10 @@ class _ProcessConnector(object):
 # Current-runtime holder
 # ---------------------------------------------------------------------------- #
 # There is no permanent runtime. Ownership is per-run: the native asyncio.run()
-# entrypoint (later B1 steps) creates a fresh AsyncTestRuntime, installs it as
-# the current runtime for the duration of the run, and detaches it on shutdown;
-# the reactor facade resolves the current runtime dynamically on every call, and
-# lazily installs one for legacy callers that never went through the entrypoint.
+# entrypoint creates a fresh AsyncTestRuntime, installs it as the current runtime
+# for the duration of the run, and detaches it on shutdown. ``current_runtime()``
+# resolves the currently installed runtime on every call, and lazily installs one
+# for legacy callers that never went through the entrypoint.
 # This keeps each run's registries, timers, and completion signal isolated from
 # the next, instead of mutating a single shared object across runs.
 _current_runtime = None

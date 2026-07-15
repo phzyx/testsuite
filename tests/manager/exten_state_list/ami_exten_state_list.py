@@ -125,10 +125,7 @@ class AMIExtensionStateList(object):
                                              state['message'])
                 resp_list.append(ami.setVar(None, presence, value))
 
-            # Plain DeferredList (no flags) waited for all setVar calls and
-            # only ever fired its callback -- child failures were captured, so
-            # the attached errback never ran. gather(return_exceptions=True)
-            # preserves that wait-for-all-and-swallow behaviour.
+            # Wait for all setVar calls and capture child failures.
             await asyncio.gather(*resp_list, return_exceptions=True)
 
         current_runtime().create_task(_run())
@@ -191,4 +188,3 @@ class AMIExtensionStateList(object):
 
         if len(self.received_expected_states) == len(EXPECTED_STATES):
             self.test_object.set_passed(True)
-

@@ -23,7 +23,7 @@ received_packets = []
 
 
 class KeepAliveProtocol(protocol.Protocol):
-    """Twisted protocol for Asterisk PJSIP keep alives"""
+    """Protocol for Asterisk PJSIP keep alives."""
 
     def __init__(self, test_object):
         """Constructor
@@ -41,7 +41,7 @@ class KeepAliveProtocol(protocol.Protocol):
 
 
 class KeepAliveFactory(protocol.ClientFactory):
-    """Twisted protocol factory for KeepAliveProtocol"""
+    """Protocol factory for KeepAliveProtocol."""
 
     def __init__(self, test_object):
         """Constructor
@@ -56,14 +56,14 @@ class KeepAliveFactory(protocol.ClientFactory):
         return KeepAliveProtocol(self.test_object)
 
     def clientConnectionFailed(self, connector, reason):
-        """twisted callback for a failed client connection"""
+        """Callback for a failed client connection."""
         LOGGER.warn('Failed to connect to Asterisk on port 5060: {0}'.format(
             reason))
         self.test_object.set_passed(False)
         self.test_object.stop_reactor()
 
     def clientConnectionLost(self, connector, reason):
-        """twisted callback for a lost client connection"""
+        """Callback for a lost client connection."""
         LOGGER.info('Client connection dropped: {0}'.format(reason))
         self.test_object.stop_reactor()
 

@@ -671,10 +671,9 @@ class ApplicationEventInstance(AMIEventInstance):
                 try:
                     await ret_obj
                 except Exception:
-                    # Mirror the old Deferred chain, which had no errback: a
-                    # failed action does not advance to the next action, so the
-                    # sequence stalls and the test times out / fails rather than
-                    # silently completing later actions.
+                    # A failed action does not advance to the next action, so
+                    # the sequence stalls and the test times out / fails rather
+                    # than silently completing later actions.
                     LOGGER.exception("Action failed; halting action sequence")
                     return
                 self.execute_next_action(actions=actions)

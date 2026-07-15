@@ -1,14 +1,8 @@
-"""asyncio replacement for twisted.python.failure.Failure.
+"""Failure object used by the asyncio test-suite helpers.
 
 A Failure wraps an exception (and optionally its traceback) so it can be passed
-through Deferred errback chains the same way Twisted's Failure was. Only the
-surface actually used by the test suite is reproduced: ``value``, ``type``,
-``getErrorMessage()``, ``check()``, plus ``trap()``/``raiseException()`` for the
-process adapter and completeness.
-
-This is part of the ``asterisk.aio`` compatibility layer (design doc Section 2,
-Section 3.1/3.2). It is a transitional aid for the Twisted removal; see the
-modernization end state (design Section 14).
+through callback errback chains. The supported surface is ``value``, ``type``,
+``getErrorMessage()``, ``check()``, ``trap()``, and ``raiseException()``.
 """
 
 import sys
@@ -18,9 +12,8 @@ import traceback as _traceback
 class Failure(object):
     """Wraps an exception for transport through Deferred errback chains."""
 
-    # Cross-shim marker: any Failure-compatible type sets this True so callback
-    # chains in either shim (testsuite / starpy) recognise a foreign Failure
-    # without importing one concrete class. See aio/defer.py._is_failure.
+    # Cross-package marker: callback chains can recognise a Failure-like object
+    # without importing one concrete class.
     _is_failure = True
 
     def __init__(self, exc=None, exc_type=None, tb=None):
@@ -52,8 +45,7 @@ class Failure(object):
     def check(self, *error_types):
         """Return the first error type that matches, or None.
 
-        Mirrors twisted Failure.check: matches against the wrapped exception's
-        class hierarchy.
+        Match against the wrapped exception's class hierarchy.
         """
         for et in error_types:
             if isinstance(self.value, et):

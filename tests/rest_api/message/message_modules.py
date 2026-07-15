@@ -214,8 +214,7 @@ class SIPMessageRunner(object):
                 self.scenarios.append(scenario)
                 scenarios.append(scenario)
 
-            # DeferredList in the original waited for every child regardless of
-            # errors; return_exceptions=True preserves that (no fail-fast).
+            # Wait for every child regardless of errors; do not fail fast.
             results = await asyncio.gather(
                 *[_run_one(s) for s in scenarios], return_exceptions=True)
             result = [(not isinstance(r, BaseException), r) for r in results]

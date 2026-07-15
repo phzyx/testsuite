@@ -64,8 +64,7 @@ class AMIExtensionControl(TestCase):
                 deferds.append(deferred)
 
             gathered = await asyncio.gather(*deferds, return_exceptions=True)
-            # Preserve the DeferredList (success, value) tuple shape _pass_test
-            # indexes into.
+            # _pass_test indexes into (success, value) tuples.
             results = [(not isinstance(r, Exception), r) for r in gathered]
             _pass_test(results, self)
 

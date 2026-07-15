@@ -75,8 +75,7 @@ class SipDialogTestCondition(TestCondition):
             LOGGER.debug("Retrieving history for SIP dialog %s" % name)
             __store_history(await ast.cli_exec("sip show history %s" % name))
 
-        # DeferredList in the original waited for every child regardless of
-        # errors; return_exceptions=True preserves that (no fail-fast).
+        # Wait for every child regardless of errors; do not fail fast.
         await asyncio.gather(*[__history(name) for name in dialog_names],
                              return_exceptions=True)
         return ast

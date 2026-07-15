@@ -77,7 +77,7 @@ def setup_logging(log_dir, log_full, log_messages):
 class TestCase(object):
     """The base class object for python tests. This class provides common
     functionality to all tests, including management of Asterisk instances, AMI,
-    asyncio reactor shim, and various other utilities.
+    the asyncio runtime, and various other utilities.
     """
 
     def __init__(self, test_path='', test_config=None):
@@ -184,9 +184,8 @@ class TestCase(object):
 
         self._setup_conditions()
 
-        # Twisted's PythonLoggingObserver bridged Twisted's logging into stdlib
-        # logging; with the asyncio shim there is no separate log system to
-        # bridge -- stdlib logging is already configured.
+        # The runtime uses stdlib logging directly; no additional log bridge is
+        # needed here.
 
         current_runtime().callWhenRunning(self._run)
 
@@ -439,11 +438,9 @@ class TestCase(object):
         # Call the method that derived objects can override
         self.start_asterisk()
 
-        # Gather up the futures from each of the instances of Asterisk and wait
-        # until all are finished before proceeding. ast.start() now returns an
-        # asyncio Future; gather(return_exceptions=True) mirrors the old
-        # DeferredList(consumeErrors=True) - each result is either the success
-        # value or the raised exception (in start order).
+        # Gather up the start futures and wait until all are finished before
+        # proceeding. Each result is either the success value or the raised
+        # exception, in start order.
         start_defers = []
         for index, ast in enumerate(self.ast):
             LOGGER.info("Starting Asterisk instance %d" % (index + 1))
@@ -451,15 +448,14 @@ class TestCase(object):
 
         results = await asyncio.gather(*start_defers, return_exceptions=True)
 
-        # __check_success_failure: on any failed start, log and stop; the old
-        # chain continued regardless, so preserve that (do not short-circuit).
+        # __check_success_failure: on any failed start, log and stop without
+        # short-circuiting the remaining results.
         for value in results:
             if isinstance(value, Exception):
                 LOGGER.error(str(value))
                 self.stop_reactor()
 
-        # __perform_pre_checks: evaluate_pre_checks() now returns a coroutine
-        # (or None); await it so pre-checks complete before we run.
+        # __perform_pre_checks: await pre-checks so they complete before we run.
         deferred = self.condition_controller.evaluate_pre_checks()
         if deferred is not None:
             await deferred
@@ -482,8 +478,7 @@ class TestCase(object):
         Returns:
         The test object (self) once all instances of Asterisk have stopped.
          """
-        # evaluate_post_checks() now returns a coroutine (or None); await it
-        # so post-checks complete before we stop the instances.
+        # Await post-checks so they complete before we stop the instances.
         deferred = self.condition_controller.evaluate_post_checks()
         if deferred is not None:
             await deferred
@@ -492,8 +487,7 @@ class TestCase(object):
         self.stop_asterisk()
 
         # Gather up the stop futures and wait until all instances of Asterisk
-        # have stopped. gather(return_exceptions=True) mirrors the old
-        # DeferredList - each result is the stop value or the raised exception.
+        # have stopped. Each result is the stop value or the raised exception.
         stop_defers = []
         for index, ast in enumerate(self.ast):
             LOGGER.info("Stopping Asterisk instance %d" % (index + 1))
@@ -520,18 +514,16 @@ class TestCase(object):
                 try:
                     current_runtime().stop()
                 except aio_error.ReactorNotRunning:
-                    # The shim's stop() is idempotent and does not raise, but
-                    # keep the guard for parity in case something stopped it
-                    # between our checks - at least we're stopped
+                    # stop() is idempotent; keep the guard in case something
+                    # stopped the runtime between our checks.
                     pass
 
         async def __drive_stop():
             """Stop the instances, run the stop observers, then the reactor.
 
-            Preserves the old Deferred chain: _stop_asterisk() resolves with
-            the test object, each stop observer is invoked in turn with the
-            running result (awaiting any observer that returns an awaitable),
-            and finally the reactor is stopped.
+            _stop_asterisk() resolves with the test object, each stop observer
+            is invoked in turn with the running result (awaiting any observer
+            that returns an awaitable), and finally the reactor is stopped.
             """
             result = await self._stop_asterisk()
             for callback in self._stop_callbacks:

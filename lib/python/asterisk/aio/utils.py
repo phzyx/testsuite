@@ -1,16 +1,13 @@
-"""asyncio replacement for the small slice of ``twisted.internet.utils`` used
-by the testsuite.
+"""Process helpers used by the testsuite.
 
 Only ``getProcessOutputAndValue`` is consumed (asterisk.py), so only that is
-implemented. It is a native ``async def`` (Phase B step B5.1); awaiting it:
+implemented. It is a native ``async def``; awaiting it:
 
 * returns ``(stdout_bytes, stderr_bytes, exit_code)`` on a normal exit
   (including a non-zero exit code); and
 * raises ``ProcessSignaled`` -- whose ``.value`` is
   ``(stdout_bytes, stderr_bytes, signal_number)`` -- when the child is
-  terminated by a signal, mirroring the ``(out, err, signal)`` tuple the old
-  Twisted-shaped errback exposed as ``Failure.value`` so callers reading
-  ``err.value`` keep working unchanged.
+  terminated by a signal.
 """
 
 import asyncio
@@ -23,8 +20,7 @@ __all__ = ['getProcessOutputAndValue', 'ProcessSignaled']
 class ProcessSignaled(Exception):
     """Raised when ``getProcessOutputAndValue``'s child dies from a signal.
 
-    ``.value`` carries ``(stdout_bytes, stderr_bytes, signal_number)`` to match
-    the tuple Twisted's signal-termination errback exposed as ``Failure.value``.
+    ``.value`` carries ``(stdout_bytes, stderr_bytes, signal_number)``.
     """
 
     def __init__(self, out, err, signal_number):
@@ -72,8 +68,8 @@ async def getProcessOutputAndValue(executable, args=(), env=None, path=None):
 
     Returns ``(stdout_bytes, stderr_bytes, exit_code)`` on a normal exit and
     raises ``ProcessSignaled`` on signal termination (see module docstring).
-    ``args`` follows the os-level convention (it does NOT include the program
-    name, unlike Twisted's ``spawnProcess`` ``args[0]``).
+    ``args`` follows the os-level convention: it does NOT include the program
+    name.
     """
     proc = await asyncio.create_subprocess_exec(
         executable, *tuple(args),
@@ -94,6 +90,6 @@ async def getProcessOutputAndValue(executable, args=(), env=None, path=None):
         raise
     code = proc.returncode
     if code is not None and code < 0:
-        # Terminated by signal: surface (out, err, signal) like Twisted did.
+        # Terminated by signal: surface (out, err, signal).
         raise ProcessSignaled(out, err, -code)
     return out, err, code

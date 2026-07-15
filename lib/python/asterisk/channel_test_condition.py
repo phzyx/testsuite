@@ -77,8 +77,7 @@ class ChannelTestCondition(TestCondition):
             """Run 'core show channels' on an instance and inspect it"""
             __channel_callback(await ast.cli_exec('core show channels'))
 
-        # DeferredList in the original waited for every child regardless of
-        # errors; return_exceptions=True preserves that (no fail-fast).
+        # Wait for every child regardless of errors; do not fail fast.
         await asyncio.gather(*[__check(ast) for ast in self.ast],
                              return_exceptions=True)
         return self

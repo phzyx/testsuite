@@ -7,17 +7,15 @@ Joshua Colp <jcolp@digium.com>
 This program is free software, distributed under the terms of
 the GNU General Public License Version 2.
 
-asyncio port (design doc Section 6.3): the authoritative DNS server that was
-built on ``twisted.names`` (``server``/``authority``/``dns``) is reimplemented on
-``dnslib`` served over the ``asterisk.aio`` reactor -- a UDP datagram protocol
-and a length-prefixed TCP protocol, both bound through the reactor's awaited
-startup so the server is answering before Asterisk queries it.
+The authoritative DNS server is built on ``dnslib`` and served over the
+``asterisk.aio`` reactor: a UDP datagram protocol and a length-prefixed TCP
+protocol, both bound through the reactor's awaited startup so the server is
+answering before Asterisk queries it.
 
 The Python zone-file format is preserved exactly: files are still Python source
 defining ``zone = [...]`` with record helpers (``SOA``/``A``/``AAAA``/``SRV``/
-``NAPTR``/...), matching twisted's ``PySourceAuthority`` DSL where the first
-positional argument is the owner name. BIND-syntax zone files remain supported
-via ``dnslib``'s zone parser.
+``NAPTR``/...), where the first positional argument is the owner name.
+BIND-syntax zone files remain supported via ``dnslib``'s zone parser.
 """
 
 import logging
@@ -31,20 +29,19 @@ from asterisk.aio.runtime import current_runtime
 LOGGER = logging.getLogger(__name__)
 
 # The classic 512-byte UDP DNS payload limit. Responses larger than this are
-# returned truncated (TC bit set) so the resolver retries over TCP -- the
-# behavior the twisted.names server exhibited and the parity contract requires.
+# returned truncated (TC bit set) so the resolver retries over TCP.
 UDP_MAX = 512
 
 
 # ---------------------------------------------------------------------------- #
-# Time-string parsing (twisted.names.dns.str2time parity)
+# Time-string parsing for SOA values
 # ---------------------------------------------------------------------------- #
 _TIME_UNITS = {'S': 1, 'M': 60, 'H': 3600, 'D': 86400, 'W': 604800}
 
 
 def _str2time(value):
     """Parse an SOA time field: an int, a plain seconds string, or ``<n><unit>``
-    where unit is S/M/H/D/W (e.g. ``"1H"`` -> 3600), matching twisted."""
+    where unit is S/M/H/D/W (e.g. ``"1H"`` -> 3600)."""
     if isinstance(value, (int, float)):
         return int(value)
     text = str(value).strip()
@@ -87,10 +84,8 @@ class _ZoneRecord(object):
 def _make_builders():
     """Return the record-helper namespace exec'd against a Python zone file.
 
-    Mirrors twisted's ``PySourceAuthority.wrapRecord``: each helper takes the
-    owner name as its first positional argument, the remaining arguments matching
-    the corresponding ``twisted.names.dns.Record_*`` constructor, and yields a
-    ``_ZoneRecord`` carrying the equivalent ``dnslib`` rdata.
+    Each helper takes the owner name as its first positional argument and yields
+    a ``_ZoneRecord`` carrying the corresponding ``dnslib`` rdata.
     """
 
     def SOA(name, mname='', rname='', serial=0, refresh=0, retry=0,
@@ -155,7 +150,7 @@ class Zone(object):
 
     @classmethod
     def from_python(cls, filename):
-        """Load a twisted-style Python zone file."""
+        """Load a Python zone file."""
         namespace = {}
         with open(filename) as handle:
             code = compile(handle.read(), filename, 'exec')
@@ -373,8 +368,8 @@ class DNSServer(object):
 
     Configuration options:
         port: The port to listen for DNS requests on (default 10053).
-        python-zones: An array of Python zone files (twisted PySourceAuthority
-            syntax; the record helpers take the owner name as first argument).
+        python-zones: An array of Python zone files; the record helpers take
+            the owner name as first argument.
         bind-zones: An array of BIND-syntax zone files.
     """
 

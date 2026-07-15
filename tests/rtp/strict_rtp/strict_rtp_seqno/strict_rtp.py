@@ -24,8 +24,7 @@ class StrictRtpTester(object):
     """A pluggable module for verifying strictrtp seqno functionality"""
 
     class PacketSendProtocol(DatagramProtocol):
-        """The twisted protocol that sends packets
-        """
+        """Protocol that sends packets."""
 
         def __init__(self, test_object):
             """Constructor
@@ -75,9 +74,8 @@ class StrictRtpTester(object):
     async def _send_loop(self, protocol, num, interval):
         """Send ``num`` packets every ``interval`` seconds until cancelled.
 
-        Replaces the old ``LoopingCall`` (start(now=True)): the first burst is
-        sent immediately, then repeated on ``interval`` until the task is
-        cancelled via ``stop()``.
+        The first burst is sent immediately, then repeated on ``interval`` until
+        the task is cancelled via ``stop()``.
         """
         try:
             while True:

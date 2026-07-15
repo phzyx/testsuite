@@ -293,7 +293,7 @@ class AriClient(ObservableObject):
         """Resets the AriClient to its initial state.
 
         Returns:
-        A twisted.defer instance.
+        An awaitable reset operation.
         """
 
         if not self.clean:
