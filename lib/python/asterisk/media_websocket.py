@@ -159,8 +159,7 @@ class MediaWebSocketClientFactory:
             LOGGER.error(f"  Giving up after {self.timeout_secs} seconds")
             raise Exception(
                 f"Failed to connect after {self.timeout_secs} seconds")
-        asyncio.ensure_future(self._connect_async(),
-                              loop=current_runtime()._ensure_loop())
+        current_runtime().create_task(self._connect_async())
 
     async def _connect_async(self):
         try:
@@ -188,7 +187,7 @@ class MediaWebSocketClientProtocol(MediaWebSocketMixin):
         """Bind an open websockets connection and start reading."""
         self._connection = connection
         self.onOpen()
-        asyncio.ensure_future(self._reader(), loop=self._loop)
+        current_runtime().create_task(self._reader())
 
     async def _reader(self):
         try:
@@ -234,7 +233,7 @@ class MediaWebSocketClientProtocol(MediaWebSocketMixin):
         websocket write backpressure and preserves ordering.
         """
         if _on_loop(self._loop):
-            asyncio.ensure_future(coro, loop=self._loop)
+            current_runtime().create_task(coro)
         else:
             try:
                 asyncio.run_coroutine_threadsafe(coro, self._loop).result()

@@ -395,8 +395,7 @@ class AriClientFactory(object):
             raise Exception("Failed to connect after %d seconds" %
                             self.timeout_secs)
 
-        asyncio.ensure_future(self._connect_async(),
-                              loop=current_runtime()._ensure_loop())
+        current_runtime().create_task(self._connect_async())
 
     async def _connect_async(self):
         try:
@@ -447,7 +446,7 @@ class AriClientProtocol(object):
         """Bind an open websockets connection and begin reading events."""
         self._connection = connection
         self.onOpen()
-        asyncio.ensure_future(self._reader(), loop=self._loop)
+        current_runtime().create_task(self._reader())
 
     async def _reader(self):
         try:
@@ -497,7 +496,7 @@ class AriClientProtocol(object):
 
     def _dispatch(self, coro):
         if _on_loop(self._loop):
-            asyncio.ensure_future(coro, loop=self._loop)
+            current_runtime().create_task(coro)
         else:
             try:
                 asyncio.run_coroutine_threadsafe(coro, self._loop).result()
