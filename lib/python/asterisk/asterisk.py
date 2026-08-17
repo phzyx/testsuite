@@ -400,10 +400,17 @@ class Asterisk(object):
         self.original_astmoddir = ""
         self.remote_config = remote_config
         self.memcheck_delay_stop = 0
+        # Shutdown escalation, in seconds after 'core stop gracefully'.
+        self.stop_now_timeout = 5
+        self.stop_kill_timeout = 15
         self.instance_id = 0
         self.wfbdelay = bootdelay
         if test_config is not None and 'memcheck-delay-stop' in test_config:
             self.memcheck_delay_stop = test_config['memcheck-delay-stop'] or 0
+        if test_config is not None and 'stop-now-timeout' in test_config:
+            self.stop_now_timeout = test_config['stop-now-timeout']
+        if test_config is not None and 'stop-kill-timeout' in test_config:
+            self.stop_kill_timeout = test_config['stop-kill-timeout']
 
         valgrind_env = os.getenv("VALGRIND_ENABLE") or ""
         self.valgrind_enabled = True if "true" in valgrind_env else False
@@ -603,6 +610,16 @@ class Asterisk(object):
                     # Ignore if we already killed it
                     pass
 
+        async def __send_stop_now():
+            """Escalate a blocked graceful shutdown to 'core stop now'."""
+            LOGGER.warning('Graceful stop did not complete for Asterisk %s; '
+                           'sending stop now' % self.host)
+            try:
+                await self.cli_exec("core stop now")
+            except Exception:
+                LOGGER.warning("Asterisk 'core stop now' for %s failed"
+                               % self.host)
+
         async def __send_stop_gracefully():
             """Send a core stop gracefully CLI command"""
             LOGGER.debug('sending stop gracefully')
@@ -657,12 +674,24 @@ class Asterisk(object):
             return reason
 
         def __actual_stop():
-            # Schedule a kill. If we don't gracefully shut down Asterisk, this
-            # will ensure that the test is stopped.
-            sched_time = 200 if self.valgrind_enabled else 45
+            # Escalate a blocked graceful stop while preserving Asterisk's own
+            # shutdown path before resorting to SIGKILL:
+            #
+            #   t=0    core stop gracefully
+            #   t=+A   core stop now
+            #   t=+B   SIGKILL
+            if self.valgrind_enabled:
+                stop_now_time, kill_time = 30, 200
+            else:
+                stop_now_time = self.stop_now_timeout
+                kill_time = self.stop_kill_timeout
 
-            self._stop_cancel_tokens.append(current_runtime().callLater(sched_time,
-                                            __send_kill))
+            self._stop_cancel_tokens.append(
+                current_runtime().callLater(
+                    stop_now_time,
+                    lambda: current_runtime().create_task(__send_stop_now())))
+            self._stop_cancel_tokens.append(
+                current_runtime().callLater(kill_time, __send_kill))
 
             # Start by asking to stop gracefully.
             current_runtime().create_task(__send_stop_gracefully())
