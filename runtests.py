@@ -239,20 +239,28 @@ class TestRun:
     def _check_for_core(self):
         core_files = []
 
-        contents = os.listdir('.')
-        for item in contents:
+        # Avoid spawning `file` for every directory entry when almost every
+        # test produces no core.  Candidate names are still validated below.
+        def _candidates(directory):
+            try:
+                entries = os.listdir(directory)
+            except OSError:
+                return []
+            return [entry for entry in entries
+                    if entry.startswith('core') or
+                    entry.startswith('vgcore')]
+
+        for item in _candidates('.'):
             if self._is_asterisk_coredump(item):
                 core_files.append(item)
 
-        contents = os.listdir('/tmp')
-        for item in contents:
-            corepath = os.path.join('/tmp', item);
+        for item in _candidates('/tmp'):
+            corepath = os.path.join('/tmp', item)
             if self._is_asterisk_coredump(corepath):
                 core_files.append(corepath)
 
-        contents = os.listdir(self.test_name)
-        for item in contents:
-            corepath = os.path.join(self.test_name, item);
+        for item in _candidates(self.test_name):
+            corepath = os.path.join(self.test_name, item)
             if self._is_asterisk_coredump(corepath):
                 core_files.append(corepath)
 

@@ -31,11 +31,25 @@ from .buildoptions import AsteriskBuildOptions
 from .sippversion import SIPpVersion
 from .opensslversion import OpenSSLVersion
 
-try:
-    from pcap_listener import PcapListener
-    PCAP_AVAILABLE = True
-except:
-    PCAP_AVAILABLE = False
+_PCAP_AVAILABLE = None
+
+
+def pcap_available():
+    """Report whether the standalone pcap listener can be imported.
+
+    Importing pcap_listener also imports scapy, which is expensive and only
+    needed by tests that explicitly request packet capture.  Probe lazily so
+    the normal test startup path does not pay that cost, and cache the result.
+    """
+    global _PCAP_AVAILABLE
+    if _PCAP_AVAILABLE is None:
+        try:
+            import pcap_listener  # noqa: F401
+            _PCAP_AVAILABLE = True
+        except Exception:
+            _PCAP_AVAILABLE = False
+    return _PCAP_AVAILABLE
+
 
 class TestConditionConfig(object):
     """This class creates a test condition config and will build up an
@@ -171,7 +185,7 @@ class Dependency(object):
                 self.met = True
         elif "pcap" in dep:
             self.name = "pcap"
-            self.met = PCAP_AVAILABLE
+            self.met = pcap_available()
         else:
             print("Unknown dependency type specified:")
             for key in dep.keys():

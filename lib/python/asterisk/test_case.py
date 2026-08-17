@@ -23,11 +23,8 @@ from starpy import manager, fastagi
 
 from .asterisk import Asterisk
 from .test_config import TestConfig
-from .test_config import PCAP_AVAILABLE
+from .test_config import pcap_available
 from .test_conditions import TestConditionController
-# This needs to be the PcapListener from the pcap_listener module
-# not the one from the .pcap module.  
-from pcap_listener import PcapListener
 
 LOGGER = None
 
@@ -174,11 +171,13 @@ class TestCase(object):
 
         LOGGER.info("Executing " + self.test_name)
 
-        if PCAP_AVAILABLE and os.getenv("PCAP", "no") == "yes":
+        # Check the environment first so normal test runs do not import scapy.
+        if os.getenv("PCAP", "no") == "yes" and pcap_available():
             # This PcapListener is from pcap_listener NOT from asterisk/pcap.
             # The former is standalone, which we need here, while the latter
             # is meant for use by tests.
             # It's triggered by the --pcap command line.
+            from pcap_listener import PcapListener
             dumpfile = os.path.join(self.testlogdir, "packet.pcap")
             PcapListener("lo", dumpfile=dumpfile)
 
@@ -411,10 +410,13 @@ class TestCase(object):
 
         """
 
-        if not PCAP_AVAILABLE:
+        if not pcap_available():
             msg = ("PCAP not available on this machine. "
                    "Test config is missing pcap dependency.")
             raise Exception(msg)
+
+        # This is the standalone listener, not asterisk.pcap.PcapListener.
+        from pcap_listener import PcapListener
 
         # TestCase will create a listener for logging purposes, and individual
         # tests can create their own. Tests may only want to watch a specific
