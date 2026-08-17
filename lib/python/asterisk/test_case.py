@@ -272,8 +272,6 @@ class TestCase(object):
                           configuration can be overwritten by individual tests,
                           however.
         """
-        # delay first cli call for waitfullybooted by 1 second per asterisk instance
-        wfbootdelay = count
         for i, ast_config in enumerate(self.get_asterisk_hosts(count)):
             local_num = ast_config.get('num')
             host = ast_config.get('host')
@@ -286,14 +284,12 @@ class TestCase(object):
                 LOGGER.info("Creating Asterisk instance %d" % local_num)
                 ast_instance = Asterisk(base=self.testlogdir, host=host,
                                         ast_conf_options=self.ast_conf_options,
-                                        test_config=test_config,
-                                        bootdelay=wfbootdelay)
+                                        test_config=test_config)
             else:
                 LOGGER.info("Managing Asterisk instance at %s" % host)
                 ast_instance = Asterisk(base=self.testlogdir, host=host,
                                         remote_config=ast_config,
-                                        test_config=test_config,
-                                        bootdelay=wfbootdelay)
+                                        test_config=test_config)
             self.ast.append(ast_instance)
             self.condition_controller.register_asterisk_instance(self.ast[i])
 

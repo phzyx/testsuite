@@ -492,6 +492,8 @@ class Asterisk(object):
         config files, if they have not already been installed
         """
 
+        retry_delay = 0.1
+
         def __start_asterisk_callback(cmd):
             """Begin the Asterisk startup cycle"""
 
@@ -505,38 +507,63 @@ class Asterisk(object):
             self.process = current_runtime().spawnProcess(self.protocol,
                                                 cmd[0],
                                                 cmd, env=os.environ)
-            # This was a one second delay, now is passed in.  This is to allow
-            # asterisk sufficient time to actually start and create the ctl
-            # file. If we try to send the fully booted command before this
-            # happens we wait and try again, but this results in an unhandled
-            # error in the reactor after the command succeeds.
-            current_runtime().callLater(self.wfbdelay, __execute_wait_fully_booted)
+
+            # The CLI cannot connect until Asterisk creates its control socket.
+            # Polling for that concrete readiness signal avoids imposing a
+            # fixed delay on every test (and an even larger one on tests with
+            # multiple instances).
+            current_runtime().callLater(0, __wait_for_control_socket)
+
+        def __start_timed_out():
+            """Return whether startup exceeded its overall deadline."""
+            timeout = 90 if self.valgrind_enabled else 45
+            return time.time() - self.__start_asterisk_time > timeout
+
+        def __fail_start():
+            """Fail the startup future after its deadline expires."""
+            if self._start_deferred.done():
+                return
+            msg = "Asterisk core waitfullybooted for %s failed" % self.host
+            LOGGER.error(msg)
+            self._start_deferred.set_exception(Exception(msg))
+
+        def __wait_for_control_socket():
+            """Wait until the local Asterisk CLI can accept commands."""
+            if self._start_deferred.done():
+                return
+            if __start_timed_out():
+                __fail_start()
+                return
+
+            control_socket = self.get_path("astrundir", "asterisk.ctl")
+            if not os.path.exists(control_socket):
+                current_runtime().callLater(0.05,
+                                            __wait_for_control_socket)
+                return
+
+            __execute_wait_fully_booted()
 
         def __execute_wait_fully_booted():
             """Send the CLI command waitfullybooted"""
 
+            nonlocal retry_delay
+
             if self.remote_config:
                 return
 
-            # try to send the command until we timeout,
-            # then assume asterisk won't start and error out
-            timeout = 90 if self.valgrind_enabled else 45
-            CLIRetVal = self.cli_exec_blocking("core waitfullybooted", "Asterisk has fully booted")
+            CLIRetVal = self.cli_exec_blocking(
+                "core waitfullybooted", "Asterisk has fully booted")
             if CLIRetVal == 0:
                 msg = "Successfully started Asterisk %s" % self.host
                 self._start_deferred.set_result(msg)
-            elif time.time() - self.__start_asterisk_time > timeout:
-                msg = "Asterisk core waitfullybooted for %s failed" % self.host
-                LOGGER.error(msg)
-                self._start_deferred.set_exception(Exception(msg))
+            elif __start_timed_out():
+                __fail_start()
             else:
                 msg = "Asterisk core waitfullybooted for %s failed, retrying" % self.host
                 LOGGER.warning(msg)
-                # wait twice as long as last time up until half timeout
-                self.wfbdelay = self.wfbdelay*2
-                if self.wfbdelay > (timeout/2):
-                    self.wfbdelay = (timeout/2)
-                current_runtime().callLater(self.wfbdelay, __execute_wait_fully_booted)
+                current_runtime().callLater(retry_delay,
+                                            __execute_wait_fully_booted)
+                retry_delay = min(retry_delay * 2, 1.0)
 
         self.install_configs(os.getcwd() + "/configs", deps)
         self._setup_configs()
